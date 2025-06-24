@@ -1,0 +1,256 @@
+BRK , s        , 0x00 , IMP         , 1 , base
+ORA , (d,x)    , 0x01 , DP IN I_X   , 2 , base
+COP , #        , 0x02 , IM          , 1 , base
+ORA , d,s      , 0x03 , SR          , 2 , base
+TSB , d        , 0x04 , DP          , 2 , base
+ORA , d        , 0x05 , DP          , 2 , base
+ASL , d        , 0x06 , DP          , 2 , base
+ORA , [d]      , 0x07 , DP INL      , 2 , base
+PHP , s        , 0x08 , IMP         , 1 , base
+ORA , #        , 0x09 , IMM         , 2 , m_set
+ASL , A        , 0x0A , IMP         , 1 , base
+PHD , s        , 0x0B , IMP         , 1 , base
+TSB , a        , 0x0C , ABS         , 3 , base
+ORA , a        , 0x0D , ABS         , 3 , base
+ASL , a        , 0x0E , ABS         , 3 , base
+ORA , al       , 0x0F , ABL         , 4 , base
+BPL , r        , 0x10 , PCR         , 2 , base
+ORA , (d),y    , 0x11 , DP IN I_Y   , 2 , base
+ORA , (d)      , 0x12 , DP IN       , 2 , base
+ORA , (d,s),y  , 0x13 , SR IN I_Y   , 2 , base
+TRB , d        , 0x14 , DP          , 2 , base
+ORA , d,x      , 0x15 , DP I_X      , 2 , base
+ASL , d,x      , 0x16 , DP I_X      , 2 , base
+ORA , [d],y    , 0x17 , DP INL I_Y  , 2 , base
+CLC , i        , 0x18 , IMP         , 1 , base
+ORA , a,y      , 0x19 , ABS I_Y     , 3 , base
+INC , A        , 0x1A , IMP         , 1 , base
+TCS , i        , 0x1B , IMP         , 1 , base
+TRB , a        , 0x1C , ABS         , 3 , base
+ORA , a,x      , 0x1D , ABS I_X     , 3 , base
+ASL , a,x      , 0x1E , ABS I_X     , 3 , base
+ORA , al,x     , 0x1F , ABL I_X     , 4 , base
+JSR , a        , 0x20 , ABS         , 3 , base
+AND , (d,x)    , 0x21 , DP I_X      , 2 , base
+JSL , al       , 0x22 , ABL         , 4 , base
+AND , d,s      , 0x23 , SR          , 2 , base
+BIT , d        , 0x24 , DP          , 2 , base
+AND , d        , 0x25 , DP          , 2 , base
+ROL , d        , 0x26 , DP          , 2 , base
+AND , [d]      , 0x27 , DP INL      , 2 , base
+PLP , s        , 0x28 , IMP         , 1 , base
+AND , #        , 0x29 , IMM         , 2 , m_set
+ROL , A        , 0x2A , IMP         , 1 , base
+PLD , s        , 0x2B , IMP         , 1 , base
+BIT , a        , 0x2C , ABS         , 3 , base
+AND , a        , 0x2D , ABS         , 3 , base
+ROL , a        , 0x2E , ABS         , 3 , base
+AND , al       , 0x2F , ABL         , 4 , base
+BMI , R        , 0x30 , PCR         , 2 , base
+AND , (d),y    , 0x31 , DP IN I_Y   , 2 , base
+AND , (d)      , 0x32 , DP IN       , 2 , base
+AND , (d,s),y  , 0x33 , SR IN I_Y   , 2 , base
+BIT , d,x      , 0x34 , DP I_X      , 2 , base
+AND , d,x      , 0x35 , DP I_X      , 2 , base
+ROL , d,x      , 0x36 , DP I_X      , 2 , base
+AND , [d],y    , 0x37 , DP INL I_Y  , 2 , base
+SEC , i        , 0x38 , IMP         , 1 , base
+AND , a,y      , 0x39 , ABS I_Y     , 3 , base
+DEC , A        , 0x3A , IMP         , 1 , base
+TSC , i        , 0x3B , IMP         , 1 , base
+BIT , a,x      , 0x3C , ABS I_X     , 3 , base
+AND , a,x      , 0x3D , ABS I_X     , 3 , base
+ROL , a,x      , 0x3E , ABS I_X     , 3 , base
+AND , al,x     , 0x3F , ABS INL I_X , 4 , base
+RTI , s        , 0x40 , IMP         , 1 , base
+EOR , (d,x)    , 0x41 , DP IN I_X   , 2 , base
+WDM , i        , 0x42 , IMP         , 2 , base                    
+EOR , d,s      , 0x43 , SR          , 2 , base
+MVP , src,dst  , 0x44 , BMA         , 3 , base
+EOR , d        , 0x45 , DP          , 2 , base
+LSR , d        , 0x46 , DP          , 2 , base
+EOR , [d]      , 0x47 , DP INL      , 2 , base
+PHA , s        , 0x48 , IMP         , 1 , base
+EOR , #        , 0x49 , IMM         , 2 , m_set
+LSR , A        , 0x4A , IMP         , 1 , base
+PHK , s        , 0x4B , IMP         , 1 , base
+JMP , a        , 0x4C , ABS         , 3 , base
+EOR , a        , 0x4D , ABS         , 3 , base
+LSR , a        , 0x4E , ABS         , 3 , base
+EOR , Al       , 0x4F , ABL         , 4 , base
+BVC , r        , 0x50 , PCR         , 2 , base
+EOR , (d),y    , 0x51 , DP IN I_Y   , 2 , base
+EOR , (d)      , 0x52 , DP IN       , 2 , base
+EOR , (d,s),y  , 0x53 , SR IN I_Y   , 2 , base
+MVN , src,dst  , 0x54 , BMA         , 3 , base
+EOR , d,x      , 0x55 , DP I_X      , 2 , base
+LSR , d,x      , 0x56 , DP I_X      , 2 , base
+EOR , [d],y    , 0x57 , DP INL I_Y  , 2 , base
+CLI , i        , 0x58 , IMP         , 1 , base
+EOR , a,y      , 0x59 , ABS I_Y     , 3 , base
+PHY , s        , 0x5A , IMP         , 1 , base
+TCD , i        , 0x5B , IMP         , 1 , base
+JMP , al       , 0x5C , ABL         , 4 , base
+EOR , a,x      , 0x5D , ABS I_X     , 3 , base
+LSR , a,x      , 0x5E , ABS I_X     , 3 , base
+EOR , al,x     , 0x5F , ABL I_X     , 4 , base
+RTS , s        , 0x60 , IMP         , 1 , base
+ADC , (dp,X)   , 0x61 , DP IN X     , 2 , base
+PER , s        , 0x62 , PCL         , 3 , base
+ADC , sr,S     , 0x63 , SR          , 2 , base
+STZ , d        , 0x64 , DP          , 2 , base
+ADC , dp       , 0x65 , DP          , 2 , base
+ROR , d        , 0x66 , DP          , 2 , base
+ADC , [dp]     , 0x67 , DP INL      , 2 , base
+PLA , s        , 0x68 , IMP         , 1 , base
+ADC , #        , 0x69 , IMM         , 2 , m_set
+ROR , A        , 0x6A , IMP         , 1 , base
+RTL , s        , 0x6B , IMP         , 1 , base
+JMP , (a)      , 0x6C , ABS IN      , 3 , base
+ADC , addr     , 0x6D , ABS         , 3 , base
+ROR , a        , 0x6E , ABS         , 3 , base
+ADC , al       , 0x6F , ABL         , 4 , base
+BVS , r        , 0x70 , PCR         , 2 , base
+ADC , (d),y    , 0x71 , DP IN I_Y   , 2 , base
+ADC , (d)      , 0x72 , DP IN       , 2 , base
+ADC , (sr,S),y , 0x73 , SR IN I_Y   , 2 , base
+STZ , d,x      , 0x74 , DP I_X      , 2 , base
+ADC , d,x      , 0x75 , DP I_X      , 2 , base
+ROR , d,x      , 0x76 , DP I_X      , 2 , base
+ADC , [d],y    , 0x77 , DP INL I_Y  , 2 , base
+SEI , i        , 0x78 , IMP         , 1 , base
+ADC , a,y      , 0x79 , ABS I_Y     , 3 , base
+PLY , s        , 0x7A , IMP         , 1 , base
+TDC , i        , 0x7B , IMP         , 1 , base
+JMP , (a,x)    , 0x7C , ABS IN I_X  , 3 , base
+ADC , a,x      , 0x7D , ABS I_X     , 3 , base
+ROR , a,x      , 0x7E , ABS I_X     , 3 , base
+ADC , al,x     , 0x7F , ABL I_X     , 4 , base
+BRA , r        , 0x80 , PCR         , 2 , base
+STA , (d,x)    , 0x81 , DP IN I_X   , 2 , base
+BRL , rl       , 0x82 , PCL         , 3 , base
+STA , d,s      , 0x83 , SR          , 2 , base
+STY , d        , 0x84 , DP          , 2 , base
+STA , d        , 0x85 , DP          , 2 , base
+STX , d        , 0x86 , DP          , 2 , base
+STA , [d]      , 0x87 , DP INL      , 2 , base
+DEY , i        , 0x88 , IMP         , 1 , base
+BIT , #        , 0x89 , IMM         , 2 , m_set
+TXA , i        , 0x8A , IMP         , 1 , base
+PHB , s        , 0x8B , IMP         , 1 , base
+STY , a        , 0x8C , ABS         , 3 , base
+STA , a        , 0x8D , ABS         , 3 , base
+STX , a        , 0x8E , ABS         , 3 , base
+STA , al       , 0x8F , ABL         , 4 , base
+BCC , r        , 0x90 , PCR         , 2 , base
+STA , (d),y    , 0x91 , DP IN I_Y   , 2 , base
+STA , (d)      , 0x92 , DP IN       , 2 , base
+STA , (d,s),y  , 0x93 , SR IN I_Y   , 2 , base
+STY , d,x      , 0x94 , DP I_X      , 2 , base
+STA , d,x      , 0x95 , DP I_X      , 2 , base
+STX , d,y      , 0x96 , DP I_Y      , 2 , base
+STA , [d],y    , 0x97 , DP INL I_Y  , 2 , base
+TYA , i        , 0x98 , IMP         , 1 , base
+STA , a,y      , 0x99 , ABS I_Y     , 3 , base
+TXS , i        , 0x9A , IMP         , 1 , base
+TXY , i        , 0x9B , IMP         , 1 , base
+STZ , a        , 0x9C , ABS         , 3 , base
+STA , a,x      , 0x9D , ABS I_X     , 3 , base
+STZ , a,x      , 0x9E , ABS I_X     , 3 , base
+STA , al,x     , 0x9F , ABL I_X     , 4 , base
+LDY , #        , 0xA0 , IMM         , 2 , x_set
+LDA , (d,x)    , 0xA1 , DP IN I_X   , 2 , base
+LDX , #        , 0xA2 , IMM         , 2 , x_set
+LDA , d,s      , 0xA3 , SR          , 2 , base
+LDY , d        , 0xA4 , DP          , 2 , base
+LDA , d        , 0xA5 , DP          , 2 , base
+LDX , d        , 0xA6 , DP          , 2 , base
+LDA , [d]      , 0xA7 , DP INL      , 2 , base
+TAY , i        , 0xA8 , IMP         , 1 , base
+LDA , #        , 0xA9 , IMM         , 2 , m_set
+TAX , i        , 0xAA , IMP         , 1 , base
+PLB , s        , 0xAB , IMP         , 1 , base
+LDY , a        , 0xAC , ABS         , 3 , base
+LDA , a        , 0xAD , ABS         , 3 , base
+LDX , a        , 0xAE , ABS         , 3 , base
+LDA , al       , 0xAF , ABL         , 4 , base
+BCS , r        , 0xB0 , PCR         , 2 , base
+LDA , (d),y    , 0xB1 , DP IN I_Y   , 2 , base
+LDA , (d)      , 0xB2 , DP IN       , 2 , base
+LDA , (d,s),y  , 0xB3 , SR IN I_Y   , 2 , base
+LDY , d,x      , 0xB4 , DP I_X      , 2 , base
+LDA , d,x      , 0xB5 , DP I_X      , 2 , base
+LDX , d,y      , 0xB6 , DP I_Y      , 2 , base
+LDA , [d],y    , 0xB7 , DP INL I_Y  , 2 , base
+CLV , i        , 0xB8 , IMP         , 1 , base
+LDA , a,y      , 0xB9 , ABS I_Y     , 3 , base
+TSX , i        , 0xBA , IMP         , 1 , base
+TYX , i        , 0xBB , IMP         , 1 , base
+LDY , a,x      , 0xBC , ABS I_X     , 3 , base
+LDA , a,x      , 0xBD , ABS I_X     , 3 , base
+LDX , a,y      , 0xBE , ABS I_Y     , 3 , base
+LDA , al,x     , 0xBF , ABL I_X     , 4 , base
+CPY , #        , 0xC0 , IMM         , 2 , x_set
+CMP , (d,x)    , 0xC1 , DP IN I_X   , 2 , base
+REP , #        , 0xC2 , IMM         , 2 , base
+CMP , d,s      , 0xC3 , SR          , 2 , base
+CPY , d        , 0xC4 , DP          , 2 , base
+CMP , d        , 0xC5 , DP          , 2 , base
+DEC , d        , 0xC6 , DP          , 2 , base
+CMP , [d]      , 0xC7 , DP INL      , 2 , base
+INY , i        , 0xC8 , IMP         , 1 , base
+CMP , #        , 0xC9 , IMM         , 2 , m_set
+DEX , i        , 0xCA , IMP         , 1 , base
+WAI , i        , 0xCB , IMP         , 1 , base
+CPY , a        , 0xCC , ABS         , 3 , base
+CMP , a        , 0xCD , ABS         , 3 , base
+DEC , a        , 0xCE , ABS         , 3 , base
+CMP , al       , 0xCF , ABL         , 4 , base
+BNE , r        , 0xD0 , PCR         , 2 , base
+CMP , (d),y    , 0xD1 , DP IN I_Y   , 2 , base
+CMP , (d)      , 0xD2 , DP IN       , 2 , base
+CMP , (d,s),y  , 0xD3 , SR IN I_Y   , 2 , base
+PEI , (dp)     , 0xD4 , DP IN       , 2 , base
+CMP , d,x      , 0xD5 , DP I_X      , 2 , base
+DEC , d,x      , 0xD6 , DP I_X      , 2 , base
+CMP , [d],y    , 0xD7 , DP INL I_Y  , 2 , base
+CLD , i        , 0xD8 , IMP         , 1 , base
+CMP , a,y      , 0xD9 , ABS I_Y     , 3 , base
+PHX , s        , 0xDA , IMP         , 1 , base
+STP , i        , 0xDB , IMP         , 1 , base
+JMP , [a]      , 0xDC , ABS INL     , 3 , base
+CMP , a,x      , 0xDD , ABS I_X     , 3 , base
+DEC , a,x      , 0xDE , ABS I_X     , 3 , base
+CMP , al,x     , 0xDF , ABL I_X     , 4 , base
+CPX , #        , 0xE0 , IMM         , 2 , x_set
+SBC , (d,x)    , 0xE1 , DP IN I_X   , 2 , base
+SEP , #        , 0xE2 , IMM         , 2 , base
+SBC , d,s      , 0xE3 , SR          , 2 , base
+CPX , d        , 0xE4 , DP          , 2 , base
+SBC , d        , 0xE5 , DP          , 2 , base
+INC , d        , 0xE6 , DP          , 2 , base
+SBC , [d]      , 0xE7 , DP INL      , 2 , base
+INX , i        , 0xE8 , IMP         , 1 , base
+SBC , #        , 0xE9 , IMM         , 2 , m_set
+NOP , i        , 0xEA , IMP         , 1 , base
+XBA , i        , 0xEB , IMP         , 1 , base
+CPX , a        , 0xEC , ABS         , 3 , base
+SBC , a        , 0xED , ABS         , 3 , base
+INC , a        , 0xEE , ABS         , 3 , base
+SBC , al       , 0xEF , ABL         , 4 , base
+BEQ , r        , 0xF0 , PCR         , 2 , base
+SBC , (d),y    , 0xF1 , DP IN I_Y   , 2 , base
+SBC , (d)      , 0xF2 , DP IN       , 2 , base
+SBC , (d,s),y  , 0xF3 , SR IN I_Y   , 2 , base
+PEA , s        , 0xF4 , ABS         , 3 , base
+SBC , d,x      , 0xF5 , DP I_X      , 2 , base
+INC , d,x      , 0xF6 , DP I_X      , 2 , base
+SBC , [d],y    , 0xF7 , DP INL I_Y  , 2 , base
+SED , i        , 0xF8 , IMP         , 1 , base
+SBC , a,y      , 0xF9 , ABS I_Y     , 3 , base
+PLX , s        , 0xFA , IMP         , 1 , base
+XCE , i        , 0xFB , IMP         , 1 , base
+JSR , (a,x)    , 0xFC , ABS IN I_X  , 3 , base
+SBC , a,x      , 0xFD , ABS I_X     , 3 , base
+INC , a,x      , 0xFE , ABS I_X     , 3 , base
+SBC , al,x     , 0xFF , ABL I_X     , 4 , base

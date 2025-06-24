@@ -1,0 +1,105 @@
+#include "ops.h"
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdarg.h>
+
+/*
+    >Immediate - single param
+    >Implied - no params
+    >PCRelative - 1 byte, branches only ? -- signed
+    >PCRelativeLong - PC Relatiove, Long - 2 bytes -- signed
+    >DirectPage  - first param is 1 byte, unsigned hex
+    >Absolute - 2 bytes, unsigned hex
+    >AbsoluteLong - 3 bytes, unsigned hex
+    Indirect  - for IndexedX also flagged, wrap whole thIndirectg Indirect parens, IndexedY wrap just first param
+    IndexedX - Indirectdexed X -- second param is X
+    IndexedY - ditto, but Y
+    >BlockMoveAddress - pair of sIndirectgle byte values, unsigned hex
+    >StackRelative - Stack Relative - gets a `,S` as part of the params, when an Indirectdexed, as part of the first param
+*/
+
+#define SET_FLAG(var, flag) (var) |= (flag)
+#define CLEAR_FLAG(var, flag) (var) &= ~(flag)
+#define CHECK_FLAG(var, flag) !!((var) & (flag))
+
+char* format_opcode_and_operands(opcode_t* code, ...) {
+    uint16_t f = code->flags;
+    char *rv1 = malloc(sizeof(char) * 16);
+    char *retval = malloc(sizeof(char) * 24);
+    char* fmt = malloc(sizeof(char)*16);
+    snprintf(rv1, 16, ""); // take care of Implied
+    va_list args;
+    va_start(args, code);
+    if (CHECK_FLAG(code->flags, Absolute) || CHECK_FLAG(code->flags, DirectPage)) {
+        // Absolute Addressing can be Indirect, Indirect | IndexedX, IndexedLong, IndexedX, IndexedY or standalone
+        // Direct Page addressing can be IndexedX, IndexedY, IndexedLong, IndexedLong | IndexedY, Indirect | IndexedX, Indirect | IndexedY, Indirect or standalone
+        uint8_t sz = CHECK_FLAG(code->flags, DirectPage)?2:4;
+        if (CHECK_FLAG(code->flags, Indirect)) {
+            if (CHECK_FLAG(code->flags, IndexedX)) {
+                snprintf(fmt, 16, "($0x%%%02uX, X)", sz);
+            } else if(CHECK_FLAG(code->flags, IndexedY)) {
+                snprintf(fmt, 16, "($0x%%%02uX), Y", sz);
+            } else {
+                snprintf(fmt, 16, "($0x%%%02uX)", sz);
+            }
+        } else if(CHECK_FLAG(code->flags, IndexedLong)) {
+            if (CHECK_FLAG(code->flags, IndexedY)) {
+            } else {
+                snprintf(fmt, 16, "[$0x%%%02uX]", sz);
+            }
+        } else if(CHECK_FLAG(code->flags, IndexedX)) {
+            snprintf(fmt, 16, "$0x%%%02uX, X", sz);
+        } else if(CHECK_FLAG(code->flags, IndexedY)) {
+            snprintf(fmt, 16, "$0x%%%02uX, Y", sz);
+        } else {
+            snprintf(fmt, 16, "$0x%%%02uX", sz);
+        }
+        vsnprintf(rv1, 16, fmt, args);
+    } else if(CHECK_FLAG(code->flags, StackRelative) || CHECK_FLAG(code->flags, AbsoluteLong)) {
+        // Stack Relative -- Indirect | IndexedY or standalone
+        // Absolute Long -- IndexedX or standalone
+        if (CHECK_FLAG(code->flags, Indirect) && CHECK_FLAG(code->flags, IndexedY)) {
+            vsnprintf(rv1, 16, "($0x%02X, S), Y", args); // this should only ever happen with StackRelative, so this is safe
+        } else if (CHECK_FLAG(code->flags, IndexedX)) { // Only with AbsoluteLong
+            vsnprintf(rv1, 16, "$0x%06X, X", args);
+        } else { // ditto
+            vsnprintf(rv1, 16, "$0x%06X", args);
+        }
+    } else if(CHECK_FLAG(code->flags, PCRelative)) {
+        // PC Relative -- only ever standalone
+        // arg is a signed char, we need to extract that to print things correctly...
+        signed char operand = va_arg(args, int); // integer promotion means that even though we expect a `signed char` here, the type passed is "int", so...
+        unsigned char d_flag = ' ';
+        if (operand < 0) { 
+            d_flag = '<';
+            operand *= -1;
+        } else d_flag = '>';
+        snprintf(rv1, 16, "$%c0x%02X", d_flag, operand);
+    } else if(CHECK_FLAG(code->flags, PCRelativeLong)) {
+        // PC Relative Long -- only ever standalone
+        // arg is a signed char, we need to extract that to print things correctly...
+        int16_t operand = va_arg(args, int); // we expects a signed short, but integer promotion interferes again
+        unsigned char d_flag = ' ';
+        if (operand < 0) { 
+            d_flag = '<';
+            operand *= -1;
+        } else d_flag = '>';
+        snprintf(rv1, 16, "$%c0x%04X", d_flag, operand);
+    } else if(CHECK_FLAG(code->flags, Immediate)) {
+        uint8_t sz = code->munge(code->psize);
+        char *fmt = malloc(sizeof(char)*8);
+        snprintf(fmt, 8, "#0x%02u", sz);
+        vsnprintf(rv1, 16, fmt, args);
+        free(fmt);
+    } else if(CHECK_FLAG(code->flags, BlockMoveAddress)) {
+        vsnprintf(rv1, 16, "$0x%02X, $0x%02X", args);
+    }
+    va_end(args);
+    snprintf(retval, 24, "%s %s\n", code->opcode, rv1);
+    free(fmt);
+    free(rv1);
+    return retval;
+}
+#undef SET_FLAG
+#undef CLEAR_FLAG
+#undef CHECK_FLAG
