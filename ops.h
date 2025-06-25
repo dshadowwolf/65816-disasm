@@ -4,7 +4,7 @@ typedef struct opcode_s {
     const uint8_t psize;            // parameter size
     int (*munge)(int);              // function to munge the parameter size
     void (*state)(unsigned char);   // function to set the processor state
-    //void (*extra)(uint32_t, void*); // function to handle extra state -- helps with JMP/BRA type instructions
+    void (*extra)(uint32_t, ...);   // function to handle extra state -- helps with JMP/BRA type instructions
     const uint16_t flags;           // flags for the opcode
 } opcode_t;
 
