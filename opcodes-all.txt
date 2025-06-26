@@ -128,7 +128,7 @@ ROR , a,x      , 0x7E , Absolute IndexedX                , 3 , base , NULL , NUL
 ADC , al,x     , 0x7F , AbsoluteLong IndexedX            , 4 , base , NULL , NULL
 BRA , r        , 0x80 , PCRelative                       , 2 , base , NULL , BRA
 STA , (d,x)    , 0x81 , DirectPage Indirect IndexedX     , 2 , base , NULL , NULL
-BRL , rl       , 0x82 , PCRelativeLong                   , 3 , base , NULL , BRA
+BRL , rl       , 0x82 , PCRelativeLong                   , 3 , base , NULL , BRL
 STA , d,s      , 0x83 , StackRelative                    , 2 , base , NULL , NULL
 STY , d        , 0x84 , DirectPage                       , 2 , base , NULL , NULL
 STA , d        , 0x85 , DirectPage                       , 2 , base , NULL , NULL

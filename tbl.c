@@ -32,6 +32,19 @@ void JMP(uint32_t offset, ...) {
     va_end(args);
 }
 
+void BRL(uint32_t offset, ...) {
+    // TODO: stub!
+    va_list args;
+    va_start(args, offset);
+    uint16_t addr = va_arg(args, int);
+    if (isESet()) {
+        // 6502 emulation mode
+        addr &= 0xFFFF; // mask to 16 bits
+    }
+    // make a label
+    va_end(args);
+}
+
 void BRA(uint32_t offset, ...) {
     // TODO: stub!
     va_list args;
@@ -111,7 +124,7 @@ const opcode_t opcodes[256] = {
     { "JMP", 2,  base, NULL,  JMP, Absolute | Indirect | IndexedX /* JMP (a,x)   */ }, { "ADC", 2,  base, NULL, NULL, Absolute | IndexedX                 /* ADC a,x      */ }, // 7C
     { "ROR", 2,  base, NULL, NULL, Absolute | IndexedX            /* ROR a,x     */ }, { "ADC", 3,  base, NULL, NULL, AbsoluteLong | IndexedX             /* ADC al,x     */ }, // 7E
     { "BRA", 1,  base, NULL, NULL, PCRelative                     /* BRA r       */ }, { "STA", 1,  base, NULL, NULL, DirectPage | Indirect | IndexedX    /* STA (d,x)    */ }, // 80
-    { "BRL", 2,  base, NULL, NULL, PCRelativeLong                 /* BRL rl      */ }, { "STA", 1,  base, NULL, NULL, StackRelative                       /* STA d,s      */ }, // 82
+    { "BRL", 2,  base, NULL,  BRL, PCRelativeLong                 /* BRL rl      */ }, { "STA", 1,  base, NULL, NULL, StackRelative                       /* STA d,s      */ }, // 82
     { "STY", 1,  base, NULL, NULL, DirectPage                     /* STY d       */ }, { "STA", 1,  base, NULL, NULL, DirectPage                          /* STA d        */ }, // 84
     { "STX", 1,  base, NULL, NULL, DirectPage                     /* STX d       */ }, { "STA", 1,  base, NULL, NULL, DirectPage | IndexedLong            /* STA [d]      */ }, // 86 
     { "DEY", 0,  base, NULL, NULL, Implied                        /* DEY i       */ }, { "BIT", 1, m_set, NULL, NULL, Immediate                           /* BIT #        */ }, // 88
