@@ -1,11 +1,13 @@
 #!/usr/bin/perl -w
 print <<END;
-typedef struct ocdb_s {
+typedef struct opcode_s {
     const char *opcode;
     const uint8_t psize;
     int (*munge)(int);
+    void (*state)(unsigned char);
+    void (*extra)(uint32_t, ...);
     const uint8_t flags;
-} ocdb_t;
+} opcode_t;
 
 const ocdb_t[256] opcodes = {
 END
@@ -20,6 +22,8 @@ foreach (<>) {
     my $flags = join( ' | ', split(/\s/, $d[3]));
     my $operandsize = int($d[4])-1;
     my $munger = $d[5];
-    printf("{ \"%3s\", %d, % 5s, %s /* %s %s */ },\n", $opcode, $operandsize, $munger, $flags, $opcode, $params);
+    my $state = $d[6];
+    my $extra = $d[7];
+    printf("{ \"%3s\", %d, % 5s, % 4s, % 4s, %s /* %s %s */ },\n", $opcode, $operandsize, $munger, $state, $extra, $flags, $opcode, $params);
 }
 print "};\n";
