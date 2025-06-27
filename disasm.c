@@ -199,8 +199,12 @@ void disasm(char *filename) {
             // take apart the uint32_t -- one byte is & 0xFF the other is >> 16 & 0xFF
             uint8_t param1 = (params >> 16) & 0xFF;
             uint8_t param2 = params & 0xFF;
+            // MVN and MVP have two parameters -- the source page and destination page
+            // stub this (for now) -- should be entering into the disassembly map
             make_line((input->data - input->mark), opcode, param1, param2);
         } else {
+            // for all other opcodes, we just need the opcode and the single parameter
+            // again, somewhat stubbed as we should be entering into the disassembly map
             make_line((input->data - input->mark), opcode, params);
         }  
     }
