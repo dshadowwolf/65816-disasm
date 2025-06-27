@@ -1,11 +1,13 @@
 #include <stdint.h>
+
 typedef struct opcode_s {
-    const char *opcode;             // mnemonic
-    const uint8_t psize;            // parameter size
-    int (*munge)(int);              // function to munge the parameter size
-    void (*state)(unsigned char);   // function to set the processor state
-    void (*extra)(uint32_t, ...);   // function to handle extra state -- helps with JMP/BRA type instructions
-    const uint16_t flags;           // flags for the opcode
+    const char *opcode;
+    const uint8_t psize;
+    int (*munge)(int);
+    void (*state)(unsigned char);
+    void (*extra)(uint32_t, ...);
+    int (*reader)(void);
+    const uint8_t flags;
 } opcode_t;
 
 typedef enum flags_s {
