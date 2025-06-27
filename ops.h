@@ -6,9 +6,9 @@ typedef struct opcode_s {
     int (*munge)(int);
     void (*state)(unsigned char);
     void (*extra)(uint32_t, ...);
-    int (*reader)(void);
+    int (*reader)(bool);
     const uint8_t flags;
-} opcode_t;
+} opcode_t __attribute__((packed));
 
 typedef enum flags_s {
     Implied = 0,               // addressing mode is implied, no parameters

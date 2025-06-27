@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <unistd.h>
+#include <stdbool.h>
 
 #include "ops.h"
 
@@ -16,6 +17,7 @@ typedef struct rval_s {
     uint32_t code;
     uint32_t handle;
     void* data;
+    void* mark;
 } rval_t;
 
 rval_t* open_file(const char* filename) {
@@ -69,3 +71,143 @@ rval_t* map_file(const char* filename) {
     return r;
 }
 
+static rval_t* input = NULL;
+
+int open_and_map(const char* filename) {
+    input = map_file(filename);
+    if (input->code < 0) {
+        fprintf(stderr, "Error opening or mapping file: %s\n", filename);
+        return -1;
+    }
+    
+    if (input->data == NULL) {
+        fprintf(stderr, "Error mapping file data: %s\n", filename);
+        close(input->handle);
+        free(input);
+        input = NULL;
+        return -1;
+    }
+    input->mark = input->data; // set the mark to the start of the data
+    return 0;
+}
+
+int unmap_and_close() {
+    if (input == NULL || input->code < 0) {
+        fprintf(stderr, "No valid input to unmap and close.\n");
+        return -1;
+    }
+
+    if (munmap(input->mark, get_filesize(input->handle)) < 0) {
+        perror("munmap");
+        return -1;
+    }
+
+    if (close(input->handle) < 0) {
+        perror("close");
+        return -1;
+    }
+
+    free(input);
+    input = NULL;
+    return 0;
+}
+
+int READ_8(bool unused) {
+    if (input == NULL || input->data == NULL) {
+        fprintf(stderr, "No valid input data to read from.\n");
+        return -1;
+    }
+
+    uint8_t value = *((uint8_t*)input->data);
+    input->data = (void*)((uint8_t*)input->data + 1); // move the pointer forward
+    return value;
+}
+
+int READ_8_16(bool read16) {
+    uint16_t value;
+    if (input == NULL || input->data == NULL) {
+        fprintf(stderr, "No valid input data to read from.\n");
+        return -1;
+    }
+
+    if (read16) {
+        value = *((uint16_t*)input->data);
+        input->data = (void*)((uint8_t*)input->data + 2); // move the pointer forward
+    } else {
+        value = *((uint8_t*)input->data);
+        input->data = (void*)((uint8_t*)input->data + 1); // move the pointer forward
+    }
+    return value;
+}
+
+int READ_16(bool unused) {
+    if (input == NULL || input->data == NULL) {
+        fprintf(stderr, "No valid input data to read from.\n");
+        return -1;
+    }
+
+    uint16_t value = *((uint16_t*)input->data);
+    input->data = (void*)((uint8_t*)input->data + 2); // move the pointer forward
+    return value;
+}
+
+int READ_BMA(bool unused) {
+    if (input == NULL || input->data == NULL) {
+        fprintf(stderr, "No valid input data to read from.\n");
+        return -1;
+    }
+
+    uint8_t value1 = *((uint8_t*)input->data);
+    input->data = (void*)((uint8_t*)input->data + 1); // move the pointer forward
+    uint8_t value2 = *((uint8_t*)input->data);
+    input->data = (void*)((uint8_t*)input->data + 1); // move the pointer forward
+
+    // thanks to how we're doing shit here, we have to get funky with this...
+    return (value1 << 16) | value2; // combine the two bytes into a single value
+}
+
+int READ_24(bool unused) {
+    if (input == NULL || input->data == NULL) {
+        fprintf(stderr, "No valid input data to read from.\n");
+        return -1;
+    }
+
+    uint16_t low_word = *((uint8_t*)input->data);
+    input->data = (void*)((uint8_t*)input->data + 1); // move the pointer forward
+    uint8_t high_byte = *((uint8_t*)input->data);
+    input->data = (void*)((uint8_t*)input->data + 1); // move the pointer forward
+
+    // expected to return a 24bit value, do so...
+    return (high_byte << 16) | low_word;
+}
+
+void disasm(char *filename) {
+    if (open_and_map(filename) < 0) {
+        fprintf(stderr, "Failed to open and map file: %s\n", filename);
+        return;
+    }
+
+
+    // Disassembly logic goes here...
+    uint32_t len = get_filesize(input->handle);
+    while ((input->data - input->mark) < len) {
+        uint8_t opcode = READ_8(false);
+        const opcode_t* code = &opcodes[opcode];
+        bool size_check = code->munge(code->psize) > code->psize;
+        uint32_t params = code->reader(size_check);
+        if (code->flags & BlockMoveAddress) {
+            // take apart the uint32_t -- one byte is & 0xFF the other is >> 16 & 0xFF
+            uint8_t param1 = (params >> 16) & 0xFF;
+            uint8_t param2 = params & 0xFF;
+            make_line((input->data - input->mark), opcode, param1, param2);
+        } else {
+            make_line((input->data - input->mark), opcode, params);
+        }  
+    }
+    // now walk through the map and create the output
+
+    // then output
+
+    // then clean up
+    unmap_and_close();
+}

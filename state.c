@@ -9,9 +9,7 @@ typedef struct p_state_s {
 } p_state_t;
 
 #define SET_FLAG(state, flag) (state.flags) |= (flag)
-
 #define CLEAR_FLAG(state, flag) (state.flags) &= ~(flag)
-
 #define CHECK_FLAG(state, flag) !!((state.flags) & (flag))
 
 static p_state_t processor_state;
