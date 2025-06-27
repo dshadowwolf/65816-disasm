@@ -1,4 +1,4 @@
-BRK , s        , 0x00 , Implied                          , 1 ,  base , NULL , NULL , NULL
+BRK , s        , 0x00 , Immediate                        , 2 ,  base , NULL , NULL , NULL
 ORA , (d,x)    , 0x01 , DirectPage Indirect IndexedX     , 2 ,  base , NULL , NULL , READ_8
 COP , #        , 0x02 , Immediate                        , 2 ,  base , NULL , NULL , READ_8
 ORA , d,s      , 0x03 , StackRelative                    , 2 ,  base , NULL , NULL , READ_8
@@ -14,7 +14,7 @@ TSB , a        , 0x0C , Absolute                         , 3 ,  base , NULL , NU
 ORA , a        , 0x0D , Absolute                         , 3 ,  base , NULL , NULL , READ_16
 ASL , a        , 0x0E , Absolute                         , 3 ,  base , NULL , NULL , READ_16
 ORA , al       , 0x0F , AbsoluteLong                     , 4 ,  base , NULL , NULL , READ_24
-BPL , r        , 0x10 , PCRelative                       , 2 ,  base , NULL ,  BRA ,  READ_8
+BPL , r        , 0x10 , PCRelative                       , 2 ,  base , NULL ,  BRA , READ_8
 ORA , (d),y    , 0x11 , DirectPage Indirect IndexedY     , 2 ,  base , NULL , NULL , READ_8
 ORA , (d)      , 0x12 , DirectPage Indirect              , 2 ,  base , NULL , NULL , READ_8
 ORA , (d,s),y  , 0x13 , StackRelative Indirect IndexedY  , 2 ,  base , NULL , NULL , READ_8
@@ -95,7 +95,7 @@ EOR , a,x      , 0x5D , Absolute IndexedX                , 3 ,  base , NULL , NU
 LSR , a,x      , 0x5E , Absolute IndexedX                , 3 ,  base , NULL , NULL , READ_16
 EOR , al,x     , 0x5F , AbsoluteLong IndexedX            , 4 ,  base , NULL , NULL , READ_24
 RTS , s        , 0x60 , Implied                          , 1 ,  base , NULL , NULL , NULL
-ADC , (dp,X)   , 0x61 , DirectPage Indirect X            , 2 ,  base , NULL , NULL , READ_8
+ADC , (dp,X)   , 0x61 , DirectPage Indirect IndexedX     , 2 ,  base , NULL , NULL , READ_8
 PER , s        , 0x62 , PCRelativeLong                   , 3 ,  base , NULL , NULL , READ_16
 ADC , sr,S     , 0x63 , StackRelative                    , 2 ,  base , NULL , NULL , READ_8
 STZ , d        , 0x64 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8
