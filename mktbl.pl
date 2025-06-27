@@ -6,6 +6,7 @@ typedef struct opcode_s {
     int (*munge)(int);
     void (*state)(unsigned char);
     void (*extra)(uint32_t, ...);
+    int reader();
     const uint8_t flags;
 } opcode_t;
 
@@ -24,6 +25,7 @@ foreach (<>) {
     my $munger = $d[5];
     my $state = $d[6];
     my $extra = $d[7];
-    printf("{ \"%3s\", %d, % 5s, % 4s, % 4s, %s /* %s %s */ },\n", $opcode, $operandsize, $munger, $state, $extra, $flags, $opcode, $params);
+    my $reader = $d[8];
+    printf("{ \"%3s\", %02d, % 5s, % 4s, % 4s, % 9s, % 36s /* %3s %8s */ },\n", $opcode, $operandsize, $munger, $state, $extra, $reader, $flags, $opcode, $params);
 }
 print "};\n";
