@@ -29,6 +29,7 @@ void JMP(uint32_t offset, ...) {
         addr &= 0xFFFF; // mask to 16 bits
     }
     // make a label
+    // make_label(???, offset, "JMP_LABEL"); // TODO: need to figure out how to get the source offset
     va_end(args);
 }
 
@@ -42,6 +43,7 @@ void BRL(uint32_t offset, ...) {
         addr &= 0xFFFF; // mask to 16 bits
     }
     // make a label
+    // make_label(???, offset, "BRL_LABEL"); // TODO: need to figure out how to get the source offset
     va_end(args);
 }
 
@@ -55,7 +57,8 @@ void BRA(uint32_t offset, ...) {
         addr &= 0xFFFF; // mask to 16 bits
     }
     // make a label
-    va_end(args);
+    // make_label(???, offset, "LOCAL"); // TODO: need to figure out how to get the source offset
+     va_end(args);
 }
 
 // HACK! Fix this at some point!
@@ -66,7 +69,7 @@ extern void READ_16();
 extern void READ_24();
 
 const opcode_t opcodes[256] = {
-{ "BRK", 00,  base, NULL, NULL,      NULL,                              Implied /* BRK        s */ }, { "ORA", 01,  base, NULL, NULL,    READ_8,     DirectPage | Indirect | IndexedX /* ORA    (d,x) */ }, // 00
+{ "BRK", 00,  base, NULL, NULL,    READ_8,                            Immediate /* BRK        s */ }, { "ORA", 01,  base, NULL, NULL,    READ_8,     DirectPage | Indirect | IndexedX /* ORA    (d,x) */ }, // 00
 { "COP", 01,  base, NULL, NULL,    READ_8,                            Immediate /* COP        # */ }, { "ORA", 01,  base, NULL, NULL,    READ_8,                        StackRelative /* ORA      d,s */ }, // 02
 { "TSB", 01,  base, NULL, NULL,    READ_8,                           DirectPage /* TSB        d */ }, { "ORA", 01,  base, NULL, NULL,    READ_8,                           DirectPage /* ORA        d */ }, // 04
 { "ASL", 01,  base, NULL, NULL,    READ_8,                           DirectPage /* ASL        d */ }, { "ORA", 01,  base, NULL, NULL,    READ_8,            DirectPage | IndirectLong /* ORA      [d] */ }, // 06

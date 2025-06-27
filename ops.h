@@ -23,7 +23,8 @@ typedef enum flags_s {
     PCRelative = 256,          // PC Relative addressing mode
     StackRelative = 512,       // Stack Relative addressing mode
     PCRelativeLong = 1024,     // PC Relative Long addressing mode
-    BlockMoveAddress = 2048    // Block Move parameters needed -- used for MVP/MVN
+    BlockMoveAddress = 2048,   // Block Move parameters needed -- used for MVP/MVN
+    IndirectLong = 4096        // Indirect Long Access
 } flags_t;
 
 int m_set(int sz);

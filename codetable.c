@@ -7,8 +7,8 @@
 #include "ops.h"
 
 typedef enum code_flags_s {
-    LABELED = 4096, // labeled code entry
-    LABEL_SOURCE = 8192, // place where a label originated
+    LABELED = 8192,       // labeled code entry
+    LABEL_SOURCE = 16384, // place where a label originated
 } code_flags_t;
 
 typedef struct codeentry_s {
@@ -21,17 +21,14 @@ typedef struct codeentry_s {
 
 extern const opcode_t opcodes[256];
 
-codeentry_t* make_line(uint32_t offset, uint8_t opcode, ...) {
+codeentry_t* make_line(uint32_t offset, uint8_t opcode, int param1, int param2) {
     codeentry_t* line = malloc(sizeof(codeentry_t));
     line->offset = offset;
     line->code = &opcodes[opcode];
     line->flags = 0; // no flags set
     line->lblname = NULL; // no label name
-    va_list args;
-    va_start(args, opcode);
-    line->params[0] = va_arg(args, int); // first parameter
-    line->params[1] = va_arg(args, int); // second parameter
-    va_end(args);
+    line->params[0] = param1; // first parameter
+    line->params[1] = param2; // second parameter
     return line;    
 }
 
