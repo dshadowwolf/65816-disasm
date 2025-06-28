@@ -6,7 +6,7 @@
 
 #include "list.h"
 
-const listent_t* mapbase[512];
+static listent_t* mapbase[512];
 typedef struct mapent_s {
     uint32_t key;
     void* val;

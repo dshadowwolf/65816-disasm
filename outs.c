@@ -73,6 +73,7 @@ char* format_opcode_and_operands(opcode_t* code, ...) {
         if (operand < 0) { 
             d_flag = '<';
             operand *= -1;
+            operand += 2; // PC Relative going Negative starts at the next instruction, so we need to add 2 to the operand
         } else d_flag = '>';
         snprintf(rv1, 16, "$%c0x%02X", d_flag, operand);
     } else if(CHECK_FLAG(code->flags, PCRelativeLong)) {
@@ -83,6 +84,7 @@ char* format_opcode_and_operands(opcode_t* code, ...) {
         if (operand < 0) { 
             d_flag = '<';
             operand *= -1;
+            operand += 2; // PC Relative going Negative starts at the next instruction, so we need to add 2 to the operand
         } else d_flag = '>';
         snprintf(rv1, 16, "$%c0x%04X", d_flag, operand);
     } else if(CHECK_FLAG(code->flags, Immediate)) {

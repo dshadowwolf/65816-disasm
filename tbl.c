@@ -19,46 +19,37 @@ int base(int sz) {
     return sz;
 }
 
-void JMP(uint32_t offset, ...) {
+void JMP(uint32_t target_offset, uint32_t source_offset) {
     // TODO: stub!
-    va_list args;
-    va_start(args, offset);
     uint16_t addr = va_arg(args, int);
     if (isESet()) {
         // 6502 emulation mode
         addr &= 0xFFFF; // mask to 16 bits
     }
-    // make a label
-    // make_label(???, offset, "JMP_LABEL"); // TODO: need to figure out how to get the source offset
-    va_end(args);
+    // make a label -- TODO: fix the f*cking naming to be dynamic
+    make_label(source_offset, target_offset, "JMP_LABEL");
 }
 
-void BRL(uint32_t offset, ...) {
+void BRL(uint32_t target_offset, uint32_t source_offset) {
     // TODO: stub!
-    va_list args;
-    va_start(args, offset);
     uint16_t addr = va_arg(args, int);
     if (isESet()) {
         // 6502 emulation mode
         addr &= 0xFFFF; // mask to 16 bits
     }
-    // make a label
-    // make_label(???, offset, "BRL_LABEL"); // TODO: need to figure out how to get the source offset
-    va_end(args);
+    // make a label -- TODO: fix the f*cking naming to be dynamic
+    make_label(source_offset, target_offset, "LOCAL_LONG");
 }
 
-void BRA(uint32_t offset, ...) {
+void BRA(uint32_t target_offset, uint32_t source_offset) {
     // TODO: stub!
-    va_list args;
-    va_start(args, offset);
     uint16_t addr = va_arg(args, int);
     if (isESet()) {
         // 6502 emulation mode
         addr &= 0xFFFF; // mask to 16 bits
     }
-    // make a label
-    // make_label(???, offset, "LOCAL"); // TODO: need to figure out how to get the source offset
-     va_end(args);
+    // make a label -- TODO: fix the f*cking naming to be dynamic
+    make_label(source_offset, target_offset, "LOCAL_SHORT");
 }
 
 // HACK! Fix this at some point!

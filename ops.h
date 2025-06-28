@@ -1,14 +1,15 @@
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef struct opcode_s {
     const char *opcode;
     const uint8_t psize;
     int (*munge)(int);
     void (*state)(unsigned char);
-    void (*extra)(uint32_t, ...);
+    void (*extra)(uint32_t, uint32_t);
     int (*reader)(bool);
-    const uint8_t flags;
-} opcode_t __attribute__((packed));
+    const uint32_t flags;
+} opcode_t;
 
 typedef enum flags_s {
     Implied = 0,               // addressing mode is implied, no parameters

@@ -10,7 +10,11 @@
 #include <unistd.h>
 #include <stdbool.h>
 
-#include "ops.h"
+//#include "ops.h"
+#include "map.h"
+#include "codetable.h"
+#include "list.h"
+#include "state.h"
 
 extern const opcode_t opcodes[256];
 typedef struct rval_s {
@@ -173,13 +177,15 @@ int READ_24(bool unused) {
     }
 
     uint16_t low_word = *((uint8_t*)input->data);
-    input->data = (void*)((uint8_t*)input->data + 1); // move the pointer forward
+    input->data = (void*)((uint8_t*)input->data + 2); // move the pointer forward
     uint8_t high_byte = *((uint8_t*)input->data);
     input->data = (void*)((uint8_t*)input->data + 1); // move the pointer forward
 
     // expected to return a 24bit value, do so...
     return (high_byte << 16) | low_word;
 }
+
+extern char* format_opcode_and_operands(opcode_t*, ...);
 
 void disasm(char *filename) {
     if (open_and_map(filename) < 0) {
@@ -195,21 +201,30 @@ void disasm(char *filename) {
         const opcode_t* code = &opcodes[opcode];
         bool size_check = code->munge(code->psize) > code->psize;
         uint32_t params = code->reader(size_check);
+        uint32_t offset = (input->data - input->mark);
         if (code->flags & BlockMoveAddress) {
             // take apart the uint32_t -- one byte is & 0xFF the other is >> 16 & 0xFF
             uint8_t param1 = (params >> 16) & 0xFF;
             uint8_t param2 = params & 0xFF;
             // MVN and MVP have two parameters -- the source page and destination page
             // stub this (for now) -- should be entering into the disassembly map
-            make_line((input->data - input->mark), opcode, param1, param2);
+            add_entry(offset, make_line(offset, opcode, param1, param2));
         } else {
             // for all other opcodes, we just need the opcode and the single parameter
             // again, somewhat stubbed as we should be entering into the disassembly map
-            make_line((input->data - input->mark), opcode, params);
+            add_entry(offset, make_line(offset, opcode, params));
         }  
     }
     // now walk through the map and create the output
-
+    for(uint32_t i = 0; i < len;) {
+        codeentry_t* entry = find_node(i);
+        if (entry != NULL) {
+            printf("0x%02X: %s\n", i, format_opcode_and_operands(entry->code, entry->params[0], entry->params[1]));
+            i += entry->code->munge(entry->code->psize)+1; // move to the next opcode, munge is the size of the opcode and operands
+        } else {
+            i++;
+        }
+    }
     // then output
 
     // then clean up

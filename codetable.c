@@ -5,30 +5,33 @@
 
 #include "map.h"
 #include "ops.h"
-
-typedef enum code_flags_s {
-    LABELED = 8192,       // labeled code entry
-    LABEL_SOURCE = 16384, // place where a label originated
-} code_flags_t;
-
-typedef struct codeentry_s {
-    uint32_t offset;
-    opcode_t* code;
-    uint16_t params[2];
-    uint8_t flags;
-    char *lblname; // label name, if any
-} codeentry_t;
+#include "codetable.h"
 
 extern const opcode_t opcodes[256];
 
-codeentry_t* make_line(uint32_t offset, uint8_t opcode, int param1, int param2) {
+codeentry_t* make_line(uint32_t offset, uint8_t opcode, ...) {
     codeentry_t* line = malloc(sizeof(codeentry_t));
     line->offset = offset;
     line->code = &opcodes[opcode];
     line->flags = 0; // no flags set
     line->lblname = NULL; // no label name
-    line->params[0] = param1; // first parameter
-    line->params[1] = param2; // second parameter
+    va_list args;
+    va_start(args, opcode);
+    if (line->code->flags & BlockMoveAddress) {
+        // Block Move Addressing requires two parameters
+        uint8_t param1 = (uint8_t)va_arg(args, int);
+        uint8_t param2 = (uint8_t)va_arg(args, int);
+        line->params[0] = param1; // first parameter
+        line->params[1] = param2; // second parameter
+    } else {
+        // all other opcodes have a single parameter
+        // store them as a 16-bit value even when they are 8-bit
+        // this is to maintain consistency in the code table
+        // which should allow for a full simulation of the 65C816
+        uint16_t param = (uint16_t)va_arg(args, int);
+        line->params[0] = param; // first parameter
+        line->params[1] = 0; // no second parameter
+    }
     return line;    
 }
 
