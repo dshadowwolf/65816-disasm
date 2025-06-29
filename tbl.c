@@ -7,6 +7,8 @@
 #include "state.h"
 #include "ops.h"
 
+extern void make_label(uint32_t, uint32_t, const char*);
+
 int m_set(int sz) {
     return isMSet()?sz+1:sz;
 }
@@ -21,33 +23,18 @@ int base(int sz) {
 
 void JMP(uint32_t target_offset, uint32_t source_offset) {
     // TODO: stub!
-    uint16_t addr = va_arg(args, int);
-    if (isESet()) {
-        // 6502 emulation mode
-        addr &= 0xFFFF; // mask to 16 bits
-    }
     // make a label -- TODO: fix the f*cking naming to be dynamic
     make_label(source_offset, target_offset, "JMP_LABEL");
 }
 
 void BRL(uint32_t target_offset, uint32_t source_offset) {
     // TODO: stub!
-    uint16_t addr = va_arg(args, int);
-    if (isESet()) {
-        // 6502 emulation mode
-        addr &= 0xFFFF; // mask to 16 bits
-    }
     // make a label -- TODO: fix the f*cking naming to be dynamic
     make_label(source_offset, target_offset, "LOCAL_LONG");
 }
 
 void BRA(uint32_t target_offset, uint32_t source_offset) {
     // TODO: stub!
-    uint16_t addr = va_arg(args, int);
-    if (isESet()) {
-        // 6502 emulation mode
-        addr &= 0xFFFF; // mask to 16 bits
-    }
     // make a label -- TODO: fix the f*cking naming to be dynamic
     make_label(source_offset, target_offset, "LOCAL_SHORT");
 }
