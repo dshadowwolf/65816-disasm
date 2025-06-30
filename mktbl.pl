@@ -1,18 +1,6 @@
 #!/usr/bin/perl -w
-print <<END;
-typedef struct opcode_s {
-    const char *opcode;
-    const uint8_t psize;
-    int (*munge)(int);
-    void (*state)(unsigned char);
-    void (*extra)(uint32_t, ...);
-    int reader();
-    const uint8_t flags;
-} opcode_t;
-
-const ocdb_t[256] opcodes = {
-END
-
+use bigint;
+my $ln = 0;
 foreach (<>) {
     chomp();
     my @d = split(/\s+,\s/);
@@ -26,6 +14,11 @@ foreach (<>) {
     my $state = $d[6];
     my $extra = $d[7];
     my $reader = $d[8];
-    printf("{ \"%3s\", %02d, % 5s, % 4s, % 4s, % 9s, % 36s /* %3s %8s */ },\n", $opcode, $operandsize, $munger, $state, $extra, $reader, $flags, $opcode, $params);
+    my $opcodeval = uc($ln->as_hex);
+    format STDOUT = 
+{ "@<<<", @##, @<<<<<, @<<<<, @<<<<, @<<<<<<<<<, @<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< /* @<<< @<<<<<<<< */ }, // @>>>>
+    $opcode, $operandsize, $munger, $state, $extra, $reader, $flags, $opcode, $params, $opcodeval
+.
+    $ln++;
+    write(STDOUT);
 }
-print "};\n";
