@@ -206,6 +206,7 @@ void disasm(char *filename) {
             // if the opcode has a state function, call it
             // Used for tracking the state of the CPU for the E, M and X flags
             code->state((uint8_t)params);
+            fprintf(stderr, "State change: 0x%02X\n", get_state());
         }
         if (code->flags & BlockMoveAddress) {
             // take apart the uint32_t -- one byte is & 0xFF the other is >> 16 & 0xFF
@@ -215,6 +216,7 @@ void disasm(char *filename) {
             // stub this (for now) -- should be entering into the disassembly map
             add_entry(offset, make_line(offset, opcode, param1, param2));
         } else {
+            fprintf(stderr, "Processing opcode: 0x%02X at offset: 0x%08X (params: 0X%08X)\n", opcode, offset, params);
             // for all other opcodes, we just need the opcode and the single parameter
             // again, somewhat stubbed as we should be entering into the disassembly map
             add_entry(offset, make_line(offset, opcode, params));

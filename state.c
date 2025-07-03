@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "state.h"
@@ -80,6 +81,10 @@ void XCE(unsigned char unused) {
 
 void set_state(unsigned char x) {
     processor_state.flags = x;
+}
+
+uint8_t get_state() {
+    return processor_state.flags;
 }
 
 #undef SET_FLAG

@@ -14,3 +14,4 @@ void SEC(unsigned char unused);
 void CLC(unsigned char unused);
 void XCE(unsigned char unused);
 void set_state(unsigned char x);
+unsigned char get_state();

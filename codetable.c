@@ -12,7 +12,8 @@ extern const opcode_t opcodes[256];
 codeentry_t* make_line(uint32_t offset, uint8_t opcode, ...) {
     codeentry_t* line = malloc(sizeof(codeentry_t));
     line->offset = offset;
-    line->code = &opcodes[opcode];
+    line->code = malloc(sizeof(opcode_t));
+    memccpy(line->code, &opcodes[opcode], 1, sizeof(opcode_t));
     line->flags = 0; // no flags set
     line->lblname = NULL; // no label name
     va_list args;
