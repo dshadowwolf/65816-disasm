@@ -33,7 +33,9 @@ char* format_opcode_and_operands(codeentry_t* ce, ...) {
     snprintf(rv1, 64, ""); // take care of Implied
     va_list args;
     va_start(args, ce);
-    if (CHECK_FLAG(code->flags, Absolute) || CHECK_FLAG(code->flags, DirectPage)) {
+    if ((CHECK_FLAG(code->flags, Absolute) || CHECK_FLAG(code->flags, AbsoluteLong)) && CHECK_FLAG(ce->flags, LABEL_SOURCE)) {
+        snprintf(fmt, 64, "%s", ce->lblname);
+    } else if (CHECK_FLAG(code->flags, Absolute) || CHECK_FLAG(code->flags, DirectPage)) {
         // Absolute Addressing can be Indirect, Indirect | IndexedX, IndexedLong, IndexedX, IndexedY or standalone
         // Direct Page addressing can be IndexedX, IndexedY, IndexedLong, IndexedLong | IndexedY, Indirect | IndexedX, Indirect | IndexedY, Indirect or standalone
         uint8_t sz = CHECK_FLAG(code->flags, DirectPage)?2:4;
@@ -73,30 +75,36 @@ char* format_opcode_and_operands(codeentry_t* ce, ...) {
         // arg is a signed char, we need to extract that to print things correctly...
         signed char operand = va_arg(args, int); // integer promotion means that even though we expect a `signed char` here, the type passed is "int", so...
         unsigned char d_flag = ' ';
-        if (operand < 0) { 
-            d_flag = '<';
-            operand *= -1;
-            operand += 2; // PC Relative going Negative starts at the next instruction, so we need to add 2 to the operand
-        } else d_flag = '>';
-        snprintf(rv1, 16, "$%c0x%02X", d_flag, operand);
+        if (CHECK_FLAG(ce->flags, LABEL_SOURCE)) {
+            snprintf(rv1, 64, "%s", ce->lblname);
+        } else {
+            if (operand < 0) { 
+                d_flag = '<';
+                operand *= -1;
+                operand += 2; // PC Relative going Negative starts at the next instruction, so we need to add 2 to the operand
+            } else d_flag = '>';
+
+            snprintf(rv1, 16, "$%c0x%02X", d_flag, operand);
+        }
     } else if(CHECK_FLAG(code->flags, PCRelativeLong)) {
         // PC Relative Long -- only ever standalone
         // arg is a signed char, we need to extract that to print things correctly...
         int16_t operand = va_arg(args, int); // we expects a signed short, but integer promotion interferes again
         unsigned char d_flag = ' ';
-        if (operand < 0) { 
-            d_flag = '<';
-            operand *= -1;
-            operand += 2; // PC Relative going Negative starts at the next instruction, so we need to add 2 to the operand
-        } else d_flag = '>';
-        snprintf(rv1, 16, "$%c0x%04X", d_flag, operand);
+        if (CHECK_FLAG(ce->flags, LABEL_SOURCE)) {
+            snprintf(rv1, 64, "%s", ce->lblname);
+        } else {
+            if (operand < 0) { 
+                d_flag = '<';
+                operand *= -1;
+                operand += 2; // PC Relative going Negative starts at the next instruction, so we need to add 2 to the operand
+            } else d_flag = '>';
+
+            snprintf(rv1, 16, "$%c0x%02X", d_flag, operand);
+        }
     } else if(CHECK_FLAG(code->flags, Immediate)) {
         uint8_t sz = code->munge(code->psize);
-        if (CHECK_FLAG(ce->flags, LABEL_SOURCE)) {
-            snprintf(fmt, 64, "%s", ce->lblname);
-        } else {
-            snprintf(fmt, 64, "$0x%%%02uX", sz);
-        }
+        snprintf(fmt, 64, "$0x%%%02uX", sz);
         snprintf(fmt, 64, "#0x%02u", sz);
         vsnprintf(rv1, 64, fmt, args);
         free(fmt);
