@@ -9,7 +9,7 @@ typedef struct codeentry_s {
     uint32_t offset;
     opcode_t* code;
     uint16_t params[2];
-    uint8_t flags;
+    uint32_t flags;
     char *lblname; // label name, if any
 } codeentry_t;
 
