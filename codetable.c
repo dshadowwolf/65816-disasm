@@ -46,6 +46,9 @@ void add_line(uint32_t offset, uint8_t opcode) {
 
 void make_label(uint32_t offset_source, uint32_t offset_target, const char* label) {
     codeentry_t* line = (codeentry_t*)find_node(offset_target);
+    char *target_label = malloc(strlen(label) + 6);
+    memset(target_label, 0, strlen(label) + 6);
+    sprintf(target_label, "%s_%04X", label, offset_target);
     if (line == NULL) {
         // create a new line if it doesn't exist
         add_line(offset_target, 0xEA); // 0xEA is a placeholder for no opcode -- (NOP)
@@ -53,7 +56,9 @@ void make_label(uint32_t offset_source, uint32_t offset_target, const char* labe
     }
     if (!CHECK_FLAG(line->flags, LABELED)) {
         line->flags |= LABELED; // set the labeled flag
-        line->lblname = strdup(label); // copy the label name
+        line->lblname = strdup(target_label); // copy the label name
+    } else {
+        target_label = strdup(line->lblname);
     }
 
     codeentry_t* source_line = (codeentry_t*)find_node(offset_source);
@@ -63,7 +68,8 @@ void make_label(uint32_t offset_source, uint32_t offset_target, const char* labe
         source_line = (codeentry_t*)find_node(offset_source);
     }
     source_line->flags |= LABEL_SOURCE; // set the label source flag
-    source_line->lblname = strdup(label); // copy the label name
+    source_line->lblname = strdup(target_label); // copy the label name
+    free(target_label);
 }
 
 #undef SET_FLAG
