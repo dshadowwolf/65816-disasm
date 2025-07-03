@@ -202,6 +202,11 @@ void disasm(char *filename) {
         bool size_check = code->munge(code->psize) > code->psize;
         uint32_t params = code->reader(size_check);
         uint32_t offset = (input->data - input->mark);
+        if (code->state) {
+            // if the opcode has a state function, call it
+            // Used for tracking the state of the CPU for the E, M and X flags
+            code->state((uint8_t)params);
+        }
         if (code->flags & BlockMoveAddress) {
             // take apart the uint32_t -- one byte is & 0xFF the other is >> 16 & 0xFF
             uint8_t param1 = (params >> 16) & 0xFF;
