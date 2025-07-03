@@ -108,7 +108,6 @@ char* format_opcode_and_operands(codeentry_t* ce, ...) {
         snprintf(fmt, 64, "$0x%%%02uX", sz);
         snprintf(fmt, 64, "#0x%02u", sz);
         vsnprintf(rv1, 64, fmt, args);
-        free(fmt);
     } else if(CHECK_FLAG(code->flags, BlockMoveAddress)) {
         vsnprintf(rv1, 64, "$0x%02X, $0x%02X", args);
     }
@@ -117,7 +116,7 @@ char* format_opcode_and_operands(codeentry_t* ce, ...) {
         // can be _ANY_ instruction, so we need to have a small buffer for the label
         snprintf(retval, 72, "%s: %s %s", ce->lblname, code->opcode, rv1);
     } else {
-        snprintf(retval, 72, "%s %s\n", code->opcode, rv1);
+        snprintf(retval, 72, "%s %s", code->opcode, rv1);
     }   
     free(fmt);
     free(rv1);
