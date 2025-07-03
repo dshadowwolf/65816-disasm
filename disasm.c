@@ -206,7 +206,6 @@ void disasm(char *filename) {
             // if the opcode has a state function, call it
             // Used for tracking the state of the CPU for the E, M and X flags
             code->state((uint8_t)params);
-            fprintf(stderr, "State change: 0x%02X\n", get_state());
         }
         if (code->flags & BlockMoveAddress) {
             // take apart the uint32_t -- one byte is & 0xFF the other is >> 16 & 0xFF
@@ -216,7 +215,6 @@ void disasm(char *filename) {
             // stub this (for now) -- should be entering into the disassembly map
             add_entry(offset, make_line(offset, opcode, param1, param2));
         } else {
-            fprintf(stderr, "Processing opcode: 0x%02X at offset: 0x%08X (params: 0X%08X)\n", opcode, offset, params);
             // for all other opcodes, we just need the opcode and the single parameter
             // again, somewhat stubbed as we should be entering into the disassembly map
             add_entry(offset, make_line(offset, opcode, params));
@@ -230,9 +228,9 @@ void disasm(char *filename) {
     }
     // now walk through the map and create the output
     for(uint32_t i = 0; i < len;) {
-        codeentry_t* entry = find_node(i);
+        codeentry_t* entry = find_node(i); // issue is here ?
         if (entry != NULL) {
-            printf("0x%02X: %s\n", i, format_opcode_and_operands(entry->code, entry->params[0], entry->params[1]));
+            printf("0x%02X: %s\n", i, format_opcode_and_operands(entry, entry->params[0], entry->params[1]));
             i += entry->code->munge(entry->code->psize)+1; // move to the next opcode, munge is the size of the opcode and operands
         } else {
             i++;

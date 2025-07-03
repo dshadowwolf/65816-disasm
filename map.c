@@ -30,7 +30,6 @@ void add_entry(uint32_t key, void* val) {
 void* find_node(uint32_t key) {
     uint32_t k = key%512; // bucket
     listent_t* work = mapbase[k];
-
     while(work != NULL) {
         mapent_t* ent = (mapent_t*)work->data;
         if (ent->key == key) {
