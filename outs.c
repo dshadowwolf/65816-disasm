@@ -22,7 +22,6 @@
 #define CLEAR_FLAG(var, flag) (var) &= ~(flag)
 #define CHECK_FLAG(var, flag) !!((var) & (flag))
 
-// TODO: Implement label logic
 // This function formats the opcode and its operands into a string for output.
 char* format_opcode_and_operands(codeentry_t* ce, ...) {
     opcode_t* code = ce->code;
@@ -33,6 +32,9 @@ char* format_opcode_and_operands(codeentry_t* ce, ...) {
     snprintf(rv1, 64, ""); // take care of Implied
     va_list args;
     va_start(args, ce);
+    fprintf(stderr, "format_opcode_and_operands: %p\n", ce);
+    fprintf(stderr, "format_opcode_and_operands: %p\n", ce->code);
+    fprintf(stderr, "format_opcode_and_operands: 0x%08X -- 0x%08X\n", code->flags, ce->flags);
     if ((CHECK_FLAG(code->flags, Absolute) || CHECK_FLAG(code->flags, AbsoluteLong)) && CHECK_FLAG(ce->flags, LABEL_SOURCE)) {
         snprintf(fmt, 64, "%s", ce->lblname);
     } else if (CHECK_FLAG(code->flags, Absolute) || CHECK_FLAG(code->flags, DirectPage)) {
