@@ -213,6 +213,12 @@ void disasm(char *filename) {
             // for all other opcodes, we just need the opcode and the single parameter
             // again, somewhat stubbed as we should be entering into the disassembly map
             add_entry(offset, make_line(offset, opcode, params));
+        }
+        // we _KNOW_ we have an entry now, so we can process for labels
+        if (code->extra) { 
+            // if the opcode has an extra function, call it
+            // this is used for JSR, JSL, JMP, BRL and BRA to create labels
+            code->extra((input->data - input->mark), offset);
         }  
     }
     // now walk through the map and create the output

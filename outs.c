@@ -22,6 +22,8 @@
 #define CLEAR_FLAG(var, flag) (var) &= ~(flag)
 #define CHECK_FLAG(var, flag) !!((var) & (flag))
 
+// TODO: Implement label logic
+// This function formats the opcode and its operands into a string for output.
 char* format_opcode_and_operands(opcode_t* code, ...) {
     uint16_t f = code->flags;
     char *rv1 = malloc(sizeof(char) * 16);
