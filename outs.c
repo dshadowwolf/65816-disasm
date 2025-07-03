@@ -1,8 +1,8 @@
-#include "ops.h"
+#include "codetable.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
-
+#include <stdint.h>
 /*
     >Immediate - single param
     >Implied - no params
@@ -24,48 +24,49 @@
 
 // TODO: Implement label logic
 // This function formats the opcode and its operands into a string for output.
-char* format_opcode_and_operands(opcode_t* code, ...) {
-    uint16_t f = code->flags;
-    char *rv1 = malloc(sizeof(char) * 16);
-    char *retval = malloc(sizeof(char) * 24);
-    char* fmt = malloc(sizeof(char)*16);
-    snprintf(rv1, 16, ""); // take care of Implied
+char* format_opcode_and_operands(codeentry_t* ce, ...) {
+    opcode_t* code = ce->code;
+    uint32_t f = ce->flags;
+    char *rv1 = malloc(sizeof(char) * 64);
+    char *retval = malloc(sizeof(char) * 128);
+    char* fmt = malloc(sizeof(char) * 64);
+    snprintf(rv1, 64, ""); // take care of Implied
     va_list args;
-    va_start(args, code);
+    va_start(args, ce);
     if (CHECK_FLAG(code->flags, Absolute) || CHECK_FLAG(code->flags, DirectPage)) {
         // Absolute Addressing can be Indirect, Indirect | IndexedX, IndexedLong, IndexedX, IndexedY or standalone
         // Direct Page addressing can be IndexedX, IndexedY, IndexedLong, IndexedLong | IndexedY, Indirect | IndexedX, Indirect | IndexedY, Indirect or standalone
         uint8_t sz = CHECK_FLAG(code->flags, DirectPage)?2:4;
         if (CHECK_FLAG(code->flags, Indirect)) {
             if (CHECK_FLAG(code->flags, IndexedX)) {
-                snprintf(fmt, 16, "($0x%%%02uX, X)", sz);
+                snprintf(fmt, 64, "($0x%%%02uX, X)", sz);
             } else if(CHECK_FLAG(code->flags, IndexedY)) {
-                snprintf(fmt, 16, "($0x%%%02uX), Y", sz);
+                snprintf(fmt, 64, "($0x%%%02uX), Y", sz);
             } else {
-                snprintf(fmt, 16, "($0x%%%02uX)", sz);
+                snprintf(fmt, 64, "($0x%%%02uX)", sz);
             }
         } else if(CHECK_FLAG(code->flags, IndexedLong)) {
             if (CHECK_FLAG(code->flags, IndexedY)) {
             } else {
-                snprintf(fmt, 16, "[$0x%%%02uX]", sz);
+                snprintf(fmt, 64, "[$0x%%%02uX]", sz);
             }
         } else if(CHECK_FLAG(code->flags, IndexedX)) {
-            snprintf(fmt, 16, "$0x%%%02uX, X", sz);
+            snprintf(fmt, 64, "$0x%%%02uX, X", sz);
         } else if(CHECK_FLAG(code->flags, IndexedY)) {
-            snprintf(fmt, 16, "$0x%%%02uX, Y", sz);
+            snprintf(fmt, 64, "$0x%%%02uX, Y", sz);
         } else {
-            snprintf(fmt, 16, "$0x%%%02uX", sz);
+            snprintf(fmt, 64, "$0x%%%02uX", sz);
         }
-        vsnprintf(rv1, 16, fmt, args);
+        vsnprintf(rv1, 64, fmt, args);
     } else if(CHECK_FLAG(code->flags, StackRelative) || CHECK_FLAG(code->flags, AbsoluteLong)) {
         // Stack Relative -- Indirect | IndexedY or standalone
         // Absolute Long -- IndexedX or standalone
         if (CHECK_FLAG(code->flags, Indirect) && CHECK_FLAG(code->flags, IndexedY)) {
-            vsnprintf(rv1, 16, "($0x%02X, S), Y", args); // this should only ever happen with StackRelative, so this is safe
+            vsnprintf(rv1, 64, "($0x%02X, S), Y", args); // this should only ever happen with StackRelative, so this is safe
         } else if (CHECK_FLAG(code->flags, IndexedX)) { // Only with AbsoluteLong
-            vsnprintf(rv1, 16, "$0x%06X, X", args);
+            vsnprintf(rv1, 64, "$0x%06X, X", args);
         } else { // ditto
-            vsnprintf(rv1, 16, "$0x%06X", args);
+            vsnprintf(rv1, 64, "$0x%06X", args);
         }
     } else if(CHECK_FLAG(code->flags, PCRelative)) {
         // PC Relative -- only ever standalone
@@ -91,15 +92,24 @@ char* format_opcode_and_operands(opcode_t* code, ...) {
         snprintf(rv1, 16, "$%c0x%04X", d_flag, operand);
     } else if(CHECK_FLAG(code->flags, Immediate)) {
         uint8_t sz = code->munge(code->psize);
-        char *fmt = malloc(sizeof(char)*8);
-        snprintf(fmt, 8, "#0x%02u", sz);
-        vsnprintf(rv1, 16, fmt, args);
+        if (CHECK_FLAG(ce->flags, LABEL_SOURCE)) {
+            snprintf(fmt, 64, "%s", ce->lblname);
+        } else {
+            snprintf(fmt, 64, "$0x%%%02uX", sz);
+        }
+        snprintf(fmt, 64, "#0x%02u", sz);
+        vsnprintf(rv1, 64, fmt, args);
         free(fmt);
     } else if(CHECK_FLAG(code->flags, BlockMoveAddress)) {
-        vsnprintf(rv1, 16, "$0x%02X, $0x%02X", args);
+        vsnprintf(rv1, 64, "$0x%02X, $0x%02X", args);
     }
     va_end(args);
-    snprintf(retval, 24, "%s %s\n", code->opcode, rv1);
+    if (CHECK_FLAG(ce->flags, LABELED)) {
+        // can be _ANY_ instruction, so we need to have a small buffer for the label
+        snprintf(retval, 72, "%s: %s %s", ce->lblname, code->opcode, rv1);
+    } else {
+        snprintf(retval, 72, "%s %s\n", code->opcode, rv1);
+    }   
     free(fmt);
     free(rv1);
     return retval;
