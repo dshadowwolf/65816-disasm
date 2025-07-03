@@ -4,7 +4,6 @@
 #include <string.h>
 
 #include "map.h"
-#include "ops.h"
 #include "codetable.h"
 
 extern const opcode_t opcodes[256];
