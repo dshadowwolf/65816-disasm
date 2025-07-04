@@ -32,6 +32,7 @@ codeentry_t* make_line(uint32_t offset, uint8_t opcode, ...) {
         line->params[0] = param; // first parameter
         line->params[1] = 0; // no second parameter
     }
+    
     return line;    
 }
 
@@ -54,6 +55,7 @@ void make_label(uint32_t offset_source, uint32_t offset_target, const char* labe
         add_line(offset_target, 0xEA); // 0xEA is a placeholder for no opcode -- (NOP)
         line = (codeentry_t*)find_node(offset_target);
     }
+
     if (!CHECK_FLAG(line->flags, LABELED)) {
         line->flags |= LABELED; // set the labeled flag
         line->lblname = strdup(target_label); // copy the label name
@@ -62,12 +64,14 @@ void make_label(uint32_t offset_source, uint32_t offset_target, const char* labe
         free(target_label);
         target_label = strdup(line->lblname);
     }
+
     codeentry_t* source_line = (codeentry_t*)find_node(offset_source);
     if (source_line == NULL) {
         // create a new source line if it doesn't exist
         add_line(offset_source, 0xEA); // 0xEA is a placeholder
         source_line = (codeentry_t*)find_node(offset_source);
     }
+
     source_line->flags |= LABEL_SOURCE; // set the label source flag
     source_line->lblname = strdup(target_label); // copy the label name
     free(target_label);

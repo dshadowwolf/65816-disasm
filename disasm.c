@@ -187,7 +187,7 @@ int READ_24(bool unused) {
     return (high_byte << 16) | low_word;
 }
 
-extern char* format_opcode_and_operands(opcode_t*, ...);
+extern char* format_opcode_and_operands(codeentry_t*, ...);
 
 void disasm(char *filename) {
     if (open_and_map(filename) < 0) {
