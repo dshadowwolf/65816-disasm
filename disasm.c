@@ -124,6 +124,7 @@ int READ_8(bool unused) {
 
     uint8_t value = *((uint8_t*)input->data);
     input->data = (void*)((uint8_t*)input->data + 1); // move the pointer forward
+    fprintf(stderr, "READ_8: returning 0x%02X, next is: 0x%02X\n", value, (uint8_t)(*((uint8_t*)input->data)));
     return value;
 }
 
@@ -141,6 +142,7 @@ int READ_8_16(bool read16) {
         value = *((uint8_t*)input->data);
         input->data = (void*)((uint8_t*)input->data + 1); // move the pointer forward
     }
+    fprintf(stderr, "READ_8_16 -- returning 0x%04X, next is: 0x%02X\n", value, (uint8_t)(*((uint8_t*)input->data)));
     return value;
 }
 
@@ -202,7 +204,7 @@ void disasm(char *filename) {
         bool size_check = code->munge(code->psize) > code->psize;
         uint32_t params = code->reader?code->reader(size_check):0;
         uint32_t offset = (input->data - input->mark);
-
+        fprintf(stderr, "disasm: opcode (%s) with curr offset at %d bytes\n", code->opcode, (input->data - input->mark));
         if (code->state) {
             // if the opcode has a state function, call it
             // Used for tracking the state of the CPU for the E, M and X flags
@@ -228,13 +230,10 @@ void disasm(char *filename) {
         }  
     }
     // now walk through the map and create the output
-    for(uint32_t i = 0; i < len;) {
+    for(uint32_t i = 0; i < len;i++) {
         codeentry_t* entry = find_node(i); // issue is here ?
         if (entry != NULL) {
             printf("0x%02X: %s\n", i, format_opcode_and_operands(entry, entry->params[0], entry->params[1]));
-            i += entry->code->munge(entry->code->psize)+1; // move to the next opcode, munge is the size of the opcode and operands
-        } else {
-            i++;
         }
     }
     // then output
