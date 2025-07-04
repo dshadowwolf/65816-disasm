@@ -199,11 +199,11 @@ void disasm(char *filename) {
     // Disassembly logic goes here...
     uint32_t len = get_filesize(input->handle);
     while ((input->data - input->mark) < len) {
+        uint32_t offset = (input->data - input->mark);
         uint8_t opcode = READ_8(false);
         const opcode_t* code = &opcodes[opcode];
         bool size_check = code->munge(code->psize) > code->psize;
         uint32_t params = code->reader?code->reader(size_check):0;
-        uint32_t offset = (input->data - input->mark);
 
         if (code->state) {
             // if the opcode has a state function, call it
