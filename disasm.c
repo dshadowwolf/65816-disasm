@@ -202,7 +202,7 @@ void disasm(char *filename) {
         bool size_check = code->munge(code->psize) > code->psize;
         uint32_t params = code->reader?code->reader(size_check):0;
         uint32_t offset = (input->data - input->mark);
-        fprintf(stderr, "%s --> 0x%08X --> 0x%02X\n", code->opcode, params, opcode);
+
         if (code->state) {
             // if the opcode has a state function, call it
             // Used for tracking the state of the CPU for the E, M and X flags

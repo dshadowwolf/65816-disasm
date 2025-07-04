@@ -39,7 +39,6 @@ bool carrySet() {
 }
 
 void REP(unsigned char x) {
-    fprintf(stderr, "REP: 0x%02X\n", x);
     switch(x) {
         case 0x10:
             CLEAR_FLAG(processor_state, X_FLAG);
@@ -53,7 +52,6 @@ void REP(unsigned char x) {
 }
 
 void SEP(unsigned char x) {
-    fprintf(stderr, "SEP: 0x%02X\n", x);
     switch(x) {
         case 0x10:
             SET_FLAG(processor_state, X_FLAG);
@@ -90,13 +88,6 @@ uint8_t get_state() {
     return processor_state.flags;
 }
 
-void set_start(unsigned int x) {
-    processor_state.start = x;
-}
-
-unsigned int get_start() {
-    return processor_state.start;
-}
 #undef SET_FLAG
 #undef CLEAR_FLAG
 #undef CHECK_FLAG
