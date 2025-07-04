@@ -58,9 +58,11 @@ void make_label(uint32_t offset_source, uint32_t offset_target, const char* labe
         line->flags |= LABELED; // set the labeled flag
         line->lblname = strdup(target_label); // copy the label name
     } else {
+        // hrm... we should free this allocation before re-using the variable...
+        free(target_label);
         target_label = strdup(line->lblname);
     }
-
+    fprintf(stderr, "Labeling offset 0x%06X as %s with source of label at 0x%06X\n", offset_target, line->lblname, offset_source);
     codeentry_t* source_line = (codeentry_t*)find_node(offset_source);
     if (source_line == NULL) {
         // create a new source line if it doesn't exist

@@ -32,8 +32,7 @@ char* format_opcode_and_operands(codeentry_t* ce, ...) {
     snprintf(rv1, 64, ""); // take care of Implied
     va_list args;
     va_start(args, ce);
-//    fprintf(stderr, "format_opcode_and_operands: %p\n", ce);
-//    fprintf(stderr, "format_opcode_and_operands: %p\n", ce->code);
+
     if ((CHECK_FLAG(code->flags, Absolute) || CHECK_FLAG(code->flags, AbsoluteLong)) && CHECK_FLAG(ce->flags, LABEL_SOURCE)) {
         snprintf(fmt, 64, "%s", ce->lblname);
     } else if (CHECK_FLAG(code->flags, Absolute) || CHECK_FLAG(code->flags, DirectPage)) {
@@ -106,7 +105,7 @@ char* format_opcode_and_operands(codeentry_t* ce, ...) {
     } else if(CHECK_FLAG(code->flags, Immediate)) {
         uint8_t sz = code->munge(code->psize);
         snprintf(fmt, 64, "$0x%%%02uX", sz);
-        snprintf(fmt, 64, "#0x%02u", sz);
+        //snprintf(fmt, 64, "#0x%02u", sz);
         vsnprintf(rv1, 64, fmt, args);
     } else if(CHECK_FLAG(code->flags, BlockMoveAddress)) {
         vsnprintf(rv1, 64, "$0x%02X, $0x%02X", args);
