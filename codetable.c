@@ -62,7 +62,6 @@ void make_label(uint32_t offset_source, uint32_t offset_target, const char* labe
         free(target_label);
         target_label = strdup(line->lblname);
     }
-    
     codeentry_t* source_line = (codeentry_t*)find_node(offset_source);
     if (source_line == NULL) {
         // create a new source line if it doesn't exist
