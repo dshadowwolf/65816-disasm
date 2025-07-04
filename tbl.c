@@ -39,12 +39,12 @@ void JMP(uint32_t target_offset, uint32_t source_offset) {
 
 void BRL(uint32_t target_offset, uint32_t source_offset) {
     int32_t p = source_offset + (int8_t)target_offset;
-    make_label(source_offset, p, "LOCAL_LONG");
+    make_label(source_offset, p+3, "LOCAL_LONG");
 }
 
 void BRA(uint32_t target_offset, uint32_t source_offset) {
     int32_t p = source_offset + (int8_t)target_offset;
-    make_label(source_offset, p, "LOCAL_SHORT");
+    make_label(source_offset, p+2, "LOCAL_SHORT");
 }
 
 // HACK! Fix this at some point!
@@ -57,7 +57,7 @@ extern int READ_24(bool);
 // Note that BRK and COP both consume the byte following them, though I cannot find any documentation saying BRK has a parameter.
 // To cover for this, we give it a dummy parameter that gets read from the byte-stream.
 const opcode_t opcodes[256] = {
-    { "BRK",   1,  base, NULL, NULL, NULL     , Immediate                             /* BRK  s         */ }, //  0x00
+    { "BRK",   1,  base, NULL, NULL, READ_8   , Immediate                             /* BRK  s         */ }, //  0x00
     { "ORA",   1,  base, NULL, NULL, READ_8   , DirectPage | Indirect | IndexedX      /* ORA  (d,x)     */ }, //  0x01
     { "COP",   1,  base, NULL, NULL, READ_8   , Immediate                             /* COP  #         */ }, //  0x02
     { "ORA",   1,  base, NULL, NULL, READ_8   , StackRelative                         /* ORA  d,s       */ }, //  0x03

@@ -1,4 +1,4 @@
-BRK , s        , 0x00 , Immediate                        , 2 ,  base , NULL , NULL , NULL
+BRK , s        , 0x00 , Immediate                        , 2 ,  base , NULL , NULL , READ_8
 ORA , (d,x)    , 0x01 , DirectPage Indirect IndexedX     , 2 ,  base , NULL , NULL , READ_8
 COP , #        , 0x02 , Immediate                        , 2 ,  base , NULL , NULL , READ_8
 ORA , d,s      , 0x03 , StackRelative                    , 2 ,  base , NULL , NULL , READ_8
