@@ -124,7 +124,7 @@ int READ_8(bool unused) {
 
     uint8_t value = *((uint8_t*)input->data);
     input->data = (void*)((uint8_t*)input->data + 1); // move the pointer forward
-    fprintf(stderr, "READ_8: returning 0x%02X, next is: 0x%02X\n", value, (uint8_t)(*((uint8_t*)input->data)));
+
     return value;
 }
 
@@ -142,7 +142,7 @@ int READ_8_16(bool read16) {
         value = *((uint8_t*)input->data);
         input->data = (void*)((uint8_t*)input->data + 1); // move the pointer forward
     }
-    fprintf(stderr, "READ_8_16 -- returning 0x%04X, next is: 0x%02X\n", value, (uint8_t)(*((uint8_t*)input->data)));
+
     return value;
 }
 
@@ -204,7 +204,7 @@ void disasm(char *filename) {
         bool size_check = code->munge(code->psize) > code->psize;
         uint32_t params = code->reader?code->reader(size_check):0;
         uint32_t offset = (input->data - input->mark);
-        fprintf(stderr, "disasm: opcode (%s) with curr offset at %d bytes\n", code->opcode, (input->data - input->mark));
+
         if (code->state) {
             // if the opcode has a state function, call it
             // Used for tracking the state of the CPU for the E, M and X flags
@@ -226,7 +226,7 @@ void disasm(char *filename) {
         if (code->extra) { 
             // if the opcode has an extra function, call it
             // this is used for JSR, JSL, JMP, BRL and BRA to create labels
-            code->extra((input->data - input->mark), offset);
+            code->extra((signed)params, offset);
         }  
     }
     // now walk through the map and create the output

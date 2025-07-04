@@ -20,25 +20,31 @@ int x_set(int sz) {
 int base(int sz) {
     return sz;
 }
-
+/*
+JSR, JSL and JMP turned into NOP's because we don't know where the start offset of the code
+actually is, just the offset from the start of the buffer for it. Because of this we cannot,
+effectively, compute where to insert labels. Making them NOP's for now.
+*/
 void JSR(uint32_t target_offset, uint32_t source_offset) {
-    make_label(source_offset, target_offset, "SUBROUTINE");
+//    make_label(source_offset, target_offset, "SUBROUTINE");
 }
 
 void JSL(uint32_t target_offset, uint32_t source_offset) {
-    make_label(source_offset, target_offset, "SUBROUTINE_LONG");
+//    make_label(source_offset, target_offset, "SUBROUTINE_LONG");
 }
 
 void JMP(uint32_t target_offset, uint32_t source_offset) {
-    make_label(source_offset, target_offset, "JMP_LABEL");
+//    make_label(source_offset, target_offset, "JMP_LABEL");
 }
 
 void BRL(uint32_t target_offset, uint32_t source_offset) {
-    make_label(source_offset, target_offset, "LOCAL_LONG");
+    int32_t p = source_offset + (int8_t)target_offset;
+    make_label(source_offset, p, "LOCAL_LONG");
 }
 
 void BRA(uint32_t target_offset, uint32_t source_offset) {
-    make_label(source_offset, target_offset, "LOCAL_SHORT");
+    int32_t p = source_offset + (int8_t)target_offset;
+    make_label(source_offset, p, "LOCAL_SHORT");
 }
 
 // HACK! Fix this at some point!
