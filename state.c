@@ -41,10 +41,10 @@ bool carrySet() {
 void REP(unsigned char x) {
     switch(x) {
         case 0x10:
-            CLEAR_FLAG(processor_state, X_FLAG);
+            SET_FLAG(processor_state, X_FLAG);
             break;
         case 0x20:
-            CLEAR_FLAG(processor_state, M_FLAG);
+            SET_FLAG(processor_state, M_FLAG);
             break;
         default:
             ;
@@ -54,10 +54,10 @@ void REP(unsigned char x) {
 void SEP(unsigned char x) {
     switch(x) {
         case 0x10:
-            SET_FLAG(processor_state, X_FLAG);
+            CLEAR_FLAG(processor_state, X_FLAG);
             break;
         case 0x20:
-            SET_FLAG(processor_state, M_FLAG);
+            CLEAR_FLAG(processor_state, M_FLAG);
             break;
         default:
             ;
