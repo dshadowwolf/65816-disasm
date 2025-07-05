@@ -24,6 +24,9 @@ int base(int sz) {
 JSR, JSL and JMP turned into NOP's because we don't know where the start offset of the code
 actually is, just the offset from the start of the buffer for it. Because of this we cannot,
 effectively, compute where to insert labels. Making them NOP's for now.
+
+Note: we can add a "physical start offset" to the disassembler state that can resolve this,
+but what exists right now is "good enough"
 */
 void JSR(uint32_t target_offset, uint32_t source_offset) {
 //    make_label(source_offset, target_offset, "SUBROUTINE");
@@ -37,15 +40,20 @@ void JMP(uint32_t target_offset, uint32_t source_offset) {
 //    make_label(source_offset, target_offset, "JMP_LABEL");
 }
 
+// for PC Relative branching we actually start with PC being the next instruction
+// past the branch, so adjust for that.
 void BRL(uint32_t target_offset, uint32_t source_offset) {
     int32_t p = source_offset + (int8_t)target_offset;
-    if (target_offset < 0) p+=3;
+    p += 3; // BRanch Long takes one byte for the instruction and 2 bytes for the
+            // operand. Adjust to cover for that. 
     make_label(source_offset, p, "LOCAL_LONG");
 }
 
 void BRA(uint32_t target_offset, uint32_t source_offset) {
     int32_t p = source_offset + (int8_t)target_offset;
-    if (target_offset < 0) p+=2;
+    p += 2; // Standard branches are 1 byte instruction, 1 byte PC Relative offset
+            // adjust to account for the Program Counter being past the actual
+            // branch instruction.
     make_label(source_offset, p, "LOCAL_SHORT");
 }
 
