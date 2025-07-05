@@ -39,12 +39,14 @@ void JMP(uint32_t target_offset, uint32_t source_offset) {
 
 void BRL(uint32_t target_offset, uint32_t source_offset) {
     int32_t p = source_offset + (int8_t)target_offset;
-    make_label(source_offset, p+3, "LOCAL_LONG");
+    if (target_offset < 0) p+=3;
+    make_label(source_offset, p, "LOCAL_LONG");
 }
 
 void BRA(uint32_t target_offset, uint32_t source_offset) {
     int32_t p = source_offset + (int8_t)target_offset;
-    make_label(source_offset, p+2, "LOCAL_SHORT");
+    if (target_offset < 0) p+=2;
+    make_label(source_offset, p, "LOCAL_SHORT");
 }
 
 // HACK! Fix this at some point!
