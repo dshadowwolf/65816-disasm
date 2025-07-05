@@ -200,7 +200,6 @@ void disasm(char *filename) {
     uint32_t len = get_filesize(input->handle);
     while ((input->data - input->mark) < len) {
         uint32_t offset = (input->data - input->mark) + get_start_offset();
-        fprintf(stderr, "offset: 0x%08X // 0x%08X\n", (input->data - input->mark), offset);
         uint8_t opcode = READ_8(false);
         const opcode_t* code = &opcodes[opcode];
         bool size_check = code->munge(code->psize) > code->psize;

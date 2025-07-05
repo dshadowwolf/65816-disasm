@@ -34,7 +34,7 @@ char* format_opcode_and_operands(codeentry_t* ce, ...) {
     va_start(args, ce);
 
     if ((CHECK_FLAG(code->flags, Absolute) || CHECK_FLAG(code->flags, AbsoluteLong)) && CHECK_FLAG(ce->flags, LABEL_SOURCE)) {
-        snprintf(fmt, 64, "%s", ce->lblname);
+        snprintf(rv1, 64, "%s", ce->lblname);
     } else if (CHECK_FLAG(code->flags, Absolute) || CHECK_FLAG(code->flags, DirectPage)) {
         // Absolute Addressing can be Indirect, Indirect | IndexedX, IndexedLong, IndexedX, IndexedY or standalone
         // Direct Page addressing can be IndexedX, IndexedY, IndexedLong, IndexedLong | IndexedY, Indirect | IndexedX, Indirect | IndexedY, Indirect or standalone
