@@ -199,7 +199,8 @@ void disasm(char *filename) {
     // Disassembly logic goes here...
     uint32_t len = get_filesize(input->handle);
     while ((input->data - input->mark) < len) {
-        uint32_t offset = (input->data - input->mark);
+        uint32_t offset = (input->data - input->mark) + get_start_offset();
+        fprintf(stderr, "offset: 0x%08X // 0x%08X\n", (input->data - input->mark), offset);
         uint8_t opcode = READ_8(false);
         const opcode_t* code = &opcodes[opcode];
         bool size_check = code->munge(code->psize) > code->psize;
@@ -230,7 +231,7 @@ void disasm(char *filename) {
         }  
     }
     // now walk through the map and create the output
-    for(uint32_t i = 0; i < len;i++) {
+    for(uint32_t i = 0+get_start_offset(); i < len+get_start_offset();i++) {
         codeentry_t* entry = find_node(i); // issue is here ?
         if (entry != NULL) {
             printf("0x%02X: %s\n", i, format_opcode_and_operands(entry, entry->params[0], entry->params[1]));

@@ -15,3 +15,5 @@ void CLC(unsigned char unused);
 void XCE(unsigned char unused);
 void set_state(unsigned char x);
 unsigned char get_state();
+unsigned int get_start_offset();
+void set_start_offset(unsigned int x);

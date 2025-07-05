@@ -29,15 +29,15 @@ Note: we can add a "physical start offset" to the disassembler state that can re
 but what exists right now is "good enough"
 */
 void JSR(uint32_t target_offset, uint32_t source_offset) {
-//    make_label(source_offset, target_offset, "SUBROUTINE");
+    make_label(source_offset, target_offset, "SUBROUTINE");
 }
 
 void JSL(uint32_t target_offset, uint32_t source_offset) {
-//    make_label(source_offset, target_offset, "SUBROUTINE_LONG");
+    make_label(source_offset, target_offset, "SUBROUTINE_LONG");
 }
 
 void JMP(uint32_t target_offset, uint32_t source_offset) {
-//    make_label(source_offset, target_offset, "JMP_LABEL");
+    make_label(source_offset, target_offset, "JMP_LABEL");
 }
 
 // for PC Relative branching we actually start with PC being the next instruction

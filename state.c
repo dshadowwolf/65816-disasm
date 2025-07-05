@@ -88,6 +88,14 @@ uint8_t get_state() {
     return processor_state.flags;
 }
 
+unsigned int get_start_offset() {
+    return processor_state.start;
+}
+
+void set_start_offset(unsigned int x) {
+    processor_state.start = x;
+}
+
 #undef SET_FLAG
 #undef CLEAR_FLAG
 #undef CHECK_FLAG
