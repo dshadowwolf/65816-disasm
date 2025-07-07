@@ -189,20 +189,21 @@ int READ_24(bool unused) {
 
 extern char* format_opcode_and_operands(codeentry_t*, ...);
 
-/*
-    This is not in a coherently usable state -- it works, but its more a test of things.
-    Actual disassembly should probably return a pointer to a list of objects that are not
-    raw strings.
-    Note: I will not be writing such at this time - this will do.
-*/
-void disasm(char *filename) {
+
+listent_t* disasm_internal(char* filename) {
     if (open_and_map(filename) < 0) {
         fprintf(stderr, "Failed to open and map file: %s\n", filename);
-        return;
+        return NULL;
     }
 
 
     // Disassembly logic goes here...
+    // This could use some refactoring, but we do the map+later list for book-keeping
+    // purposes. It'd be O(n) for any label if we just went with a raw list instead
+    // of using an intermediate hash-map. Might be worth it -- max address space for
+    // the 65C816 is 16M but this comes in 64k segments, which I don't think we're
+    // ever going to see code using more than one of except for things like data
+    // storage, so an O(n) linked list might be fine, performance-wise...
     uint32_t len = get_filesize(input->handle);
     while ((input->data - input->mark) < len) {
         uint32_t offset = (input->data - input->mark) + get_start_offset();
@@ -236,20 +237,44 @@ void disasm(char *filename) {
         }  
     }
 
-    // The bits that follow this were meant to create a linked-list of code-objects to be output later.
-    // This was changed because it'd make things rather more complex, especially during the encoding of the
-    // code objects -- see outs.c for how complex just output gets and then think what all needs encoded
-    // to make shit work.
+    // create the output...
+    listent_t* retval;
+    for(uint32_t i = 0+get_start_offset(); i < len+get_start_offset(); i++) {
+        codeentry_t* code = find_node(i);
 
-    // now walk through the map and create the output
-    for(uint32_t i = 0+get_start_offset(); i < len+get_start_offset();i++) {
-        codeentry_t* entry = find_node(i); // issue is here ?
-        if (entry != NULL) {
-            // then output
-            printf("0x%02X: %s\n", i, format_opcode_and_operands(entry, entry->params[0], entry->params[1]));
+        if (code != NULL) {
+            // we never allocate the start, just init it here if needed
+            if (retval == NULL) retval = init_node(code);
+            else append_node(retval, init_node(code));
         }
     }
 
-    // and clean up
+    fprintf(stderr, "DEBUG1: %p\n", retval);
     unmap_and_close();
+    return retval;
+}
+
+/*
+    This is finally in a coherent state, with an internal helper to get the raw data.
+*/
+void disasm(char *filename) {
+    listent_t* disasm_data = disasm_internal(filename); // get the data
+    listent_t* work = disasm_data;                      // working copy to preserve the pointer
+    uint32_t i = get_start_offset();
+
+    if (disasm_data == NULL) {
+        printf("ERROR: disassembly returned NULL\n");
+        return;
+    }
+    
+    // loop the data for output
+    while(work != NULL) {
+        codeentry_t* entry = work->data;
+        printf("0x%06X: %s\n", i, format_opcode_and_operands(entry, entry->params[0], entry->params[1])); // OUTPUT! (no, Johnny 5, not Input)
+        i += entry->code->munge(entry->code->psize);   // update the current offset to account for the current instruction and its parameters
+        work = work->child;
+    }
+
+    // and clean up
+    delete_list(disasm_data);
 }
