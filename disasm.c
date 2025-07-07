@@ -249,7 +249,6 @@ listent_t* disasm_internal(char* filename) {
         }
     }
 
-    fprintf(stderr, "DEBUG1: %p\n", retval);
     unmap_and_close();
     return retval;
 }
@@ -266,7 +265,7 @@ void disasm(char *filename) {
         printf("ERROR: disassembly returned NULL\n");
         return;
     }
-    
+
     // loop the data for output
     while(work != NULL) {
         codeentry_t* entry = work->data;
