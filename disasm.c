@@ -189,6 +189,12 @@ int READ_24(bool unused) {
 
 extern char* format_opcode_and_operands(codeentry_t*, ...);
 
+/*
+    This is not in a coherently usable state -- it works, but its more a test of things.
+    Actual disassembly should probably return a pointer to a list of objects that are not
+    raw strings.
+    Note: I will not be writing such at this time - this will do.
+*/
 void disasm(char *filename) {
     if (open_and_map(filename) < 0) {
         fprintf(stderr, "Failed to open and map file: %s\n", filename);
@@ -229,15 +235,21 @@ void disasm(char *filename) {
             code->extra((signed)params, offset);
         }  
     }
+
+    // The bits that follow this were meant to create a linked-list of code-objects to be output later.
+    // This was changed because it'd make things rather more complex, especially during the encoding of the
+    // code objects -- see outs.c for how complex just output gets and then think what all needs encoded
+    // to make shit work.
+
     // now walk through the map and create the output
     for(uint32_t i = 0+get_start_offset(); i < len+get_start_offset();i++) {
         codeentry_t* entry = find_node(i); // issue is here ?
         if (entry != NULL) {
+            // then output
             printf("0x%02X: %s\n", i, format_opcode_and_operands(entry, entry->params[0], entry->params[1]));
         }
     }
-    // then output
 
-    // then clean up
+    // and clean up
     unmap_and_close();
 }

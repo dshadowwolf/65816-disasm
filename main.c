@@ -5,6 +5,10 @@
 
 extern void disasm(char *filename);
 
+/*
+ This exists as nothing more than a test of the system, same with how
+ disasm(char*) just dumps right to the console.
+*/
 int main() {
     // this is a quick and dirty test to see if this thing works
     char *filename = "testfile.bin"; // replace with your test file
