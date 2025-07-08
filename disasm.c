@@ -258,8 +258,7 @@ listent_t* disasm_raw(char* filename) {
 */
 void disasm_dump(char *filename) {
     listent_t* disasm_data = disasm_raw(filename); // get the data
-    listent_t* work = disasm_data;                      // working copy to preserve the pointer
-    uint32_t i = get_start_offset();
+    listent_t* work = disasm_data;                 // working copy to preserve the pointer
 
     if (disasm_data == NULL) {
         printf("ERROR: disassembly returned NULL\n");
@@ -269,8 +268,7 @@ void disasm_dump(char *filename) {
     // loop the data for output
     while(work != NULL) {
         codeentry_t* entry = work->data;
-        printf("0x%06X: %s\n", i, format_opcode_and_operands(entry, entry->params[0], entry->params[1])); // OUTPUT! (no, Johnny 5, not Input)
-        i += entry->code->munge(entry->code->psize);   // update the current offset to account for the current instruction and its parameters
+        printf("0x%06X: %s\n", entry->offset, format_opcode_and_operands(entry, entry->params[0], entry->params[1])); // OUTPUT! (no, Johnny 5, not Input)
         work = work->child;
     }
 
