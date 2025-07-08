@@ -2,8 +2,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "state.h"
-
-extern void disasm_dump(char *filename);
+#include "disasm.h"
 
 /*
  This exists as nothing more than a test of the system, same with how
