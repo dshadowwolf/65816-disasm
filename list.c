@@ -16,7 +16,7 @@ listent_t* init_node(void* nodeval) {
 
 void append_node(listent_t* list, listent_t* node) {
     listent_t* work = list;
-    
+
     while(work->child != NULL) work = work->child;
     work->child = node;
     node->parent = work;

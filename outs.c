@@ -56,7 +56,7 @@ char* format_direct_page_address(opcode_t* opcode, uint8_t address) {
     } else if (CHECK_FLAG(opcode->flags, IndexedY)) {
         snprintf(buffer, 64, "$%02X, Y", address);
     } else {
-        snprintf(buffer, 64, "$0x%02X", address);
+        snprintf(buffer, 64, "$%02X", address);
     }
 
     return buffer;
@@ -104,9 +104,9 @@ char* format_opcode_and_operands(codeentry_t* ce, ...) {
     } else if(CHECK_FLAG(code->flags, AbsoluteLong)) {
         // Absolute Long -- IndexedX or standalone
         if (CHECK_FLAG(code->flags, IndexedX)) { // Only with AbsoluteLong
-            vsnprintf(rv1, 64, "$0x%06X, X", args);
+            vsnprintf(rv1, 64, "$%06X, X", args);
         } else { // ditto
-            vsnprintf(rv1, 64, "$0x%06X", args);
+            vsnprintf(rv1, 64, "$%06X", args);
         }
     } else if(CHECK_FLAG(code->flags, PCRelative)) {
         // PC Relative -- only ever standalone
