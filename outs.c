@@ -22,6 +22,60 @@
 #define CLEAR_FLAG(var, flag) (var) &= ~(flag)
 #define CHECK_FLAG(var, flag) !!((var) & (flag))
 
+char* format_absolute_address(opcode_t* opcode, uint32_t address) {
+    // Absolute Addressing can be Indirect, Indirect | IndexedX, IndexedLong, IndexedX, IndexedY or standalone
+    char* buffer = malloc(64);
+    if (!buffer) return NULL;
+
+    if (CHECK_FLAG(opcode->flags, Indirect)) {
+        if (CHECK_FLAG(opcode->flags, IndexedX)) {
+            snprintf(buffer, 64, "($%04X, X)", address);
+        } else {
+            snprintf(buffer, 64, "($%04X)", address);
+        }
+    } else if (CHECK_FLAG(opcode->flags, IndexedX)) {
+        snprintf(buffer, 64, "$%04X, X", address);
+    } else if (CHECK_FLAG(opcode->flags, IndexedY)) {
+        snprintf(buffer, 64, "$%04X, Y", address);
+    } else if (CHECK_FLAG(opcode->flags, IndexedLong)) {
+        snprintf(buffer, 64, "$%06X", address);
+    } else {
+        snprintf(buffer, 64, "$%04X", address);
+    }
+
+    return buffer;
+}
+
+char* format_direct_page_address(opcode_t* opcode, uint8_t address) {
+    // Direct Page Addressing can be IndexedX, IndexedY, IndexedLong, IndexedLong | IndexedY, Indirect | IndexedX, Indirect | IndexedY, Indirect or standalone
+    char* buffer = malloc(64);
+    if (!buffer) return NULL;
+
+    if (CHECK_FLAG(opcode->flags, IndexedX)) {
+        snprintf(buffer, 64, "$%02X, X", address);
+    } else if (CHECK_FLAG(opcode->flags, IndexedY)) {
+        snprintf(buffer, 64, "$%02X, Y", address);
+    } else {
+        snprintf(buffer, 64, "$0x%02X", address);
+    }
+
+    return buffer;
+}
+
+char* format_stack_relative_address(opcode_t* opcode, uint8_t address) {
+    // Stack Relative Addressing can be IndexedY or standalone
+    char* buffer = malloc(64);
+    if (!buffer) return NULL;
+
+    if (CHECK_FLAG(opcode->flags, IndexedY)) {
+        snprintf(buffer, 64, "($%02X, S), Y", address);
+    } else {
+        snprintf(buffer, 64, "($%02X, S)", address);
+    }
+
+    return buffer;
+}
+
 // This function formats the opcode and its operands into a string for output.
 char* format_opcode_and_operands(codeentry_t* ce, ...) {
     opcode_t* code = ce->code;
@@ -35,37 +89,21 @@ char* format_opcode_and_operands(codeentry_t* ce, ...) {
 
     if ((CHECK_FLAG(code->flags, Absolute) || CHECK_FLAG(code->flags, AbsoluteLong)) && CHECK_FLAG(ce->flags, LABEL_SOURCE)) {
         snprintf(rv1, 64, "%s", ce->lblname);
-    } else if (CHECK_FLAG(code->flags, Absolute) || CHECK_FLAG(code->flags, DirectPage)) {
-        // Absolute Addressing can be Indirect, Indirect | IndexedX, IndexedLong, IndexedX, IndexedY or standalone
-        // Direct Page addressing can be IndexedX, IndexedY, IndexedLong, IndexedLong | IndexedY, Indirect | IndexedX, Indirect | IndexedY, Indirect or standalone
-        uint8_t sz = CHECK_FLAG(code->flags, DirectPage)?2:4;
-        if (CHECK_FLAG(code->flags, Indirect)) {
-            if (CHECK_FLAG(code->flags, IndexedX)) {
-                snprintf(fmt, 64, "($0x%%%02uX, X)", sz);
-            } else if(CHECK_FLAG(code->flags, IndexedY)) {
-                snprintf(fmt, 64, "($0x%%%02uX), Y", sz);
-            } else {
-                snprintf(fmt, 64, "($0x%%%02uX)", sz);
-            }
-        } else if(CHECK_FLAG(code->flags, IndexedLong)) {
-            if (CHECK_FLAG(code->flags, IndexedY)) {
-            } else {
-                snprintf(fmt, 64, "[$0x%%%02uX]", sz);
-            }
-        } else if(CHECK_FLAG(code->flags, IndexedX)) {
-            snprintf(fmt, 64, "$0x%%%02uX, X", sz);
-        } else if(CHECK_FLAG(code->flags, IndexedY)) {
-            snprintf(fmt, 64, "$0x%%%02uX, Y", sz);
-        } else {
-            snprintf(fmt, 64, "$0x%%%02uX", sz);
-        }
-        vsnprintf(rv1, 64, fmt, args);
-    } else if(CHECK_FLAG(code->flags, StackRelative) || CHECK_FLAG(code->flags, AbsoluteLong)) {
-        // Stack Relative -- Indirect | IndexedY or standalone
+    } else if (CHECK_FLAG(code->flags, Absolute)) {
+        free(rv1);
+        uint32_t arg = va_arg(args, uint32_t);
+        rv1 = format_absolute_address(code, arg);
+    } else if (CHECK_FLAG(code->flags, DirectPage)) {
+        free(rv1);
+        int8_t arg = (int8_t)va_arg(args, int32_t);
+        rv1 = format_direct_page_address(code, arg);
+    } else if(CHECK_FLAG(code->flags, StackRelative)) {
+        free(rv1);
+        int8_t arg = (int8_t)va_arg(args, int32_t);
+        rv1 = format_stack_relative_address(code, arg);
+    } else if(CHECK_FLAG(code->flags, AbsoluteLong)) {
         // Absolute Long -- IndexedX or standalone
-        if (CHECK_FLAG(code->flags, Indirect) && CHECK_FLAG(code->flags, IndexedY)) {
-            vsnprintf(rv1, 64, "($0x%02X, S), Y", args); // this should only ever happen with StackRelative, so this is safe
-        } else if (CHECK_FLAG(code->flags, IndexedX)) { // Only with AbsoluteLong
+        if (CHECK_FLAG(code->flags, IndexedX)) { // Only with AbsoluteLong
             vsnprintf(rv1, 64, "$0x%06X, X", args);
         } else { // ditto
             vsnprintf(rv1, 64, "$0x%06X", args);
@@ -84,7 +122,7 @@ char* format_opcode_and_operands(codeentry_t* ce, ...) {
                 operand += 2; // PC Relative going Negative starts at the next instruction, so we need to add 2 to the operand
             } else d_flag = '>';
 
-            snprintf(rv1, 16, "$%c0x%02X", d_flag, operand);
+            snprintf(rv1, 16, "$%c%02X", d_flag, operand);
         }
     } else if(CHECK_FLAG(code->flags, PCRelativeLong)) {
         // PC Relative Long -- only ever standalone
@@ -100,15 +138,14 @@ char* format_opcode_and_operands(codeentry_t* ce, ...) {
                 operand += 2; // PC Relative going Negative starts at the next instruction, so we need to add 2 to the operand
             } else d_flag = '>';
 
-            snprintf(rv1, 16, "$%c0x%02X", d_flag, operand);
+            snprintf(rv1, 16, "$%c%02X", d_flag, operand);
         }
     } else if(CHECK_FLAG(code->flags, Immediate)) {
         uint8_t sz = code->munge(code->psize);
-        snprintf(fmt, 64, "$0x%%%02uX", sz);
-        //snprintf(fmt, 64, "#0x%02u", sz);
+        snprintf(fmt, 64, "$%%%02uX", sz);
         vsnprintf(rv1, 64, fmt, args);
     } else if(CHECK_FLAG(code->flags, BlockMoveAddress)) {
-        vsnprintf(rv1, 64, "$0x%02X, $0x%02X", args);
+        vsnprintf(rv1, 64, "$%02X, $%02X", args);
     }
     va_end(args);
     if (CHECK_FLAG(ce->flags, LABELED)) {
