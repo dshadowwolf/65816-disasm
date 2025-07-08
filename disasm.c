@@ -190,7 +190,7 @@ int READ_24(bool unused) {
 extern char* format_opcode_and_operands(codeentry_t*, ...);
 
 
-listent_t* disasm_internal(char* filename) {
+listent_t* disasm_raw(char* filename) {
     if (open_and_map(filename) < 0) {
         fprintf(stderr, "Failed to open and map file: %s\n", filename);
         return NULL;
@@ -256,8 +256,8 @@ listent_t* disasm_internal(char* filename) {
 /*
     This is finally in a coherent state, with an internal helper to get the raw data.
 */
-void disasm(char *filename) {
-    listent_t* disasm_data = disasm_internal(filename); // get the data
+void disasm_dump(char *filename) {
+    listent_t* disasm_data = disasm_raw(filename); // get the data
     listent_t* work = disasm_data;                      // working copy to preserve the pointer
     uint32_t i = get_start_offset();
 
