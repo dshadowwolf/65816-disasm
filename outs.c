@@ -76,6 +76,63 @@ char* format_stack_relative_address(opcode_t* opcode, uint8_t address) {
     return buffer;
 }
 
+char* standalone_format_signed(opcode_t* opcode, int32_t arg) {
+    char* buffer = malloc(64);
+    if (!buffer) return NULL;
+
+    if (CHECK_FLAG(opcode->flags, DirectPage)) {
+        buffer = format_direct_page_address(opcode, arg);
+    } else if(CHECK_FLAG(opcode->flags, StackRelative)) {
+        buffer = format_stack_relative_address(opcode, arg);
+    }
+    return buffer;
+}
+
+char* standalone_format_unsigned(opcode_t* opcode, uint32_t arg) {
+    char* buffer = malloc(64);
+    if (!buffer) return NULL;
+
+    if (CHECK_FLAG(opcode->flags, Absolute)) {
+        buffer = format_absolute_address(opcode, arg);
+    } else if (CHECK_FLAG(opcode->flags, AbsoluteLong)) {
+        if (CHECK_FLAG(opcode->flags, IndexedX)) { // Only with AbsoluteLong
+            vsnprintf(buffer, 64, "$%06X, X", arg);
+        } else { // ditto
+            vsnprintf(buffer, 64, "$%06X", arg);
+        }
+    }
+    
+    return buffer;
+}
+
+char* format_pcrelative(opcode_t* opcode, int32_t arg) {
+    char* buffer = malloc(64);
+    if (!buffer) return NULL;
+
+    if (CHECK_FLAG(opcode->flags, PCRelative)) {
+        unsigned char d_flag = ' ';
+        if (arg < 0) { 
+            d_flag = '<';
+            arg *= -1;
+            arg += 2; // PC Relative going Negative starts at the next instruction, so we need to add 2 to the operand
+        } else {
+            d_flag = '>';
+        }
+        snprintf(buffer, 64, "$%c%02X", d_flag, arg);
+    } else if (CHECK_FLAG(opcode->flags, PCRelativeLong)) {
+        unsigned char d_flag = ' ';
+        if (arg < 0) { 
+            d_flag = '<';
+            arg *= -1;
+            arg += 2; // PC Relative Long going Negative starts at the next instruction, so we need to add 2 to the operand
+        } else {
+            d_flag = '>';
+        }
+        snprintf(buffer, 64, "$%c%04X", d_flag, arg);
+    }
+
+    return buffer;
+}
 // This function formats the opcode and its operands into a string for output.
 char* format_opcode_and_operands(codeentry_t* ce, ...) {
     opcode_t* code = ce->code;
@@ -89,57 +146,18 @@ char* format_opcode_and_operands(codeentry_t* ce, ...) {
 
     if ((CHECK_FLAG(code->flags, Absolute) || CHECK_FLAG(code->flags, AbsoluteLong)) && CHECK_FLAG(ce->flags, LABEL_SOURCE)) {
         snprintf(rv1, 64, "%s", ce->lblname);
-    } else if (CHECK_FLAG(code->flags, Absolute)) {
+    } else if (CHECK_FLAG(code->flags, Absolute) || CHECK_FLAG(code->flags, AbsoluteLong)) {}) {
         free(rv1);
         uint32_t arg = va_arg(args, uint32_t);
-        rv1 = format_absolute_address(code, arg);
-    } else if (CHECK_FLAG(code->flags, DirectPage)) {
+        rv1 = standalone_format_unsigned(code, arg);
+    } else if (CHECK_FLAG(code->flags, DirectPage) || CHECK_FLAG(code->flags, StackRelative)) {
         free(rv1);
         int8_t arg = (int8_t)va_arg(args, int32_t);
-        rv1 = format_direct_page_address(code, arg);
-    } else if(CHECK_FLAG(code->flags, StackRelative)) {
+        rv1 = standalone_format_signed(code, arg);
+    } else if(CHECK_FLAG(code->flags, PCRelative) || CHECK_FLAG(code->flags, PCRelativeLong)) {
         free(rv1);
-        int8_t arg = (int8_t)va_arg(args, int32_t);
-        rv1 = format_stack_relative_address(code, arg);
-    } else if(CHECK_FLAG(code->flags, AbsoluteLong)) {
-        // Absolute Long -- IndexedX or standalone
-        if (CHECK_FLAG(code->flags, IndexedX)) { // Only with AbsoluteLong
-            vsnprintf(rv1, 64, "$%06X, X", args);
-        } else { // ditto
-            vsnprintf(rv1, 64, "$%06X", args);
-        }
-    } else if(CHECK_FLAG(code->flags, PCRelative)) {
-        // PC Relative -- only ever standalone
-        // arg is a signed char, we need to extract that to print things correctly...
-        signed char operand = va_arg(args, int); // integer promotion means that even though we expect a `signed char` here, the type passed is "int", so...
-        unsigned char d_flag = ' ';
-        if (CHECK_FLAG(ce->flags, LABEL_SOURCE)) {
-            snprintf(rv1, 64, "%s", ce->lblname);
-        } else {
-            if (operand < 0) { 
-                d_flag = '<';
-                operand *= -1;
-                operand += 2; // PC Relative going Negative starts at the next instruction, so we need to add 2 to the operand
-            } else d_flag = '>';
-
-            snprintf(rv1, 16, "$%c%02X", d_flag, operand);
-        }
-    } else if(CHECK_FLAG(code->flags, PCRelativeLong)) {
-        // PC Relative Long -- only ever standalone
-        // arg is a signed char, we need to extract that to print things correctly...
-        int16_t operand = va_arg(args, int); // we expects a signed short, but integer promotion interferes again
-        unsigned char d_flag = ' ';
-        if (CHECK_FLAG(ce->flags, LABEL_SOURCE)) {
-            snprintf(rv1, 64, "%s", ce->lblname);
-        } else {
-            if (operand < 0) { 
-                d_flag = '<';
-                operand *= -1;
-                operand += 2; // PC Relative going Negative starts at the next instruction, so we need to add 2 to the operand
-            } else d_flag = '>';
-
-            snprintf(rv1, 16, "$%c%04X", d_flag, operand);
-        }
+        int32_t operand = va_arg(args, int32_t);
+        rv1 = format_pcrelative(code, operand);
     } else if(CHECK_FLAG(code->flags, Immediate)) {
         uint8_t sz = code->munge(code->psize);
         snprintf(fmt, 64, "$%%%02uX", sz);
