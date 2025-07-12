@@ -76,6 +76,7 @@ char* format_stack_relative_address(opcode_t* opcode, uint8_t address) {
     return buffer;
 }
 
+// the next two functions exist to move some logic around and simplify the main formatting function
 char* standalone_format_signed(opcode_t* opcode, int32_t arg) {
     char* buffer = malloc(64);
     if (!buffer) return NULL;
@@ -105,6 +106,8 @@ char* standalone_format_unsigned(opcode_t* opcode, uint32_t arg) {
     return buffer;
 }
 
+// This function formats the PC Relative and PC Relative Long addressing modes.
+// Moving the logic here cleans up the main formatting function, makes things easier to read and much more maintainable.
 char* format_pcrelative(opcode_t* opcode, int32_t arg) {
     char* buffer = malloc(64);
     if (!buffer) return NULL;
