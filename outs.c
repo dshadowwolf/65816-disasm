@@ -138,7 +138,7 @@ char* format_opcode_and_operands(codeentry_t* ce, ...) {
                 operand += 2; // PC Relative going Negative starts at the next instruction, so we need to add 2 to the operand
             } else d_flag = '>';
 
-            snprintf(rv1, 16, "$%c%02X", d_flag, operand);
+            snprintf(rv1, 16, "$%c%04X", d_flag, operand);
         }
     } else if(CHECK_FLAG(code->flags, Immediate)) {
         uint8_t sz = code->munge(code->psize);
