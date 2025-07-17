@@ -1,0 +1,257 @@
+"Base Size","Data Reader",Flags,"Label Handler","M Flag Use",Name,"Params Example","State Handler",Value,"X Flag Use"
+1,READ_8,Immediate,nullptr,false,BRK,s,nullptr,0x00,false
+1,READ_8,"DirectPage | Indirect | IndexedX",nullptr,false,ORA,"(d,x)",nullptr,0x01,false
+1,READ_8,Immediate,nullptr,false,COP,#,nullptr,0x02,false
+1,READ_8,StackRelative,nullptr,false,ORA,"d,s",nullptr,0x03,false
+1,READ_8,DirectPage,nullptr,false,TSB,d,nullptr,0x04,false
+1,READ_8,DirectPage,nullptr,false,ORA,d,nullptr,0x05,false
+1,READ_8,DirectPage,nullptr,false,ASL,d,nullptr,0x06,false
+1,READ_8,"DirectPage | IndirectLong",nullptr,false,ORA,[d],nullptr,0x07,false
+0,NONE,Implied,nullptr,false,PHP,s,nullptr,0x08,false
+1,READ_8_16,Immediate,nullptr,true,ORA,#,nullptr,0x09,false
+0,NONE,Implied,nullptr,false,ASL,A,nullptr,0x0A,false
+0,NONE,Implied,nullptr,false,PHD,s,nullptr,0x0B,false
+2,READ_16,Absolute,nullptr,false,TSB,a,nullptr,0x0C,false
+2,READ_16,Absolute,nullptr,false,ORA,a,nullptr,0x0D,false
+2,READ_16,Absolute,nullptr,false,ASL,a,nullptr,0x0E,false
+3,READ_24,AbsoluteLong,nullptr,false,ORA,al,nullptr,0x0F,false
+1,READ_8,PCRelative,BRA,false,BPL,r,nullptr,0x10,false
+1,READ_8,"DirectPage | Indirect | IndexedY",nullptr,false,ORA,"(d),y",nullptr,0x11,false
+1,READ_8,"DirectPage | Indirect",nullptr,false,ORA,(d),nullptr,0x12,false
+1,READ_8,"StackRelative | Indirect | IndexedY",nullptr,false,ORA,"(d,s),y",nullptr,0x13,false
+1,READ_8,DirectPage,nullptr,false,TRB,d,nullptr,0x14,false
+1,READ_8,"DirectPage | IndexedX",nullptr,false,ORA,"d,x",nullptr,0x15,false
+1,READ_8,"DirectPage | IndexedX",nullptr,false,ASL,"d,x",nullptr,0x16,false
+1,READ_8,"DirectPage | IndirectLong | IndexedY",nullptr,false,ORA,"[d],y",nullptr,0x17,false
+0,NONE,Implied,nullptr,false,CLC,i,CLC,0x18,false
+2,READ_16,"Absolute | IndexedY",nullptr,false,ORA,"a,y",nullptr,0x19,false
+0,NONE,Implied,nullptr,false,INC,A,nullptr,0x1A,false
+0,NONE,Implied,nullptr,false,TCS,i,nullptr,0x1B,false
+2,READ_16,Absolute,nullptr,false,TRB,a,nullptr,0x1C,false
+2,READ_16,"Absolute | IndexedX",nullptr,false,ORA,"a,x",nullptr,0x1D,false
+2,READ_16,"Absolute | IndexedX",nullptr,false,ASL,"a,x",nullptr,0x1E,false
+3,READ_24,"AbsoluteLong | IndexedX",nullptr,false,ORA,"al,x",nullptr,0x1F,false
+2,READ_16,Absolute,JMP,false,JSR,a,nullptr,0x20,false
+1,READ_8,"DirectPage | IndexedX",nullptr,false,AND,"(d,x)",nullptr,0x21,false
+3,READ_24,AbsoluteLong,JMP,false,JSL,al,nullptr,0x22,false
+1,READ_8,StackRelative,nullptr,false,AND,"d,s",nullptr,0x23,false
+1,READ_8,DirectPage,nullptr,false,BIT,d,nullptr,0x24,false
+1,READ_8,DirectPage,nullptr,false,AND,d,nullptr,0x25,false
+1,READ_8,DirectPage,nullptr,false,ROL,d,nullptr,0x26,false
+1,READ_8,"DirectPage | IndirectLong",nullptr,false,AND,[d],nullptr,0x27,false
+0,NONE,Implied,nullptr,false,PLP,s,nullptr,0x28,false
+1,READ_8_16,Immediate,nullptr,true,AND,#,nullptr,0x29,false
+0,NONE,Implied,nullptr,false,ROL,A,nullptr,0x2A,false
+0,NONE,Implied,nullptr,false,PLD,s,nullptr,0x2B,false
+2,READ_16,Absolute,nullptr,false,BIT,a,nullptr,0x2C,false
+2,READ_16,Absolute,nullptr,false,AND,a,nullptr,0x2D,false
+2,READ_16,Absolute,nullptr,false,ROL,a,nullptr,0x2E,false
+3,READ_24,AbsoluteLong,nullptr,false,AND,al,nullptr,0x2F,false
+1,READ_8,PCRelative,BRA,false,BMI,R,nullptr,0x30,false
+1,READ_8,"DirectPage | Indirect | IndexedY",nullptr,false,AND,"(d),y",nullptr,0x31,false
+1,READ_8,"DirectPage | Indirect",nullptr,false,AND,(d),nullptr,0x32,false
+1,READ_8,"StackRelative | Indirect | IndexedY",nullptr,false,AND,"(d,s),y",nullptr,0x33,false
+1,READ_8,"DirectPage | IndexedX",nullptr,false,BIT,"d,x",nullptr,0x34,false
+1,READ_8,"DirectPage | IndexedX",nullptr,false,AND,"d,x",nullptr,0x35,false
+1,READ_8,"DirectPage | IndexedX",nullptr,false,ROL,"d,x",nullptr,0x36,false
+1,READ_8,"DirectPage | IndirectLong | IndexedY",nullptr,false,AND,"[d],y",nullptr,0x37,false
+0,NONE,Implied,nullptr,false,SEC,i,SEC,0x38,false
+2,READ_16,"Absolute | IndexedY",nullptr,false,AND,"a,y",nullptr,0x39,false
+0,NONE,Implied,nullptr,false,DEC,A,nullptr,0x3A,false
+0,NONE,Implied,nullptr,false,TSC,i,nullptr,0x3B,false
+2,READ_16,"Absolute | IndexedX",nullptr,false,BIT,"a,x",nullptr,0x3C,false
+2,READ_16,"Absolute | IndexedX",nullptr,false,AND,"a,x",nullptr,0x3D,false
+2,READ_16,"Absolute | IndexedX",nullptr,false,ROL,"a,x",nullptr,0x3E,false
+3,READ_24,"Absolute | IndirectLong | IndexedX",nullptr,false,AND,"al,x",nullptr,0x3F,false
+0,NONE,Implied,nullptr,false,RTI,s,nullptr,0x40,false
+1,READ_8,"DirectPage | Indirect | IndexedX",nullptr,false,EOR,"(d,x)",nullptr,0x41,false
+1,READ_8,Implied,nullptr,false,WDM,i,nullptr,0x42,false
+1,READ_8,StackRelative,nullptr,false,EOR,"d,s",nullptr,0x43,false
+2,READ_BMA,BlockMoveAddress,nullptr,false,MVP,"src,dst",nullptr,0x44,false
+1,READ_8,DirectPage,nullptr,false,EOR,d,nullptr,0x45,false
+1,READ_8,DirectPage,nullptr,false,LSR,d,nullptr,0x46,false
+1,READ_8,"DirectPage | IndirectLong",nullptr,false,EOR,[d],nullptr,0x47,false
+0,NONE,Implied,nullptr,false,PHA,s,nullptr,0x48,false
+1,READ_8_16,Immediate,nullptr,true,EOR,#,nullptr,0x49,false
+0,NONE,Implied,nullptr,false,LSR,A,nullptr,0x4A,false
+0,NONE,Implied,nullptr,false,PHK,s,nullptr,0x4B,false
+2,READ_16,Absolute,JMP,false,JMP,a,nullptr,0x4C,false
+2,READ_16,Absolute,nullptr,false,EOR,a,nullptr,0x4D,false
+2,READ_16,Absolute,nullptr,false,LSR,a,nullptr,0x4E,false
+3,READ_24,AbsoluteLong,nullptr,false,EOR,al,nullptr,0x4F,false
+1,READ_8,PCRelative,BRA,false,BVC,r,nullptr,0x50,false
+1,READ_8,"DirectPage | Indirect | IndexedY",nullptr,false,EOR,"(d),y",nullptr,0x51,false
+1,READ_8,"DirectPage | Indirect",nullptr,false,EOR,(d),nullptr,0x52,false
+1,READ_8,"StackRelative | Indirect | IndexedY",nullptr,false,EOR,"(d,s),y",nullptr,0x53,false
+2,READ_BMA,BlockMoveAddress,nullptr,false,MVN,"src,dst",nullptr,0x54,false
+1,READ_8,"DirectPage | IndexedX",nullptr,false,EOR,"d,x",nullptr,0x55,false
+1,READ_8,"DirectPage | IndexedX",nullptr,false,LSR,"d,x",nullptr,0x56,false
+1,READ_8,"DirectPage | IndirectLong | IndexedY",nullptr,false,EOR,"[d],y",nullptr,0x57,false
+0,NONE,Implied,nullptr,false,CLI,i,nullptr,0x58,false
+2,READ_16,"Absolute | IndexedY",nullptr,false,EOR,"a,y",nullptr,0x59,false
+0,NONE,Implied,nullptr,false,PHY,s,nullptr,0x5A,false
+0,NONE,Implied,nullptr,false,TCD,i,nullptr,0x5B,false
+3,READ_24,AbsoluteLong,JMP,false,JMP,al,nullptr,0x5C,false
+2,READ_16,"Absolute | IndexedX",nullptr,false,EOR,"a,x",nullptr,0x5D,false
+2,READ_16,"Absolute | IndexedX",nullptr,false,LSR,"a,x",nullptr,0x5E,false
+3,READ_24,"AbsoluteLong | IndexedX",nullptr,false,EOR,"al,x",nullptr,0x5F,false
+0,NONE,Implied,nullptr,false,RTS,s,nullptr,0x60,false
+1,READ_8,"DirectPage | Indirect | IndexedX",nullptr,false,ADC,"(dp,X)",nullptr,0x61,false
+2,READ_16,PCRelativeLong,nullptr,false,PER,s,nullptr,0x62,false
+1,READ_8,StackRelative,nullptr,false,ADC,"sr,S",nullptr,0x63,false
+1,READ_8,DirectPage,nullptr,false,STZ,d,nullptr,0x64,false
+1,READ_8,DirectPage,nullptr,false,ADC,dp,nullptr,0x65,false
+1,READ_8,DirectPage,nullptr,false,ROR,d,nullptr,0x66,false
+1,READ_8,"DirectPage | IndirectLong",nullptr,false,ADC,[dp],nullptr,0x67,false
+0,NONE,Implied,nullptr,false,PLA,s,nullptr,0x68,false
+1,READ_8_16,Immediate,nullptr,true,ADC,#,nullptr,0x69,false
+0,NONE,Implied,nullptr,false,ROR,A,nullptr,0x6A,false
+0,NONE,Implied,nullptr,false,RTL,s,nullptr,0x6B,false
+2,READ_16,"Absolute | Indirect",JMP,false,JMP,(a),nullptr,0x6C,false
+2,READ_16,Absolute,nullptr,false,ADC,addr,nullptr,0x6D,false
+2,READ_16,Absolute,nullptr,false,ROR,a,nullptr,0x6E,false
+3,READ_24,AbsoluteLong,nullptr,false,ADC,al,nullptr,0x6F,false
+1,READ_8,PCRelative,BRA,false,BVS,r,nullptr,0x70,false
+1,READ_8,"DirectPage | Indirect | IndexedY",nullptr,false,ADC,"(d),y",nullptr,0x71,false
+1,READ_8,"DirectPage | Indirect",nullptr,false,ADC,(d),nullptr,0x72,false
+1,READ_8,"StackRelative | Indirect | IndexedY",nullptr,false,ADC,"(sr,S),y",nullptr,0x73,false
+1,READ_8,"DirectPage | IndexedX",nullptr,false,STZ,"d,x",nullptr,0x74,false
+1,READ_8,"DirectPage | IndexedX",nullptr,false,ADC,"d,x",nullptr,0x75,false
+1,READ_8,"DirectPage | IndexedX",nullptr,false,ROR,"d,x",nullptr,0x76,false
+1,READ_8,"DirectPage | IndirectLong | IndexedY",nullptr,false,ADC,"[d],y",nullptr,0x77,false
+0,NONE,Implied,nullptr,false,SEI,i,nullptr,0x78,false
+2,READ_16,"Absolute | IndexedY",nullptr,false,ADC,"a,y",nullptr,0x79,false
+0,NONE,Implied,nullptr,false,PLY,s,nullptr,0x7A,false
+0,NONE,Implied,nullptr,false,TDC,i,nullptr,0x7B,false
+2,READ_16,"Absolute | Indirect | IndexedX",JMP,false,JMP,"(a,x)",nullptr,0x7C,false
+2,READ_16,"Absolute | IndexedX",nullptr,false,ADC,"a,x",nullptr,0x7D,false
+2,READ_16,"Absolute | IndexedX",nullptr,false,ROR,"a,x",nullptr,0x7E,false
+3,READ_16,"AbsoluteLong | IndexedX",nullptr,false,ADC,"al,x",nullptr,0x7F,false
+1,READ_8,PCRelative,BRA,false,BRA,r,nullptr,0x80,false
+1,READ_8,"DirectPage | Indirect | IndexedX",nullptr,false,STA,"(d,x)",nullptr,0x81,false
+2,READ_16,PCRelativeLong,BRL,false,BRL,rl,nullptr,0x82,false
+1,READ_8,StackRelative,nullptr,false,STA,"d,s",nullptr,0x83,false
+1,READ_8,DirectPage,nullptr,false,STY,d,nullptr,0x84,false
+1,READ_8,DirectPage,nullptr,false,STA,d,nullptr,0x85,false
+1,READ_8,DirectPage,nullptr,false,STX,d,nullptr,0x86,false
+1,READ_8,"DirectPage | IndirectLong",nullptr,false,STA,[d],nullptr,0x87,false
+0,NONE,Implied,nullptr,false,DEY,i,nullptr,0x88,false
+1,READ_8_16,Immediate,nullptr,true,BIT,#,nullptr,0x89,false
+0,NONE,Implied,nullptr,false,TXA,i,nullptr,0x8A,false
+0,NONE,Implied,nullptr,false,PHB,s,nullptr,0x8B,false
+2,READ_16,Absolute,nullptr,false,STY,a,nullptr,0x8C,false
+2,READ_16,Absolute,nullptr,false,STA,a,nullptr,0x8D,false
+2,READ_16,Absolute,nullptr,false,STX,a,nullptr,0x8E,false
+3,READ_24,AbsoluteLong,nullptr,false,STA,al,nullptr,0x8F,false
+1,READ_8,PCRelative,BRA,false,BCC,r,nullptr,0x90,false
+1,READ_8,"DirectPage | Indirect | IndexedY",nullptr,false,STA,"(d),y",nullptr,0x91,false
+1,READ_8,"DirectPage | Indirect",nullptr,false,STA,(d),nullptr,0x92,false
+1,READ_8,"StackRelative | Indirect | IndexedY",nullptr,false,STA,"(d,s),y",nullptr,0x93,false
+1,READ_8,"DirectPage | IndexedX",nullptr,false,STY,"d,x",nullptr,0x94,false
+1,READ_8,"DirectPage | IndexedX",nullptr,false,STA,"d,x",nullptr,0x95,false
+1,READ_8,"DirectPage | IndexedY",nullptr,false,STX,"d,y",nullptr,0x96,false
+1,READ_8,"DirectPage | IndirectLong | IndexedY",nullptr,false,STA,"[d],y",nullptr,0x97,false
+0,NONE,Implied,nullptr,false,TYA,i,nullptr,0x98,false
+2,READ_16,"Absolute | IndexedY",nullptr,false,STA,"a,y",nullptr,0x99,false
+0,NONE,Implied,nullptr,false,TXS,i,nullptr,0x9A,false
+0,NONE,Implied,nullptr,false,TXY,i,nullptr,0x9B,false
+2,READ_16,Absolute,nullptr,false,STZ,a,nullptr,0x9C,false
+2,READ_16,"Absolute | IndexedX",nullptr,false,STA,"a,x",nullptr,0x9D,false
+2,READ_16,"Absolute | IndexedX",nullptr,false,STZ,"a,x",nullptr,0x9E,false
+3,READ_24,"AbsoluteLong | IndexedX",nullptr,false,STA,"al,x",nullptr,0x9F,false
+1,READ_8_16,Immediate,nullptr,false,LDY,#,nullptr,0xA0,true
+1,READ_8,"DirectPage | Indirect | IndexedX",nullptr,false,LDA,"(d,x)",nullptr,0xA1,false
+1,READ_8_16,Immediate,nullptr,false,LDX,#,nullptr,0xA2,true
+1,READ_8,StackRelative,nullptr,false,LDA,"d,s",nullptr,0xA3,false
+1,READ_8,DirectPage,nullptr,false,LDY,d,nullptr,0xA4,false
+1,READ_8,DirectPage,nullptr,false,LDA,d,nullptr,0xA5,false
+1,READ_8,DirectPage,nullptr,false,LDX,d,nullptr,0xA6,false
+1,READ_8,"DirectPage | IndirectLong",nullptr,false,LDA,[d],nullptr,0xA7,false
+0,NONE,Implied,nullptr,false,TAY,i,nullptr,0xA8,false
+1,READ_8_16,Immediate,nullptr,true,LDA,#,nullptr,0xA9,false
+0,NONE,Implied,nullptr,false,TAX,i,nullptr,0xAA,false
+0,NONE,Implied,nullptr,false,PLB,s,nullptr,0xAB,false
+2,READ_16,Absolute,nullptr,false,LDY,a,nullptr,0xAC,false
+2,READ_16,Absolute,nullptr,false,LDA,a,nullptr,0xAD,false
+2,READ_16,Absolute,nullptr,false,LDX,a,nullptr,0xAE,false
+3,READ_24,AbsoluteLong,nullptr,false,LDA,al,nullptr,0xAF,false
+1,READ_8,PCRelative,BRA,false,BCS,r,nullptr,0xB0,false
+1,READ_8,"DirectPage | Indirect | IndexedY",nullptr,false,LDA,"(d),y",nullptr,0xB1,false
+1,READ_8,"DirectPage | Indirect",nullptr,false,LDA,(d),nullptr,0xB2,false
+1,READ_8,"StackRelative | Indirect | IndexedY",nullptr,false,LDA,"(d,s),y",nullptr,0xB3,false
+1,READ_8,"DirectPage | IndexedX",nullptr,false,LDY,"d,x",nullptr,0xB4,false
+1,READ_8,"DirectPage | IndexedX",nullptr,false,LDA,"d,x",nullptr,0xB5,false
+1,READ_8,"DirectPage | IndexedY",nullptr,false,LDX,"d,y",nullptr,0xB6,false
+1,READ_8,"DirectPage | IndirectLong | IndexedY",nullptr,false,LDA,"[d],y",nullptr,0xB7,false
+0,NONE,Implied,nullptr,false,CLV,i,nullptr,0xB8,false
+2,READ_16,"Absolute | IndexedY",nullptr,false,LDA,"a,y",nullptr,0xB9,false
+0,NONE,Implied,nullptr,false,TSX,i,nullptr,0xBA,false
+0,NONE,Implied,nullptr,false,TYX,i,nullptr,0xBB,false
+2,READ_16,"Absolute | IndexedX",nullptr,false,LDY,"a,x",nullptr,0xBC,false
+2,READ_16,"Absolute | IndexedX",nullptr,false,LDA,"a,x",nullptr,0xBD,false
+2,READ_16,"Absolute | IndexedY",nullptr,false,LDX,"a,y",nullptr,0xBE,false
+3,READ_24,"AbsoluteLong | IndexedX",nullptr,false,LDA,"al,x",nullptr,0xBF,false
+1,READ_8,Immediate,nullptr,false,CPY,#,nullptr,0xC0,true
+1,READ_8,"DirectPage | Indirect | IndexedX",nullptr,false,CMP,"(d,x)",nullptr,0xC1,false
+1,READ_8,Immediate,nullptr,false,REP,#,REP,0xC2,false
+1,READ_8,StackRelative,nullptr,false,CMP,"d,s",nullptr,0xC3,false
+1,READ_8,DirectPage,nullptr,false,CPY,d,nullptr,0xC4,false
+1,READ_8,DirectPage,nullptr,false,CMP,d,nullptr,0xC5,false
+1,READ_8,DirectPage,nullptr,false,DEC,d,nullptr,0xC6,false
+1,READ_8,"DirectPage | IndirectLong",nullptr,false,CMP,[d],nullptr,0xC7,false
+0,NONE,Implied,nullptr,false,INY,i,nullptr,0xC8,false
+1,READ_8,Immediate,nullptr,true,CMP,#,nullptr,0xC9,false
+0,NONE,Implied,nullptr,false,DEX,i,nullptr,0xCA,false
+0,NONE,Implied,nullptr,false,WAI,i,nullptr,0xCB,false
+2,READ_16,Absolute,nullptr,false,CPY,a,nullptr,0xCC,false
+2,READ_16,Absolute,nullptr,false,CMP,a,nullptr,0xCD,false
+2,READ_16,Absolute,nullptr,false,DEC,a,nullptr,0xCE,false
+3,READ_24,AbsoluteLong,nullptr,false,CMP,al,nullptr,0xCF,false
+1,READ_8,PCRelative,BRA,false,BNE,r,nullptr,0xD0,false
+1,READ_8,"DirectPage | Indirect | IndexedY",nullptr,false,CMP,"(d),y",nullptr,0xD1,false
+1,READ_8,"DirectPage | Indirect",nullptr,false,CMP,(d),nullptr,0xD2,false
+1,READ_8,"StackRelative | Indirect | IndexedY",nullptr,false,CMP,"(d,s),y",nullptr,0xD3,false
+1,READ_8,"DirectPage | Indirect",nullptr,false,PEI,(dp),nullptr,0xD4,false
+1,READ_8,"DirectPage | IndexedX",nullptr,false,CMP,"d,x",nullptr,0xD5,false
+1,READ_8,"DirectPage | IndexedX",nullptr,false,DEC,"d,x",nullptr,0xD6,false
+1,READ_8,"DirectPage | IndirectLong | IndexedY",nullptr,false,CMP,"[d],y",nullptr,0xD7,false
+0,NONE,Implied,nullptr,false,CLD,i,nullptr,0xD8,false
+2,READ_16,"Absolute | IndexedY",nullptr,false,CMP,"a,y",nullptr,0xD9,false
+0,NONE,Implied,nullptr,false,PHX,s,nullptr,0xDA,false
+0,NONE,Implied,nullptr,false,STP,i,nullptr,0xDB,false
+2,READ_16,"Absolute | IndirectLong",JMP,false,JMP,[a],nullptr,0xDC,false
+2,READ_16,"Absolute | IndexedX",nullptr,false,CMP,"a,x",nullptr,0xDD,false
+2,READ_16,"Absolute | IndexedX",nullptr,false,DEC,"a,x",nullptr,0xDE,false
+3,READ_24,"AbsoluteLong | IndexedX",nullptr,false,CMP,"al,x",nullptr,0xDF,false
+1,READ_8,Immediate,nullptr,false,CPX,#,nullptr,0xE0,true
+1,READ_8,"DirectPage | Indirect | IndexedX",nullptr,false,SBC,"(d,x)",nullptr,0xE1,false
+1,READ_8,Immediate,nullptr,false,SEP,#,SEP,0xE2,false
+1,READ_8,StackRelative,nullptr,false,SBC,"d,s",nullptr,0xE3,false
+1,READ_8,DirectPage,nullptr,false,CPX,d,nullptr,0xE4,false
+1,READ_8,DirectPage,nullptr,false,SBC,d,nullptr,0xE5,false
+1,READ_8,DirectPage,nullptr,false,INC,d,nullptr,0xE6,false
+1,READ_8,"DirectPage | IndirectLong",nullptr,false,SBC,[d],nullptr,0xE7,false
+0,NONE,Implied,nullptr,false,INX,i,nullptr,0xE8,false
+1,READ_8,Immediate,nullptr,true,SBC,#,nullptr,0xE9,false
+0,NONE,Implied,nullptr,false,NOP,i,nullptr,0xEA,false
+0,NONE,Implied,nullptr,false,XBA,i,nullptr,0xEB,false
+2,READ_16,Absolute,nullptr,false,CPX,a,nullptr,0xEC,false
+2,READ_16,Absolute,nullptr,false,SBC,a,nullptr,0xED,false
+2,READ_16,Absolute,nullptr,false,INC,a,nullptr,0xEE,false
+3,READ_24,AbsoluteLong,nullptr,false,SBC,al,nullptr,0xEF,false
+1,READ_8,PCRelative,BRA,false,BEQ,r,nullptr,0xF0,false
+1,READ_8,"DirectPage | Indirect | IndexedY",nullptr,false,SBC,"(d),y",nullptr,0xF1,false
+1,READ_8,"DirectPage | Indirect",nullptr,false,SBC,(d),nullptr,0xF2,false
+1,READ_8,"StackRelative | Indirect | IndexedY",nullptr,false,SBC,"(d,s),y",nullptr,0xF3,false
+2,READ_16,Absolute,nullptr,false,PEA,s,nullptr,0xF4,false
+1,READ_8,"DirectPage | IndexedX",nullptr,false,SBC,"d,x",nullptr,0xF5,false
+1,READ_8,"DirectPage | IndexedX",nullptr,false,INC,"d,x",nullptr,0xF6,false
+1,READ_8,"DirectPage | IndirectLong | IndexedY",nullptr,false,SBC,"[d],y",nullptr,0xF7,false
+0,NONE,Implied,nullptr,false,SED,i,nullptr,0xF8,false
+2,READ_16,"Absolute | IndexedY",nullptr,false,SBC,"a,y",nullptr,0xF9,false
+0,NONE,Implied,nullptr,false,PLX,s,nullptr,0xFA,false
+0,NONE,Implied,nullptr,false,XCE,i,XCE,0xFB,false
+2,READ_16,"Absolute | Indirect | IndexedX",nullptr,false,JSR,"(a,x)",nullptr,0xFC,false
+2,READ_16,"Absolute | IndexedX",nullptr,false,SBC,"a,x",nullptr,0xFD,false
+2,READ_16,"Absolute | IndexedX",nullptr,false,INC,"a,x",nullptr,0xFE,false
+3,READ_16,"AbsoluteLong | IndexedX",nullptr,false,SBC,"al,x",nullptr,0xFF,false
