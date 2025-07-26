@@ -176,7 +176,8 @@ char* format_opcode_and_operands(codeentry_t* ce, ...) {
         snprintf(retval, 72, "%s %s", code->opcode, rv1);
     }   
     free(fmt);
-    free(rv1);
+    if (rv1)
+        free(rv1);
     return retval;
 }
 #undef SET_FLAG
