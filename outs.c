@@ -97,9 +97,9 @@ char* standalone_format_unsigned(opcode_t* opcode, uint32_t arg) {
         buffer = format_absolute_address(opcode, arg);
     } else if (CHECK_FLAG(opcode->flags, AbsoluteLong)) {
         if (CHECK_FLAG(opcode->flags, IndexedX)) { // Only with AbsoluteLong
-            vsnprintf(buffer, 64, "$%06X, X", arg);
+            snprintf(buffer, 64, "$%06X, X", arg);
         } else { // ditto
-            vsnprintf(buffer, 64, "$%06X", arg);
+            snprintf(buffer, 64, "$%06X", arg);
         }
     }
     
@@ -149,7 +149,7 @@ char* format_opcode_and_operands(codeentry_t* ce, ...) {
 
     if ((CHECK_FLAG(code->flags, Absolute) || CHECK_FLAG(code->flags, AbsoluteLong)) && CHECK_FLAG(ce->flags, LABEL_SOURCE)) {
         snprintf(rv1, 64, "%s", ce->lblname);
-    } else if (CHECK_FLAG(code->flags, Absolute) || CHECK_FLAG(code->flags, AbsoluteLong)) {}) {
+    } else if (CHECK_FLAG(code->flags, Absolute) || CHECK_FLAG(code->flags, AbsoluteLong)) {
         free(rv1);
         uint32_t arg = va_arg(args, uint32_t);
         rv1 = standalone_format_unsigned(code, arg);
