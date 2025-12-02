@@ -186,7 +186,7 @@ const opcode_t opcodes[256] = {
     { "ADC",   1,  base, NULL, NULL, READ_8   , StackRelative | Indirect | IndexedY  , ADC_SR_I_IY   /* ADC  (sr,S),y  */ }, //  0X73
     { "STZ",   1,  base, NULL, NULL, READ_8   , DirectPage | IndexedX                , STZ_DP_IX     /* STZ  d,x       */ }, //  0X74
     { "ADC",   1,  base, NULL, NULL, READ_8   , DirectPage | IndexedX                , ADC_DP_IX     /* ADC  d,x       */ }, //  0X75
-    { "ROR",   1,  base, NULL, NULL, READ_8   , DirectPage | IndexedX                , RPR_DP_IX     /* ROR  d,x       */ }, //  0X76
+    { "ROR",   1,  base, NULL, NULL, READ_8   , DirectPage | IndexedX                , ROR_DP_IX     /* ROR  d,x       */ }, //  0X76
     { "ADC",   1,  base, NULL, NULL, READ_8   , DirectPage | IndirectLong | IndexedY , ADC_DP_IL_IY  /* ADC  [d],y     */ }, //  0X77
     { "SEI",   0,  base, NULL, NULL, NULL     , Implied                              , SEI           /* SEI  i         */ }, //  0X78
     { "ADC",   2,  base, NULL, NULL, READ_16  , Absolute | IndexedY                  , ADC_ABS_IY    /* ADC  a,y       */ }, //  0X79

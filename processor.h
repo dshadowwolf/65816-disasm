@@ -13,9 +13,6 @@ void reset_processor(processor_state_t *state);
 void initialize_machine(state_t *machine);
 void reset_machine(state_t *machine);
 state_t* create_machine();
-bool is_flag_set(state_t *machine, uint8_t flag);
-state_t* set_flag(state_t *machine, uint8_t flag);
-state_t* clear_flag(state_t *machine, uint8_t flag);
 void destroy_machine(state_t *machine);
 
 state_t* XCE_CB        (state_t *machine, uint16_t unused1, uint16_t unused2);
@@ -139,7 +136,7 @@ state_t* ADC_DP_I      (state_t* machine, uint16_t arg_one, uint16_t arg_two);
 state_t* ADC_SR_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two);
 state_t* STZ_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two);
 state_t* ADC_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two);
-state_t* RPR_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two);
+state_t* ROR_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two);
 state_t* ADC_DP_IL_IY  (state_t* machine, uint16_t arg_one, uint16_t arg_two);
 state_t* SEI           (state_t* machine, uint16_t arg_one, uint16_t arg_two);
 state_t* ADC_ABS_IY    (state_t* machine, uint16_t arg_one, uint16_t arg_two);
