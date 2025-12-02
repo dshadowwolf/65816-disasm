@@ -15,9 +15,10 @@ foreach (<>) {
     my $extra = $d[7];
     my $reader = $d[8];
     my $opcodeval = uc($ln->as_hex);
+    my $opcall = $d[9];
     format STDOUT = 
-{ "@<<", @##, @<<<<, @<<<, @<<<, @<<<<<<<<, @<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< /* @<<< @<<<<<<<< */ }, // @>>>>
-    $opcode, $operandsize, $munger, $state, $extra, $reader, $flags, $opcode, $params, $opcodeval
+{ "@<<", @##, @<<<<, @<<<, @<<<, @<<<<<<<<, @<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<, @<<<<<<<<<<<< /* @<<< @<<<<<<<< */ }, // @>>>>
+    $opcode, $operandsize, $munger, $state, $extra, $reader, $flags, $opcall, $opcode, $params, $opcodeval
 .
     $ln++;
     write(STDOUT);

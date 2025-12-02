@@ -5,6 +5,9 @@
 
 #include "state.h"
 
+#include "machine.h"
+
+#define E_FLAG INTERRUPT_DISABLE
 typedef struct p_state_s {
     unsigned char flags;
     unsigned int start;

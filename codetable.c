@@ -68,7 +68,7 @@ void make_label(uint32_t offset_source, uint32_t offset_target, const char* labe
     codeentry_t* source_line = (codeentry_t*)find_node(offset_source);
     if (source_line == NULL) {
         // create a new source line if it doesn't exist
-        add_line(offset_source, 0xEA); // 0xEA is a placeholder
+        add_line(offset_source, 0xEA); // 0xEA is a placeholder (NOP)
         source_line = (codeentry_t*)find_node(offset_source);
     }
 

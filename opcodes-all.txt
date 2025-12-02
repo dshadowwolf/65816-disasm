@@ -1,256 +1,256 @@
-BRK , s        , 0x00 , Immediate                        , 2 ,  base , NULL , NULL , READ_8
-ORA , (d,x)    , 0x01 , DirectPage Indirect IndexedX     , 2 ,  base , NULL , NULL , READ_8
-COP , #        , 0x02 , Immediate                        , 2 ,  base , NULL , NULL , READ_8
-ORA , d,s      , 0x03 , StackRelative                    , 2 ,  base , NULL , NULL , READ_8
-TSB , d        , 0x04 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8
-ORA , d        , 0x05 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8
-ASL , d        , 0x06 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8
-ORA , [d]      , 0x07 , DirectPage IndirectLong          , 2 ,  base , NULL , NULL , READ_8
-PHP , s        , 0x08 , Implied                          , 1 ,  base , NULL , NULL , NULL
-ORA , #        , 0x09 , Immediate                        , 2 , m_set , NULL , NULL , READ_8_16
-ASL , A        , 0x0A , Implied                          , 1 ,  base , NULL , NULL , NULL
-PHD , s        , 0x0B , Implied                          , 1 ,  base , NULL , NULL , NULL
-TSB , a        , 0x0C , Absolute                         , 3 ,  base , NULL , NULL , READ_16
-ORA , a        , 0x0D , Absolute                         , 3 ,  base , NULL , NULL , READ_16
-ASL , a        , 0x0E , Absolute                         , 3 ,  base , NULL , NULL , READ_16
-ORA , al       , 0x0F , AbsoluteLong                     , 4 ,  base , NULL , NULL , READ_24
-BPL , r        , 0x10 , PCRelative                       , 2 ,  base , NULL ,  BRA , READ_8
-ORA , (d),y    , 0x11 , DirectPage Indirect IndexedY     , 2 ,  base , NULL , NULL , READ_8
-ORA , (d)      , 0x12 , DirectPage Indirect              , 2 ,  base , NULL , NULL , READ_8
-ORA , (d,s),y  , 0x13 , StackRelative Indirect IndexedY  , 2 ,  base , NULL , NULL , READ_8
-TRB , d        , 0x14 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8
-ORA , d,x      , 0x15 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8
-ASL , d,x      , 0x16 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8
-ORA , [d],y    , 0x17 , DirectPage IndirectLong IndexedY , 2 ,  base , NULL , NULL , READ_8
-CLC , i        , 0x18 , Implied                          , 1 ,  base ,  CLC , NULL , NULL
-ORA , a,y      , 0x19 , Absolute IndexedY                , 3 ,  base , NULL , NULL , READ_16
-INC , A        , 0x1A , Implied                          , 1 ,  base , NULL , NULL , NULL
-TCS , i        , 0x1B , Implied                          , 1 ,  base , NULL , NULL , NULL
-TRB , a        , 0x1C , Absolute                         , 3 ,  base , NULL , NULL , READ_16
-ORA , a,x      , 0x1D , Absolute IndexedX                , 3 ,  base , NULL , NULL , READ_16
-ASL , a,x      , 0x1E , Absolute IndexedX                , 3 ,  base , NULL , NULL , READ_16
-ORA , al,x     , 0x1F , AbsoluteLong IndexedX            , 4 ,  base , NULL , NULL , READ_24
-JSR , a        , 0x20 , Absolute                         , 3 ,  base , NULL ,  JMP , READ_16 
-AND , (d,x)    , 0x21 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8
-JSL , al       , 0x22 , AbsoluteLong                     , 4 ,  base , NULL ,  JMP , READ_24
-AND , d,s      , 0x23 , StackRelative                    , 2 ,  base , NULL , NULL , READ_8
-BIT , d        , 0x24 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8
-AND , d        , 0x25 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8
-ROL , d        , 0x26 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8
-AND , [d]      , 0x27 , DirectPage IndirectLong          , 2 ,  base , NULL , NULL , READ_8
-PLP , s        , 0x28 , Implied                          , 1 ,  base , NULL , NULL , NULL
-AND , #        , 0x29 , Immediate                        , 2 , m_set , NULL , NULL , READ_8_16
-ROL , A        , 0x2A , Implied                          , 1 ,  base , NULL , NULL , NULL
-PLD , s        , 0x2B , Implied                          , 1 ,  base , NULL , NULL , NULL
-BIT , a        , 0x2C , Absolute                         , 3 ,  base , NULL , NULL , READ_16
-AND , a        , 0x2D , Absolute                         , 3 ,  base , NULL , NULL , READ_16
-ROL , a        , 0x2E , Absolute                         , 3 ,  base , NULL , NULL , READ_16
-AND , al       , 0x2F , AbsoluteLong                     , 4 ,  base , NULL , NULL , READ_24
-BMI , R        , 0x30 , PCRelative                       , 2 ,  base , NULL ,  BRA , READ_8
-AND , (d),y    , 0x31 , DirectPage Indirect IndexedY     , 2 ,  base , NULL , NULL , READ_8
-AND , (d)      , 0x32 , DirectPage Indirect              , 2 ,  base , NULL , NULL , READ_8
-AND , (d,s),y  , 0x33 , StackRelative Indirect IndexedY  , 2 ,  base , NULL , NULL , READ_8
-BIT , d,x      , 0x34 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8
-AND , d,x      , 0x35 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8
-ROL , d,x      , 0x36 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8
-AND , [d],y    , 0x37 , DirectPage IndirectLong IndexedY , 2 ,  base , NULL , NULL , READ_8
-SEC , i        , 0x38 , Implied                          , 1 ,  base ,  SEC , NULL , NULL
-AND , a,y      , 0x39 , Absolute IndexedY                , 3 ,  base , NULL , NULL , READ_16
-DEC , A        , 0x3A , Implied                          , 1 ,  base , NULL , NULL , NULL
-TSC , i        , 0x3B , Implied                          , 1 ,  base , NULL , NULL , NULL
-BIT , a,x      , 0x3C , Absolute IndexedX                , 3 ,  base , NULL , NULL , READ_16
-AND , a,x      , 0x3D , Absolute IndexedX                , 3 ,  base , NULL , NULL , READ_16
-ROL , a,x      , 0x3E , Absolute IndexedX                , 3 ,  base , NULL , NULL , READ_16
-AND , al,x     , 0x3F , Absolute IndirectLong IndexedX   , 4 ,  base , NULL , NULL , READ_24
-RTI , s        , 0x40 , Implied                          , 1 ,  base , NULL , NULL , NULL
-EOR , (d,x)    , 0x41 , DirectPage Indirect IndexedX     , 2 ,  base , NULL , NULL , READ_8
-WDM , i        , 0x42 , Implied                          , 2 ,  base , NULL , NULL , READ_8
-EOR , d,s      , 0x43 , StackRelative                    , 2 ,  base , NULL , NULL , READ_8
-MVP , src,dst  , 0x44 , BlockMoveAddress                 , 3 ,  base , NULL , NULL , READ_BMA
-EOR , d        , 0x45 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8
-LSR , d        , 0x46 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8
-EOR , [d]      , 0x47 , DirectPage IndirectLong          , 2 ,  base , NULL , NULL , READ_8
-PHA , s        , 0x48 , Implied                          , 1 ,  base , NULL , NULL , NULL
-EOR , #        , 0x49 , Immediate                        , 2 , m_set , NULL , NULL , READ_8_16
-LSR , A        , 0x4A , Implied                          , 1 ,  base , NULL , NULL , NULL
-PHK , s        , 0x4B , Implied                          , 1 ,  base , NULL , NULL , NULL
-JMP , a        , 0x4C , Absolute                         , 3 ,  base , NULL ,  JMP , READ_16
-EOR , a        , 0x4D , Absolute                         , 3 ,  base , NULL , NULL , READ_16
-LSR , a        , 0x4E , Absolute                         , 3 ,  base , NULL , NULL , READ_16
-EOR , al       , 0x4F , AbsoluteLong                     , 4 ,  base , NULL , NULL , READ_24
-BVC , r        , 0x50 , PCRelative                       , 2 ,  base , NULL ,  BRA , READ_8
-EOR , (d),y    , 0x51 , DirectPage Indirect IndexedY     , 2 ,  base , NULL , NULL , READ_8
-EOR , (d)      , 0x52 , DirectPage Indirect              , 2 ,  base , NULL , NULL , READ_8
-EOR , (d,s),y  , 0x53 , StackRelative Indirect IndexedY  , 2 ,  base , NULL , NULL , READ_8
-MVN , src,dst  , 0x54 , BlockMoveAddress                 , 3 ,  base , NULL , NULL , READ_BMA
-EOR , d,x      , 0x55 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8
-LSR , d,x      , 0x56 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8
-EOR , [d],y    , 0x57 , DirectPage IndirectLong IndexedY , 2 ,  base , NULL , NULL , READ_8
-CLI , i        , 0x58 , Implied                          , 1 ,  base , NULL , NULL , NULL
-EOR , a,y      , 0x59 , Absolute IndexedY                , 3 ,  base , NULL , NULL , READ_16
-PHY , s        , 0x5A , Implied                          , 1 ,  base , NULL , NULL , NULL
-TCD , i        , 0x5B , Implied                          , 1 ,  base , NULL , NULL , NULL
-JMP , al       , 0x5C , AbsoluteLong                     , 4 ,  base , NULL ,  JMP , READ_24
-EOR , a,x      , 0x5D , Absolute IndexedX                , 3 ,  base , NULL , NULL , READ_16
-LSR , a,x      , 0x5E , Absolute IndexedX                , 3 ,  base , NULL , NULL , READ_16
-EOR , al,x     , 0x5F , AbsoluteLong IndexedX            , 4 ,  base , NULL , NULL , READ_24
-RTS , s        , 0x60 , Implied                          , 1 ,  base , NULL , NULL , NULL
-ADC , (dp,X)   , 0x61 , DirectPage Indirect IndexedX     , 2 ,  base , NULL , NULL , READ_8
-PER , s        , 0x62 , PCRelativeLong                   , 3 ,  base , NULL , NULL , READ_16
-ADC , sr,S     , 0x63 , StackRelative                    , 2 ,  base , NULL , NULL , READ_8
-STZ , d        , 0x64 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8
-ADC , dp       , 0x65 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8
-ROR , d        , 0x66 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8
-ADC , [dp]     , 0x67 , DirectPage IndirectLong          , 2 ,  base , NULL , NULL , READ_8
-PLA , s        , 0x68 , Implied                          , 1 ,  base , NULL , NULL , NULL
-ADC , #        , 0x69 , Immediate                        , 2 , m_set , NULL , NULL , READ_8_16
-ROR , A        , 0x6A , Implied                          , 1 ,  base , NULL , NULL , NULL
-RTL , s        , 0x6B , Implied                          , 1 ,  base , NULL , NULL , NULL
-JMP , (a)      , 0x6C , Absolute Indirect                , 3 ,  base , NULL ,  JMP , READ_16
-ADC , addr     , 0x6D , Absolute                         , 3 ,  base , NULL , NULL , READ_16
-ROR , a        , 0x6E , Absolute                         , 3 ,  base , NULL , NULL , READ_16
-ADC , al       , 0x6F , AbsoluteLong                     , 4 ,  base , NULL , NULL , READ_24
-BVS , r        , 0x70 , PCRelative                       , 2 ,  base , NULL ,  BRA , READ_8
-ADC , (d),y    , 0x71 , DirectPage Indirect IndexedY     , 2 ,  base , NULL , NULL , READ_8
-ADC , (d)      , 0x72 , DirectPage Indirect              , 2 ,  base , NULL , NULL , READ_8
-ADC , (sr,S),y , 0x73 , StackRelative Indirect IndexedY  , 2 ,  base , NULL , NULL , READ_8
-STZ , d,x      , 0x74 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8
-ADC , d,x      , 0x75 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8
-ROR , d,x      , 0x76 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8
-ADC , [d],y    , 0x77 , DirectPage IndirectLong IndexedY , 2 ,  base , NULL , NULL , READ_8
-SEI , i        , 0x78 , Implied                          , 1 ,  base , NULL , NULL , NULL
-ADC , a,y      , 0x79 , Absolute IndexedY                , 3 ,  base , NULL , NULL , READ_16
-PLY , s        , 0x7A , Implied                          , 1 ,  base , NULL , NULL , NULL
-TDC , i        , 0x7B , Implied                          , 1 ,  base , NULL , NULL , NULL
-JMP , (a,x)    , 0x7C , Absolute Indirect IndexedX       , 3 ,  base , NULL ,  JMP , READ_16
-ADC , a,x      , 0x7D , Absolute IndexedX                , 3 ,  base , NULL , NULL , READ_16
-ROR , a,x      , 0x7E , Absolute IndexedX                , 3 ,  base , NULL , NULL , READ_16
-ADC , al,x     , 0x7F , AbsoluteLong IndexedX            , 4 ,  base , NULL , NULL , READ_16
-BRA , r        , 0x80 , PCRelative                       , 2 ,  base , NULL ,  BRA , READ_8
-STA , (d,x)    , 0x81 , DirectPage Indirect IndexedX     , 2 ,  base , NULL , NULL , READ_8
-BRL , rl       , 0x82 , PCRelativeLong                   , 3 ,  base , NULL ,  BRL , READ_16
-STA , d,s      , 0x83 , StackRelative                    , 2 ,  base , NULL , NULL , READ_8
-STY , d        , 0x84 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8
-STA , d        , 0x85 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8
-STX , d        , 0x86 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8
-STA , [d]      , 0x87 , DirectPage IndirectLong          , 2 ,  base , NULL , NULL , READ_8
-DEY , i        , 0x88 , Implied                          , 1 ,  base , NULL , NULL , NULL
-BIT , #        , 0x89 , Immediate                        , 2 , m_set , NULL , NULL , READ_8_16
-TXA , i        , 0x8A , Implied                          , 1 ,  base , NULL , NULL , NULL
-PHB , s        , 0x8B , Implied                          , 1 ,  base , NULL , NULL , NULL
-STY , a        , 0x8C , Absolute                         , 3 ,  base , NULL , NULL , READ_16
-STA , a        , 0x8D , Absolute                         , 3 ,  base , NULL , NULL , READ_16
-STX , a        , 0x8E , Absolute                         , 3 ,  base , NULL , NULL , READ_16
-STA , al       , 0x8F , AbsoluteLong                     , 4 ,  base , NULL , NULL , READ_24
-BCC , r        , 0x90 , PCRelative                       , 2 ,  base , NULL ,  BRA , READ_8
-STA , (d),y    , 0x91 , DirectPage Indirect IndexedY     , 2 ,  base , NULL , NULL , READ_8
-STA , (d)      , 0x92 , DirectPage Indirect              , 2 ,  base , NULL , NULL , READ_8
-STA , (d,s),y  , 0x93 , StackRelative Indirect IndexedY  , 2 ,  base , NULL , NULL , READ_8
-STY , d,x      , 0x94 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8
-STA , d,x      , 0x95 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8
-STX , d,y      , 0x96 , DirectPage IndexedY              , 2 ,  base , NULL , NULL , READ_8
-STA , [d],y    , 0x97 , DirectPage IndirectLong IndexedY , 2 ,  base , NULL , NULL , READ_8
-TYA , i        , 0x98 , Implied                          , 1 ,  base , NULL , NULL , NULL
-STA , a,y      , 0x99 , Absolute IndexedY                , 3 ,  base , NULL , NULL , READ_16
-TXS , i        , 0x9A , Implied                          , 1 ,  base , NULL , NULL , NULL
-TXY , i        , 0x9B , Implied                          , 1 ,  base , NULL , NULL , NULL
-STZ , a        , 0x9C , Absolute                         , 3 ,  base , NULL , NULL , READ_16
-STA , a,x      , 0x9D , Absolute IndexedX                , 3 ,  base , NULL , NULL , READ_16
-STZ , a,x      , 0x9E , Absolute IndexedX                , 3 ,  base , NULL , NULL , READ_16
-STA , al,x     , 0x9F , AbsoluteLong IndexedX            , 4 ,  base , NULL , NULL , READ_24
-LDY , #        , 0xA0 , Immediate                        , 2 , x_set , NULL , NULL , READ_8_16
-LDA , (d,x)    , 0xA1 , DirectPage Indirect IndexedX     , 2 ,  base , NULL , NULL , READ_8
-LDX , #        , 0xA2 , Immediate                        , 2 , x_set , NULL , NULL , READ_8_16
-LDA , d,s      , 0xA3 , StackRelative                    , 2 ,  base , NULL , NULL , READ_8
-LDY , d        , 0xA4 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8
-LDA , d        , 0xA5 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8
-LDX , d        , 0xA6 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8
-LDA , [d]      , 0xA7 , DirectPage IndirectLong          , 2 ,  base , NULL , NULL , READ_8
-TAY , i        , 0xA8 , Implied                          , 1 ,  base , NULL , NULL , NULL
-LDA , #        , 0xA9 , Immediate                        , 2 , m_set , NULL , NULL , READ_8_16
-TAX , i        , 0xAA , Implied                          , 1 ,  base , NULL , NULL , NULL
-PLB , s        , 0xAB , Implied                          , 1 ,  base , NULL , NULL , NULL
-LDY , a        , 0xAC , Absolute                         , 3 ,  base , NULL , NULL , READ_16
-LDA , a        , 0xAD , Absolute                         , 3 ,  base , NULL , NULL , READ_16
-LDX , a        , 0xAE , Absolute                         , 3 ,  base , NULL , NULL , READ_16
-LDA , al       , 0xAF , AbsoluteLong                     , 4 ,  base , NULL , NULL , READ_24
-BCS , r        , 0xB0 , PCRelative                       , 2 ,  base , NULL ,  BRA , READ_8
-LDA , (d),y    , 0xB1 , DirectPage Indirect IndexedY     , 2 ,  base , NULL , NULL , READ_8
-LDA , (d)      , 0xB2 , DirectPage Indirect              , 2 ,  base , NULL , NULL , READ_8
-LDA , (d,s),y  , 0xB3 , StackRelative Indirect IndexedY  , 2 ,  base , NULL , NULL , READ_8
-LDY , d,x      , 0xB4 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8
-LDA , d,x      , 0xB5 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8
-LDX , d,y      , 0xB6 , DirectPage IndexedY              , 2 ,  base , NULL , NULL , READ_8
-LDA , [d],y    , 0xB7 , DirectPage IndirectLong IndexedY , 2 ,  base , NULL , NULL , READ_8
-CLV , i        , 0xB8 , Implied                          , 1 ,  base , NULL , NULL , NULL
-LDA , a,y      , 0xB9 , Absolute IndexedY                , 3 ,  base , NULL , NULL , READ_16
-TSX , i        , 0xBA , Implied                          , 1 ,  base , NULL , NULL , NULL
-TYX , i        , 0xBB , Implied                          , 1 ,  base , NULL , NULL , NULL
-LDY , a,x      , 0xBC , Absolute IndexedX                , 3 ,  base , NULL , NULL , READ_16
-LDA , a,x      , 0xBD , Absolute IndexedX                , 3 ,  base , NULL , NULL , READ_16
-LDX , a,y      , 0xBE , Absolute IndexedY                , 3 ,  base , NULL , NULL , READ_16
-LDA , al,x     , 0xBF , AbsoluteLong IndexedX            , 4 ,  base , NULL , NULL , READ_24
-CPY , #        , 0xC0 , Immediate                        , 2 , x_set , NULL , NULL , READ_8
-CMP , (d,x)    , 0xC1 , DirectPage Indirect IndexedX     , 2 ,  base , NULL , NULL , READ_8
-REP , #        , 0xC2 , Immediate                        , 2 ,  base ,  REP , NULL , READ_8
-CMP , d,s      , 0xC3 , StackRelative                    , 2 ,  base , NULL , NULL , READ_8
-CPY , d        , 0xC4 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8
-CMP , d        , 0xC5 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8
-DEC , d        , 0xC6 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8
-CMP , [d]      , 0xC7 , DirectPage IndirectLong          , 2 ,  base , NULL , NULL , READ_8
-INY , i        , 0xC8 , Implied                          , 1 ,  base , NULL , NULL , NULL
-CMP , #        , 0xC9 , Immediate                        , 2 , m_set , NULL , NULL , READ_8
-DEX , i        , 0xCA , Implied                          , 1 ,  base , NULL , NULL , NULL
-WAI , i        , 0xCB , Implied                          , 1 ,  base , NULL , NULL , NULL
-CPY , a        , 0xCC , Absolute                         , 3 ,  base , NULL , NULL , READ_16
-CMP , a        , 0xCD , Absolute                         , 3 ,  base , NULL , NULL , READ_16
-DEC , a        , 0xCE , Absolute                         , 3 ,  base , NULL , NULL , READ_16
-CMP , al       , 0xCF , AbsoluteLong                     , 4 ,  base , NULL , NULL , READ_24
-BNE , r        , 0xD0 , PCRelative                       , 2 ,  base , NULL ,  BRA , READ_8
-CMP , (d),y    , 0xD1 , DirectPage Indirect IndexedY     , 2 ,  base , NULL , NULL , READ_8
-CMP , (d)      , 0xD2 , DirectPage Indirect              , 2 ,  base , NULL , NULL , READ_8
-CMP , (d,s),y  , 0xD3 , StackRelative Indirect IndexedY  , 2 ,  base , NULL , NULL , READ_8
-PEI , (dp)     , 0xD4 , DirectPage Indirect              , 2 ,  base , NULL , NULL , READ_8
-CMP , d,x      , 0xD5 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8
-DEC , d,x      , 0xD6 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8
-CMP , [d],y    , 0xD7 , DirectPage IndirectLong IndexedY , 2 ,  base , NULL , NULL , READ_8
-CLD , i        , 0xD8 , Implied                          , 1 ,  base , NULL , NULL , NULL
-CMP , a,y      , 0xD9 , Absolute IndexedY                , 3 ,  base , NULL , NULL , READ_16
-PHX , s        , 0xDA , Implied                          , 1 ,  base , NULL , NULL , NULL
-STP , i        , 0xDB , Implied                          , 1 ,  base , NULL , NULL , NULL
-JMP , [a]      , 0xDC , Absolute IndirectLong            , 3 ,  base , NULL ,  JMP , READ_16
-CMP , a,x      , 0xDD , Absolute IndexedX                , 3 ,  base , NULL , NULL , READ_16
-DEC , a,x      , 0xDE , Absolute IndexedX                , 3 ,  base , NULL , NULL , READ_16
-CMP , al,x     , 0xDF , AbsoluteLong IndexedX            , 4 ,  base , NULL , NULL , READ_24
-CPX , #        , 0xE0 , Immediate                        , 2 , x_set , NULL , NULL , READ_8
-SBC , (d,x)    , 0xE1 , DirectPage Indirect IndexedX     , 2 ,  base , NULL , NULL , READ_8
-SEP , #        , 0xE2 , Immediate                        , 2 ,  base ,  SEP , NULL , READ_8
-SBC , d,s      , 0xE3 , StackRelative                    , 2 ,  base , NULL , NULL , READ_8
-CPX , d        , 0xE4 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8
-SBC , d        , 0xE5 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8
-INC , d        , 0xE6 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8
-SBC , [d]      , 0xE7 , DirectPage IndirectLong          , 2 ,  base , NULL , NULL , READ_8
-INX , i        , 0xE8 , Implied                          , 1 ,  base , NULL , NULL , NULL
-SBC , #        , 0xE9 , Immediate                        , 2 , m_set , NULL , NULL , READ_8
-NOP , i        , 0xEA , Implied                          , 1 ,  base , NULL , NULL , NULL
-XBA , i        , 0xEB , Implied                          , 1 ,  base , NULL , NULL , NULL
-CPX , a        , 0xEC , Absolute                         , 3 ,  base , NULL , NULL , READ_16
-SBC , a        , 0xED , Absolute                         , 3 ,  base , NULL , NULL , READ_16
-INC , a        , 0xEE , Absolute                         , 3 ,  base , NULL , NULL , READ_16
-SBC , al       , 0xEF , AbsoluteLong                     , 4 ,  base , NULL , NULL , READ_24
-BEQ , r        , 0xF0 , PCRelative                       , 2 ,  base , NULL ,  BRA , READ_8
-SBC , (d),y    , 0xF1 , DirectPage Indirect IndexedY     , 2 ,  base , NULL , NULL , READ_8
-SBC , (d)      , 0xF2 , DirectPage Indirect              , 2 ,  base , NULL , NULL , READ_8
-SBC , (d,s),y  , 0xF3 , StackRelative Indirect IndexedY  , 2 ,  base , NULL , NULL , READ_8
-PEA , s        , 0xF4 , Absolute                         , 3 ,  base , NULL , NULL , READ_16
-SBC , d,x      , 0xF5 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8
-INC , d,x      , 0xF6 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8
-SBC , [d],y    , 0xF7 , DirectPage IndirectLong IndexedY , 2 ,  base , NULL , NULL , READ_8
-SED , i        , 0xF8 , Implied                          , 1 ,  base , NULL , NULL , NULL
-SBC , a,y      , 0xF9 , Absolute IndexedY                , 3 ,  base , NULL , NULL , READ_16
-PLX , s        , 0xFA , Implied                          , 1 ,  base , NULL , NULL , NULL
-XCE , i        , 0xFB , Implied                          , 1 ,  base ,  XCE , NULL , NULL
-JSR , (a,x)    , 0xFC , Absolute Indirect IndexedX       , 3 ,  base , NULL , NULL , READ_16
-SBC , a,x      , 0xFD , Absolute IndexedX                , 3 ,  base , NULL , NULL , READ_16
-INC , a,x      , 0xFE , Absolute IndexedX                , 3 ,  base , NULL , NULL , READ_16
-SBC , al,x     , 0xFF , AbsoluteLong IndexedX            , 4 ,  base , NULL , NULL , READ_16
+BRK , s        , 0x00 , Immediate                        , 2 ,  base , NULL , NULL , READ_8    , BRK
+ORA , (d,x)    , 0x01 , DirectPage Indirect IndexedX     , 2 ,  base , NULL , NULL , READ_8    , ORA_DP_I_IX 
+COP , #        , 0x02 , Immediate                        , 2 ,  base , NULL , NULL , READ_8    , COP
+ORA , d,s      , 0x03 , StackRelative                    , 2 ,  base , NULL , NULL , READ_8    , ORA_SR
+TSB , d        , 0x04 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8    , TSB_DP
+ORA , d        , 0x05 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8    , ORA_DP
+ASL , d        , 0x06 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8    , ASL_DP
+ORA , [d]      , 0x07 , DirectPage IndirectLong          , 2 ,  base , NULL , NULL , READ_8    , ORA_DP_IL
+PHP , s        , 0x08 , Implied                          , 1 ,  base , NULL , NULL , NULL      , PHP
+ORA , #        , 0x09 , Immediate                        , 2 , m_set , NULL , NULL , READ_8_16 , ORA_IMM
+ASL , A        , 0x0A , Implied                          , 1 ,  base , NULL , NULL , NULL      , ASL
+PHD , s        , 0x0B , Implied                          , 1 ,  base , NULL , NULL , NULL      , PHD
+TSB , a        , 0x0C , Absolute                         , 3 ,  base , NULL , NULL , READ_16   , TSB_ABS
+ORA , a        , 0x0D , Absolute                         , 3 ,  base , NULL , NULL , READ_16   , ORA_ABS
+ASL , a        , 0x0E , Absolute                         , 3 ,  base , NULL , NULL , READ_16   , ASL_ABS
+ORA , al       , 0x0F , AbsoluteLong                     , 4 ,  base , NULL , NULL , READ_24   , ORA_ABL
+BPL , r        , 0x10 , PCRelative                       , 2 ,  base , NULL ,  BRA , READ_8    , BPL_CB
+ORA , (d),y    , 0x11 , DirectPage Indirect IndexedY     , 2 ,  base , NULL , NULL , READ_8    , ORA_I_IY
+ORA , (d)      , 0x12 , DirectPage Indirect              , 2 ,  base , NULL , NULL , READ_8    , ORA_DP_I
+ORA , (d,s),y  , 0x13 , StackRelative Indirect IndexedY  , 2 ,  base , NULL , NULL , READ_8    , ORA_SR_I_IY
+TRB , d        , 0x14 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8    , TRB_DP
+ORA , d,x      , 0x15 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8    , ORA_DP_IX
+ASL , d,x      , 0x16 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8    , ASL_DP_IX
+ORA , [d],y    , 0x17 , DirectPage IndirectLong IndexedY , 2 ,  base , NULL , NULL , READ_8    , ORA_DP_IL_IY
+CLC , i        , 0x18 , Implied                          , 1 ,  base ,  CLC , NULL , NULL      , CLC_CB
+ORA , a,y      , 0x19 , Absolute IndexedY                , 3 ,  base , NULL , NULL , READ_16   , ORA_ABS_IY
+INC , A        , 0x1A , Implied                          , 1 ,  base , NULL , NULL , NULL      , INC
+TCS , i        , 0x1B , Implied                          , 1 ,  base , NULL , NULL , NULL      , TCS
+TRB , a        , 0x1C , Absolute                         , 3 ,  base , NULL , NULL , READ_16   , TRB_ABS
+ORA , a,x      , 0x1D , Absolute IndexedX                , 3 ,  base , NULL , NULL , READ_16   , ORA_ABS_IX
+ASL , a,x      , 0x1E , Absolute IndexedX                , 3 ,  base , NULL , NULL , READ_16   , ASL_ABS_IX
+ORA , al,x     , 0x1F , AbsoluteLong IndexedX            , 4 ,  base , NULL , NULL , READ_24   , ORA_ABL_IX
+JSR , a        , 0x20 , Absolute                         , 3 ,  base , NULL ,  JMP , READ_16   , JSR_CB
+AND , (d,x)    , 0x21 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8    , AND_DP_IX
+JSL , al       , 0x22 , AbsoluteLong                     , 4 ,  base , NULL ,  JMP , READ_24   , JSL_CB
+AND , d,s      , 0x23 , StackRelative                    , 2 ,  base , NULL , NULL , READ_8    , AND_SR
+BIT , d        , 0x24 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8    , BIT_DP
+AND , d        , 0x25 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8    , AND_DP
+ROL , d        , 0x26 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8    , ROL_DP
+AND , [d]      , 0x27 , DirectPage IndirectLong          , 2 ,  base , NULL , NULL , READ_8    , AND_DP_IL
+PLP , s        , 0x28 , Implied                          , 1 ,  base , NULL , NULL , NULL      , PLP
+AND , #        , 0x29 , Immediate                        , 2 , m_set , NULL , NULL , READ_8_16 , AND_IMM
+ROL , A        , 0x2A , Implied                          , 1 ,  base , NULL , NULL , NULL      , ROL
+PLD , s        , 0x2B , Implied                          , 1 ,  base , NULL , NULL , NULL      , PLD
+BIT , a        , 0x2C , Absolute                         , 3 ,  base , NULL , NULL , READ_16   , BIT_ABS
+AND , a        , 0x2D , Absolute                         , 3 ,  base , NULL , NULL , READ_16   , AND_ABS
+ROL , a        , 0x2E , Absolute                         , 3 ,  base , NULL , NULL , READ_16   , ROL_ABS
+AND , al       , 0x2F , AbsoluteLong                     , 4 ,  base , NULL , NULL , READ_24   , AND_ABL
+BMI , R        , 0x30 , PCRelative                       , 2 ,  base , NULL ,  BRA , READ_8    , BMI_CB
+AND , (d),y    , 0x31 , DirectPage Indirect IndexedY     , 2 ,  base , NULL , NULL , READ_8    , AND_DP_I_IY
+AND , (d)      , 0x32 , DirectPage Indirect              , 2 ,  base , NULL , NULL , READ_8    , AND_DP_I 
+AND , (d,s),y  , 0x33 , StackRelative Indirect IndexedY  , 2 ,  base , NULL , NULL , READ_8    , AND_SR_I_IY
+BIT , d,x      , 0x34 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8    , BIT_DP_IX
+AND , d,x      , 0x35 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8    , AND_DP_IX
+ROL , d,x      , 0x36 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8    , ROL_DP_IX
+AND , [d],y    , 0x37 , DirectPage IndirectLong IndexedY , 2 ,  base , NULL , NULL , READ_8    , AND_DP_IL_IY
+SEC , i        , 0x38 , Implied                          , 1 ,  base ,  SEC , NULL , NULL      , SEC_CB
+AND , a,y      , 0x39 , Absolute IndexedY                , 3 ,  base , NULL , NULL , READ_16   , AND_ABS_IY
+DEC , A        , 0x3A , Implied                          , 1 ,  base , NULL , NULL , NULL      , DEC
+TSC , i        , 0x3B , Implied                          , 1 ,  base , NULL , NULL , NULL      , TSC
+BIT , a,x      , 0x3C , Absolute IndexedX                , 3 ,  base , NULL , NULL , READ_16   , BIT_ABS_IX
+AND , a,x      , 0x3D , Absolute IndexedX                , 3 ,  base , NULL , NULL , READ_16   , AND_ABS_IX
+ROL , a,x      , 0x3E , Absolute IndexedX                , 3 ,  base , NULL , NULL , READ_16   , ROL_ABS_IX
+AND , al,x     , 0x3F , Absolute IndirectLong IndexedX   , 4 ,  base , NULL , NULL , READ_24   , AND_ABS_IL_IX
+RTI , s        , 0x40 , Implied                          , 1 ,  base , NULL , NULL , NULL      , RTI
+EOR , (d,x)    , 0x41 , DirectPage Indirect IndexedX     , 2 ,  base , NULL , NULL , READ_8    , EOR_DP_I_IX
+WDM , i        , 0x42 , Implied                          , 2 ,  base , NULL , NULL , READ_8    , WDM
+EOR , d,s      , 0x43 , StackRelative                    , 2 ,  base , NULL , NULL , READ_8    , EOR_SR
+MVP , src,dst  , 0x44 , BlockMoveAddress                 , 3 ,  base , NULL , NULL , READ_BMA  , MVP
+EOR , d        , 0x45 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8    , EOR_DP
+LSR , d        , 0x46 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8    , LSR_DP
+EOR , [d]      , 0x47 , DirectPage IndirectLong          , 2 ,  base , NULL , NULL , READ_8    , EOR_DP_IL
+PHA , s        , 0x48 , Implied                          , 1 ,  base , NULL , NULL , NULL      , PHA
+EOR , #        , 0x49 , Immediate                        , 2 , m_set , NULL , NULL , READ_8_16 , EOR_IMM
+LSR , A        , 0x4A , Implied                          , 1 ,  base , NULL , NULL , NULL      , LSR
+PHK , s        , 0x4B , Implied                          , 1 ,  base , NULL , NULL , NULL      , PHK
+JMP , a        , 0x4C , Absolute                         , 3 ,  base , NULL ,  JMP , READ_16   , JMP_CB
+EOR , a        , 0x4D , Absolute                         , 3 ,  base , NULL , NULL , READ_16   , EOR_ABS
+LSR , a        , 0x4E , Absolute                         , 3 ,  base , NULL , NULL , READ_16   , LSR_ABS
+EOR , al       , 0x4F , AbsoluteLong                     , 4 ,  base , NULL , NULL , READ_24   , EOR_ABL
+BVC , r        , 0x50 , PCRelative                       , 2 ,  base , NULL ,  BRA , READ_8    , BVC_CB
+EOR , (d),y    , 0x51 , DirectPage Indirect IndexedY     , 2 ,  base , NULL , NULL , READ_8    , EOR_DP_I_IY
+EOR , (d)      , 0x52 , DirectPage Indirect              , 2 ,  base , NULL , NULL , READ_8    , EOR_DP_I 
+EOR , (d,s),y  , 0x53 , StackRelative Indirect IndexedY  , 2 ,  base , NULL , NULL , READ_8    , EOR_SR_I_IY
+MVN , src,dst  , 0x54 , BlockMoveAddress                 , 3 ,  base , NULL , NULL , READ_BMA  , MVN
+EOR , d,x      , 0x55 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8    , EOR_DP_IX
+LSR , d,x      , 0x56 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8    , LSR_DP_IX
+EOR , [d],y    , 0x57 , DirectPage IndirectLong IndexedY , 2 ,  base , NULL , NULL , READ_8    , EOR_DP_IL_IY
+CLI , i        , 0x58 , Implied                          , 1 ,  base , NULL , NULL , NULL      , CLI
+EOR , a,y      , 0x59 , Absolute IndexedY                , 3 ,  base , NULL , NULL , READ_16   , EOR_ABS_IY
+PHY , s        , 0x5A , Implied                          , 1 ,  base , NULL , NULL , NULL      , PHY
+TCD , i        , 0x5B , Implied                          , 1 ,  base , NULL , NULL , NULL      , TCD
+JMP , al       , 0x5C , AbsoluteLong                     , 4 ,  base , NULL ,  JMP , READ_24   , JMP_AL
+EOR , a,x      , 0x5D , Absolute IndexedX                , 3 ,  base , NULL , NULL , READ_16   , EOR_ABS_IX
+LSR , a,x      , 0x5E , Absolute IndexedX                , 3 ,  base , NULL , NULL , READ_16   , LSR_ABS_IX
+EOR , al,x     , 0x5F , AbsoluteLong IndexedX            , 4 ,  base , NULL , NULL , READ_24   , EOR_AL_IX
+RTS , s        , 0x60 , Implied                          , 1 ,  base , NULL , NULL , NULL      , RTS
+ADC , (dp,X)   , 0x61 , DirectPage Indirect IndexedX     , 2 ,  base , NULL , NULL , READ_8    , ADC_DP_I_IX
+PER , s        , 0x62 , PCRelativeLong                   , 3 ,  base , NULL , NULL , READ_16   , PER
+ADC , sr,S     , 0x63 , StackRelative                    , 2 ,  base , NULL , NULL , READ_8    , ADC_SR
+STZ , d        , 0x64 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8    , STZ
+ADC , dp       , 0x65 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8    , ADC_DP
+ROR , d        , 0x66 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8    , ROR_DP
+ADC , [dp]     , 0x67 , DirectPage IndirectLong          , 2 ,  base , NULL , NULL , READ_8    , ADC_DP_IL
+PLA , s        , 0x68 , Implied                          , 1 ,  base , NULL , NULL , NULL      , PLA
+ADC , #        , 0x69 , Immediate                        , 2 , m_set , NULL , NULL , READ_8_16 , ADC_IMM
+ROR , A        , 0x6A , Implied                          , 1 ,  base , NULL , NULL , NULL      , ROR
+RTL , s        , 0x6B , Implied                          , 1 ,  base , NULL , NULL , NULL      , RTL
+JMP , (a)      , 0x6C , Absolute Indirect                , 3 ,  base , NULL ,  JMP , READ_16   , JMP_ABS_I
+ADC , addr     , 0x6D , Absolute                         , 3 ,  base , NULL , NULL , READ_16   , ADC_ABS
+ROR , a        , 0x6E , Absolute                         , 3 ,  base , NULL , NULL , READ_16   , ROR_ABS
+ADC , al       , 0x6F , AbsoluteLong                     , 4 ,  base , NULL , NULL , READ_24   , ADC_ABL
+BVS , r        , 0x70 , PCRelative                       , 2 ,  base , NULL ,  BRA , READ_8    , BVS_PCR
+ADC , (d),y    , 0x71 , DirectPage Indirect IndexedY     , 2 ,  base , NULL , NULL , READ_8    , ADC_DP_I_IY
+ADC , (d)      , 0x72 , DirectPage Indirect              , 2 ,  base , NULL , NULL , READ_8    , ADC_DP_I
+ADC , (sr,S),y , 0x73 , StackRelative Indirect IndexedY  , 2 ,  base , NULL , NULL , READ_8    , ADC_SR_I_IY
+STZ , d,x      , 0x74 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8    , STZ_DP_IX
+ADC , d,x      , 0x75 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8    , ADC_DP_IX
+ROR , d,x      , 0x76 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8    , RPR_DP_IX
+ADC , [d],y    , 0x77 , DirectPage IndirectLong IndexedY , 2 ,  base , NULL , NULL , READ_8    , ADC_DP_IL_IY
+SEI , i        , 0x78 , Implied                          , 1 ,  base , NULL , NULL , NULL      , SEI
+ADC , a,y      , 0x79 , Absolute IndexedY                , 3 ,  base , NULL , NULL , READ_16   , ADC_ABS_IY
+PLY , s        , 0x7A , Implied                          , 1 ,  base , NULL , NULL , NULL      , PLY
+TDC , i        , 0x7B , Implied                          , 1 ,  base , NULL , NULL , NULL      , TDC
+JMP , (a,x)    , 0x7C , Absolute Indirect IndexedX       , 3 ,  base , NULL ,  JMP , READ_16   , JMP_ABS_I_IX
+ADC , a,x      , 0x7D , Absolute IndexedX                , 3 ,  base , NULL , NULL , READ_16   , ADC_ABS_IX
+ROR , a,x      , 0x7E , Absolute IndexedX                , 3 ,  base , NULL , NULL , READ_16   , ROR_ABS_IX
+ADC , al,x     , 0x7F , AbsoluteLong IndexedX            , 4 ,  base , NULL , NULL , READ_16   , ADC_AL_IX
+BRA , r        , 0x80 , PCRelative                       , 2 ,  base , NULL ,  BRA , READ_8    , BRA_CB
+STA , (d,x)    , 0x81 , DirectPage Indirect IndexedX     , 2 ,  base , NULL , NULL , READ_8    , STA_DP_I_IX
+BRL , rl       , 0x82 , PCRelativeLong                   , 3 ,  base , NULL ,  BRL , READ_16   , BRL_CB
+STA , d,s      , 0x83 , StackRelative                    , 2 ,  base , NULL , NULL , READ_8    , STA_SR
+STY , d        , 0x84 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8    , STY_DP
+STA , d        , 0x85 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8    , STA_DP
+STX , d        , 0x86 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8    , STX_DP
+STA , [d]      , 0x87 , DirectPage IndirectLong          , 2 ,  base , NULL , NULL , READ_8    , STA_DP_IL
+DEY , i        , 0x88 , Implied                          , 1 ,  base , NULL , NULL , NULL      , DEY
+BIT , #        , 0x89 , Immediate                        , 2 , m_set , NULL , NULL , READ_8_16 , BIT_IMM 
+TXA , i        , 0x8A , Implied                          , 1 ,  base , NULL , NULL , NULL      , TXA
+PHB , s        , 0x8B , Implied                          , 1 ,  base , NULL , NULL , NULL      , PHB
+STY , a        , 0x8C , Absolute                         , 3 ,  base , NULL , NULL , READ_16   , STY_ABS
+STA , a        , 0x8D , Absolute                         , 3 ,  base , NULL , NULL , READ_16   , STA_ABS
+STX , a        , 0x8E , Absolute                         , 3 ,  base , NULL , NULL , READ_16   , STX_ABS
+STA , al       , 0x8F , AbsoluteLong                     , 4 ,  base , NULL , NULL , READ_24   , STA_ABL
+BCC , r        , 0x90 , PCRelative                       , 2 ,  base , NULL ,  BRA , READ_8    , BCC_CB
+STA , (d),y    , 0x91 , DirectPage Indirect IndexedY     , 2 ,  base , NULL , NULL , READ_8    , STA_DP_I_IY
+STA , (d)      , 0x92 , DirectPage Indirect              , 2 ,  base , NULL , NULL , READ_8    , STA_DP_I
+STA , (d,s),y  , 0x93 , StackRelative Indirect IndexedY  , 2 ,  base , NULL , NULL , READ_8    , STA_SR_I_IY
+STY , d,x      , 0x94 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8    , STY_DP_IX
+STA , d,x      , 0x95 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8    , STA_DP_IX
+STX , d,y      , 0x96 , DirectPage IndexedY              , 2 ,  base , NULL , NULL , READ_8    , STX_DP_IY
+STA , [d],y    , 0x97 , DirectPage IndirectLong IndexedY , 2 ,  base , NULL , NULL , READ_8    , STA_DP_IL_IY
+TYA , i        , 0x98 , Implied                          , 1 ,  base , NULL , NULL , NULL      , TYA
+STA , a,y      , 0x99 , Absolute IndexedY                , 3 ,  base , NULL , NULL , READ_16   , STA_ABS_IY
+TXS , i        , 0x9A , Implied                          , 1 ,  base , NULL , NULL , NULL      , TXS
+TXY , i        , 0x9B , Implied                          , 1 ,  base , NULL , NULL , NULL      , TXY
+STZ , a        , 0x9C , Absolute                         , 3 ,  base , NULL , NULL , READ_16   , STZ_ABS
+STA , a,x      , 0x9D , Absolute IndexedX                , 3 ,  base , NULL , NULL , READ_16   , STA_ABS_IX
+STZ , a,x      , 0x9E , Absolute IndexedX                , 3 ,  base , NULL , NULL , READ_16   , STZ_ABS_IX
+STA , al,x     , 0x9F , AbsoluteLong IndexedX            , 4 ,  base , NULL , NULL , READ_24   , STA_ABL_IX
+LDY , #        , 0xA0 , Immediate                        , 2 , x_set , NULL , NULL , READ_8_16 , LDY_IMM
+LDA , (d,x)    , 0xA1 , DirectPage Indirect IndexedX     , 2 ,  base , NULL , NULL , READ_8    , LDA_DP_I_IX
+LDX , #        , 0xA2 , Immediate                        , 2 , x_set , NULL , NULL , READ_8_16 , LDX_IMM
+LDA , d,s      , 0xA3 , StackRelative                    , 2 ,  base , NULL , NULL , READ_8    , LDA_SR
+LDY , d        , 0xA4 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8    , LDY_DP
+LDA , d        , 0xA5 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8    , LDA_DP
+LDX , d        , 0xA6 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8    , LDX_DP
+LDA , [d]      , 0xA7 , DirectPage IndirectLong          , 2 ,  base , NULL , NULL , READ_8    , LDA_DP_IL
+TAY , i        , 0xA8 , Implied                          , 1 ,  base , NULL , NULL , NULL      , TAY
+LDA , #        , 0xA9 , Immediate                        , 2 , m_set , NULL , NULL , READ_8_16 , LDA_IMM
+TAX , i        , 0xAA , Implied                          , 1 ,  base , NULL , NULL , NULL      , TAX
+PLB , s        , 0xAB , Implied                          , 1 ,  base , NULL , NULL , NULL      , PLB
+LDY , a        , 0xAC , Absolute                         , 3 ,  base , NULL , NULL , READ_16   , LDY_ABS
+LDA , a        , 0xAD , Absolute                         , 3 ,  base , NULL , NULL , READ_16   , LDA_ABS
+LDX , a        , 0xAE , Absolute                         , 3 ,  base , NULL , NULL , READ_16   , LDX_ABS
+LDA , al       , 0xAF , AbsoluteLong                     , 4 ,  base , NULL , NULL , READ_24   , LDA_ABL
+BCS , r        , 0xB0 , PCRelative                       , 2 ,  base , NULL ,  BRA , READ_8    , BCS_CB
+LDA , (d),y    , 0xB1 , DirectPage Indirect IndexedY     , 2 ,  base , NULL , NULL , READ_8    , LDA_DP_I_IY
+LDA , (d)      , 0xB2 , DirectPage Indirect              , 2 ,  base , NULL , NULL , READ_8    , LDA_DP_I 
+LDA , (d,s),y  , 0xB3 , StackRelative Indirect IndexedY  , 2 ,  base , NULL , NULL , READ_8    , LDA_SR_I_IY
+LDY , d,x      , 0xB4 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8    , LDY_DP_IX
+LDA , d,x      , 0xB5 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8    , LDA_DP_IX
+LDX , d,y      , 0xB6 , DirectPage IndexedY              , 2 ,  base , NULL , NULL , READ_8    , LDX_DP_IX
+LDA , [d],y    , 0xB7 , DirectPage IndirectLong IndexedY , 2 ,  base , NULL , NULL , READ_8    , LDA_DP_IL_IY
+CLV , i        , 0xB8 , Implied                          , 1 ,  base , NULL , NULL , NULL      , CLV
+LDA , a,y      , 0xB9 , Absolute IndexedY                , 3 ,  base , NULL , NULL , READ_16   , LDA_ABS_IY
+TSX , i        , 0xBA , Implied                          , 1 ,  base , NULL , NULL , NULL      , TSX
+TYX , i        , 0xBB , Implied                          , 1 ,  base , NULL , NULL , NULL      , TYX
+LDY , a,x      , 0xBC , Absolute IndexedX                , 3 ,  base , NULL , NULL , READ_16   , LDY_ABS_IX
+LDA , a,x      , 0xBD , Absolute IndexedX                , 3 ,  base , NULL , NULL , READ_16   , LDA_ABS_IX
+LDX , a,y      , 0xBE , Absolute IndexedY                , 3 ,  base , NULL , NULL , READ_16   , LDX_ABS_IY
+LDA , al,x     , 0xBF , AbsoluteLong IndexedX            , 4 ,  base , NULL , NULL , READ_24   , LDA_AL_IX
+CPY , #        , 0xC0 , Immediate                        , 2 , x_set , NULL , NULL , READ_8    , CPY_IMM
+CMP , (d,x)    , 0xC1 , DirectPage Indirect IndexedX     , 2 ,  base , NULL , NULL , READ_8    , CMP_DP_I_IX
+REP , #        , 0xC2 , Immediate                        , 2 ,  base ,  REP , NULL , READ_8    , REP_CB
+CMP , d,s      , 0xC3 , StackRelative                    , 2 ,  base , NULL , NULL , READ_8    , CMP_SR
+CPY , d        , 0xC4 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8    , CPY_DP
+CMP , d        , 0xC5 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8    , CMP_DP
+DEC , d        , 0xC6 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8    , DEC_DP
+CMP , [d]      , 0xC7 , DirectPage IndirectLong          , 2 ,  base , NULL , NULL , READ_8    , CMP_DP_IL
+INY , i        , 0xC8 , Implied                          , 1 ,  base , NULL , NULL , NULL      , INY
+CMP , #        , 0xC9 , Immediate                        , 2 , m_set , NULL , NULL , READ_8    , CMP_IMM
+DEX , i        , 0xCA , Implied                          , 1 ,  base , NULL , NULL , NULL      , DEX
+WAI , i        , 0xCB , Implied                          , 1 ,  base , NULL , NULL , NULL      , WAI
+CPY , a        , 0xCC , Absolute                         , 3 ,  base , NULL , NULL , READ_16   , CPY_ABS
+CMP , a        , 0xCD , Absolute                         , 3 ,  base , NULL , NULL , READ_16   , CMP_ABS
+DEC , a        , 0xCE , Absolute                         , 3 ,  base , NULL , NULL , READ_16   , DEC_ABS
+CMP , al       , 0xCF , AbsoluteLong                     , 4 ,  base , NULL , NULL , READ_24   , CMP_ABL
+BNE , r        , 0xD0 , PCRelative                       , 2 ,  base , NULL ,  BRA , READ_8    , BNE_CB
+CMP , (d),y    , 0xD1 , DirectPage Indirect IndexedY     , 2 ,  base , NULL , NULL , READ_8    , CMP_DP_I_IX
+CMP , (d)      , 0xD2 , DirectPage Indirect              , 2 ,  base , NULL , NULL , READ_8    , CMP_DP_I
+CMP , (d,s),y  , 0xD3 , StackRelative Indirect IndexedY  , 2 ,  base , NULL , NULL , READ_8    , CMP_SR_I_IY
+PEI , (dp)     , 0xD4 , DirectPage Indirect              , 2 ,  base , NULL , NULL , READ_8    , PEI_DP_I
+CMP , d,x      , 0xD5 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8    , CMP_DP_IX
+DEC , d,x      , 0xD6 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8    , DEC_DP_IX
+CMP , [d],y    , 0xD7 , DirectPage IndirectLong IndexedY , 2 ,  base , NULL , NULL , READ_8    , CMP_DP_IL_IY
+CLD , i        , 0xD8 , Implied                          , 1 ,  base , NULL , NULL , NULL      , CLD_CB
+CMP , a,y      , 0xD9 , Absolute IndexedY                , 3 ,  base , NULL , NULL , READ_16   , CMP_ABS_IY
+PHX , s        , 0xDA , Implied                          , 1 ,  base , NULL , NULL , NULL      , PHX
+STP , i        , 0xDB , Implied                          , 1 ,  base , NULL , NULL , NULL      , STP
+JMP , [a]      , 0xDC , Absolute IndirectLong            , 3 ,  base , NULL ,  JMP , READ_16   , JMP_ABS_IL
+CMP , a,x      , 0xDD , Absolute IndexedX                , 3 ,  base , NULL , NULL , READ_16   , CMP_ABS_IX
+DEC , a,x      , 0xDE , Absolute IndexedX                , 3 ,  base , NULL , NULL , READ_16   , DEC_ABS_IX
+CMP , al,x     , 0xDF , AbsoluteLong IndexedX            , 4 ,  base , NULL , NULL , READ_24   , CMP_ABL_IX
+CPX , #        , 0xE0 , Immediate                        , 2 , x_set , NULL , NULL , READ_8    , CPX_IMM
+SBC , (d,x)    , 0xE1 , DirectPage Indirect IndexedX     , 2 ,  base , NULL , NULL , READ_8    , SBC_DP_I_IX
+SEP , #        , 0xE2 , Immediate                        , 2 ,  base ,  SEP , NULL , READ_8    , SEP_CB
+SBC , d,s      , 0xE3 , StackRelative                    , 2 ,  base , NULL , NULL , READ_8    , SBC_SR
+CPX , d        , 0xE4 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8    , CPX_DP
+SBC , d        , 0xE5 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8    , SBC_DP
+INC , d        , 0xE6 , DirectPage                       , 2 ,  base , NULL , NULL , READ_8    , INC_DP
+SBC , [d]      , 0xE7 , DirectPage IndirectLong          , 2 ,  base , NULL , NULL , READ_8    , SBC_DP_IL
+INX , i        , 0xE8 , Implied                          , 1 ,  base , NULL , NULL , NULL      , INX
+SBC , #        , 0xE9 , Immediate                        , 2 , m_set , NULL , NULL , READ_8    , SBC_IMM
+NOP , i        , 0xEA , Implied                          , 1 ,  base , NULL , NULL , NULL      , NOP
+XBA , i        , 0xEB , Implied                          , 1 ,  base , NULL , NULL , NULL      , XBA
+CPX , a        , 0xEC , Absolute                         , 3 ,  base , NULL , NULL , READ_16   , CPX_ABS
+SBC , a        , 0xED , Absolute                         , 3 ,  base , NULL , NULL , READ_16   , SBC_ABS
+INC , a        , 0xEE , Absolute                         , 3 ,  base , NULL , NULL , READ_16   , INC_ABS
+SBC , al       , 0xEF , AbsoluteLong                     , 4 ,  base , NULL , NULL , READ_24   , SBC_ABL
+BEQ , r        , 0xF0 , PCRelative                       , 2 ,  base , NULL ,  BRA , READ_8    , BEQ_CB
+SBC , (d),y    , 0xF1 , DirectPage Indirect IndexedY     , 2 ,  base , NULL , NULL , READ_8    , SBC_DP_I_IY
+SBC , (d)      , 0xF2 , DirectPage Indirect              , 2 ,  base , NULL , NULL , READ_8    , SBC_DP_I
+SBC , (d,s),y  , 0xF3 , StackRelative Indirect IndexedY  , 2 ,  base , NULL , NULL , READ_8    , SBC_SR_I_IY
+PEA , s        , 0xF4 , Absolute                         , 3 ,  base , NULL , NULL , READ_16   , PEA_ABS
+SBC , d,x      , 0xF5 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8    , SBC_DP_IX
+INC , d,x      , 0xF6 , DirectPage IndexedX              , 2 ,  base , NULL , NULL , READ_8    , INC_DP_IX
+SBC , [d],y    , 0xF7 , DirectPage IndirectLong IndexedY , 2 ,  base , NULL , NULL , READ_8    , SBC_DP_IL_IY
+SED , i        , 0xF8 , Implied                          , 1 ,  base , NULL , NULL , NULL      , SED
+SBC , a,y      , 0xF9 , Absolute IndexedY                , 3 ,  base , NULL , NULL , READ_16   , SBC_ABS_IY
+PLX , s        , 0xFA , Implied                          , 1 ,  base , NULL , NULL , NULL      , PLX
+XCE , i        , 0xFB , Implied                          , 1 ,  base ,  XCE , NULL , NULL      , XCE_CB
+JSR , (a,x)    , 0xFC , Absolute Indirect IndexedX       , 3 ,  base , NULL , NULL , READ_16   , JSR_ABS_I_IX
+SBC , a,x      , 0xFD , Absolute IndexedX                , 3 ,  base , NULL , NULL , READ_16   , SBC_ABS_IX
+INC , a,x      , 0xFE , Absolute IndexedX                , 3 ,  base , NULL , NULL , READ_16   , INC_ABS_IX
+SBC , al,x     , 0xFF , AbsoluteLong IndexedX            , 4 ,  base , NULL , NULL , READ_16   , SBC_ABL_IX
