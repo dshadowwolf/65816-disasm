@@ -3238,6 +3238,805 @@ TEST(CMP_SR_I_IY_sr_indirect_indexed) {
 }
 
 // ============================================================================
+// Additional Load/Store Tests (Comprehensive Coverage)
+// ============================================================================
+
+TEST(LDA_IMM_8bit_mode) {
+    state_t *machine = setup_machine();
+    set_flag(machine, M_FLAG);
+    
+    LDA_IMM(machine, 0x42, 0);
+    ASSERT_EQ(machine->processor.A.low, 0x42, "LDA #imm should load immediate to A");
+    
+    destroy_machine(machine);
+}
+
+TEST(LDA_SR_stack_relative) {
+    state_t *machine = setup_machine();
+    machine->processor.emulation_mode = false;
+    machine->processor.SP = 0x100;
+    set_flag(machine, M_FLAG);
+    
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x10A] = 0x55;
+    
+    LDA_SR(machine, 0x0A, 0);
+    ASSERT_EQ(machine->processor.A.low, 0x55, "LDA SR,S should load from stack relative");
+    
+    destroy_machine(machine);
+}
+
+TEST(LDA_DP_I_direct_page_indirect) {
+    state_t *machine = setup_machine();
+    machine->processor.DP = 0x00;
+    set_flag(machine, M_FLAG);
+    
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x20] = 0x00;
+    bank[0x21] = 0x50;
+    bank[0x5000] = 0xAA;
+    
+    LDA_DP_I(machine, 0x20, 0);
+    ASSERT_EQ(machine->processor.A.low, 0xAA, "LDA (DP) should load via indirect");
+    
+    destroy_machine(machine);
+}
+
+TEST(LDA_DP_I_IX_indexed_indirect) {
+    state_t *machine = setup_machine();
+    machine->processor.DP = 0x00;
+    machine->processor.X = 0x05;
+    set_flag(machine, M_FLAG);
+    
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x15] = 0x00;
+    bank[0x16] = 0x60;
+    bank[0x6000] = 0xBB;
+    
+    LDA_DP_I_IX(machine, 0x10, 0);
+    ASSERT_EQ(machine->processor.A.low, 0xBB, "LDA (DP,X) should load indexed indirect");
+    
+    destroy_machine(machine);
+}
+
+TEST(LDA_DP_I_IY_indirect_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.DP = 0x00;
+    machine->processor.Y = 0x10;
+    set_flag(machine, M_FLAG);
+    
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x20] = 0x00;
+    bank[0x21] = 0x70;
+    bank[0x7010] = 0xCC;
+    
+    LDA_DP_I_IY(machine, 0x20, 0);
+    ASSERT_EQ(machine->processor.A.low, 0xCC, "LDA (DP),Y should load indirect indexed");
+    
+    destroy_machine(machine);
+}
+
+TEST(LDA_DP_IL_indirect_long) {
+    state_t *machine = setup_machine();
+    machine->processor.emulation_mode = false;
+    machine->processor.DP = 0x00;
+    set_flag(machine, M_FLAG);
+    
+    uint8_t *bank0 = get_memory_bank(machine, 0);
+    bank0[0x30] = 0x00;
+    bank0[0x31] = 0x80;
+    bank0[0x32] = 0x01;
+    
+    uint8_t *bank1 = get_memory_bank(machine, 0x01);
+    bank1[0x8000] = 0xDD;
+    
+    LDA_DP_IL(machine, 0x30, 0);
+    ASSERT_EQ(machine->processor.A.low, 0xDD, "LDA [DP] should load indirect long");
+    
+    destroy_machine(machine);
+}
+
+TEST(LDA_DP_IL_IY_indirect_long_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.emulation_mode = false;
+    machine->processor.DP = 0x00;
+    machine->processor.Y = 0x20;
+    set_flag(machine, M_FLAG);
+    
+    uint8_t *bank0 = get_memory_bank(machine, 0);
+    bank0[0x40] = 0x00;
+    bank0[0x41] = 0x90;
+    bank0[0x42] = 0x02;
+    
+    uint8_t *bank2 = get_memory_bank(machine, 0x02);
+    bank2[0x9020] = 0xEE;
+    
+    LDA_DP_IL_IY(machine, 0x40, 0);
+    ASSERT_EQ(machine->processor.A.low, 0xEE, "LDA [DP],Y should load indirect long indexed");
+    
+    destroy_machine(machine);
+}
+
+TEST(LDA_SR_I_IY_sr_indirect_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.emulation_mode = false;
+    machine->processor.SP = 0x150;
+    machine->processor.Y = 0x08;
+    set_flag(machine, M_FLAG);
+    
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x155] = 0x00;
+    bank[0x156] = 0xA0;
+    bank[0xA008] = 0xFF;
+    
+    LDA_SR_I_IY(machine, 0x05, 0);
+    ASSERT_EQ(machine->processor.A.low, 0xFF, "LDA (SR,S),Y should load SR indirect indexed");
+    
+    destroy_machine(machine);
+}
+
+TEST(LDX_IMM_immediate) {
+    state_t *machine = setup_machine();
+    machine->processor.emulation_mode = false;
+    clear_flag(machine, X_FLAG);
+    
+    LDX_IMM(machine, 0x1234, 0);
+    ASSERT_EQ(machine->processor.X, 0x1234, "LDX #imm should load immediate to X");
+    
+    destroy_machine(machine);
+}
+
+TEST(LDX_DP_IX_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.DP = 0x00;
+    machine->processor.Y = 0x05;
+    set_flag(machine, X_FLAG);
+    
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x25] = 0x77;
+    
+    LDX_DP_IX(machine, 0x20, 0);
+    ASSERT_EQ(machine->processor.X & 0xFF, 0x77, "LDX DP,Y should load indexed");
+    
+    destroy_machine(machine);
+}
+
+TEST(LDX_ABS_IY_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.Y = 0x10;
+    set_flag(machine, X_FLAG);
+    
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x2010] = 0x88;
+    
+    LDX_ABS_IY(machine, 0x2000, 0);
+    ASSERT_EQ(machine->processor.X & 0xFF, 0x88, "LDX ABS,Y should load indexed");
+    
+    destroy_machine(machine);
+}
+
+TEST(LDY_IMM_immediate) {
+    state_t *machine = setup_machine();
+    machine->processor.emulation_mode = false;
+    clear_flag(machine, X_FLAG);
+    
+    LDY_IMM(machine, 0x5678, 0);
+    ASSERT_EQ(machine->processor.Y, 0x5678, "LDY #imm should load immediate to Y");
+    
+    destroy_machine(machine);
+}
+
+TEST(LDY_DP_IX_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.DP = 0x00;
+    machine->processor.X = 0x08;
+    set_flag(machine, X_FLAG);
+    
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x38] = 0x99;
+    
+    LDY_DP_IX(machine, 0x30, 0);
+    ASSERT_EQ(machine->processor.Y & 0xFF, 0x99, "LDY DP,X should load indexed");
+    
+    destroy_machine(machine);
+}
+
+TEST(LDY_ABS_IX_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.X = 0x0C;
+    set_flag(machine, X_FLAG);
+    
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x300C] = 0xAA;
+    
+    LDY_ABS_IX(machine, 0x3000, 0);
+    ASSERT_EQ(machine->processor.Y & 0xFF, 0xAA, "LDY ABS,X should load indexed");
+    
+    destroy_machine(machine);
+}
+
+TEST(STA_DP_I_indirect) {
+    state_t *machine = setup_machine();
+    machine->processor.A.low = 0x42;
+    machine->processor.DP = 0x00;
+    set_flag(machine, M_FLAG);
+    
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x50] = 0x00;
+    bank[0x51] = 0x70;
+    
+    STA_DP_I(machine, 0x50, 0);
+    ASSERT_EQ(bank[0x7000], 0x42, "STA (DP) should store via indirect");
+    
+    destroy_machine(machine);
+}
+
+TEST(STA_DP_I_IX_indexed_indirect) {
+    state_t *machine = setup_machine();
+    machine->processor.A.low = 0x55;
+    machine->processor.DP = 0x00;
+    machine->processor.X = 0x04;
+    set_flag(machine, M_FLAG);
+    
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x14] = 0x00;
+    bank[0x15] = 0x80;
+    
+    STA_DP_I_IX(machine, 0x10, 0);
+    ASSERT_EQ(bank[0x8000], 0x55, "STA (DP,X) should store indexed indirect");
+    
+    destroy_machine(machine);
+}
+
+TEST(STA_DP_I_IY_indirect_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.A.low = 0x66;
+    machine->processor.DP = 0x00;
+    machine->processor.Y = 0x10;
+    set_flag(machine, M_FLAG);
+    
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x20] = 0x00;
+    bank[0x21] = 0x90;
+    
+    STA_DP_I_IY(machine, 0x20, 0);
+    ASSERT_EQ(bank[0x9010], 0x66, "STA (DP),Y should store indirect indexed");
+    
+    destroy_machine(machine);
+}
+
+TEST(STA_DP_IL_indirect_long) {
+    state_t *machine = setup_machine();
+    machine->processor.emulation_mode = false;
+    machine->processor.A.low = 0x77;
+    machine->processor.DP = 0x00;
+    set_flag(machine, M_FLAG);
+    
+    uint8_t *bank0 = get_memory_bank(machine, 0);
+    bank0[0x60] = 0x00;
+    bank0[0x61] = 0xA0;
+    bank0[0x62] = 0x01;
+    
+    uint8_t *bank1 = get_memory_bank(machine, 0x01);
+    
+    STA_DP_IL(machine, 0x60, 0);
+    ASSERT_EQ(bank1[0xA000], 0x77, "STA [DP] should store indirect long");
+    
+    destroy_machine(machine);
+}
+
+TEST(STA_DP_IL_IY_indirect_long_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.emulation_mode = false;
+    machine->processor.A.low = 0x88;
+    machine->processor.DP = 0x00;
+    machine->processor.Y = 0x20;
+    set_flag(machine, M_FLAG);
+    
+    uint8_t *bank0 = get_memory_bank(machine, 0);
+    bank0[0x70] = 0x00;
+    bank0[0x71] = 0xB0;
+    bank0[0x72] = 0x02;
+    
+    uint8_t *bank2 = get_memory_bank(machine, 0x02);
+    
+    STA_DP_IL_IY(machine, 0x70, 0);
+    ASSERT_EQ(bank2[0xB020], 0x88, "STA [DP],Y should store indirect long indexed");
+    
+    destroy_machine(machine);
+}
+
+TEST(STA_SR_stack_relative) {
+    state_t *machine = setup_machine();
+    machine->processor.emulation_mode = false;
+    machine->processor.A.low = 0x99;
+    machine->processor.SP = 0x120;
+    set_flag(machine, M_FLAG);
+    
+    uint8_t *bank = get_memory_bank(machine, 0);
+    
+    STA_SR(machine, 0x08, 0);
+    ASSERT_EQ(bank[0x128], 0x99, "STA SR,S should store stack relative");
+    
+    destroy_machine(machine);
+}
+
+TEST(STA_SR_I_IY_sr_indirect_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.emulation_mode = false;
+    machine->processor.A.low = 0xAA;
+    machine->processor.SP = 0x130;
+    machine->processor.Y = 0x15;
+    set_flag(machine, M_FLAG);
+    
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x136] = 0x00;
+    bank[0x137] = 0xC0;
+    
+    STA_SR_I_IY(machine, 0x06, 0);
+    ASSERT_EQ(bank[0xC015], 0xAA, "STA (SR,S),Y should store SR indirect indexed");
+    
+    destroy_machine(machine);
+}
+
+TEST(STA_ABL_long_absolute) {
+    state_t *machine = setup_machine();
+    machine->processor.emulation_mode = false;
+    machine->processor.A.low = 0xBB;
+    set_flag(machine, M_FLAG);
+    
+    uint8_t *bank3 = get_memory_bank(machine, 0x03);
+    
+    STA_ABL(machine, 0xD000, 0x03);
+    ASSERT_EQ(bank3[0xD000], 0xBB, "STA long should store to bank");
+    
+    destroy_machine(machine);
+}
+
+TEST(STA_ABL_IX_long_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.emulation_mode = false;
+    machine->processor.A.low = 0xCC;
+    machine->processor.X = 0x18;
+    set_flag(machine, M_FLAG);
+    
+    uint8_t *bank4 = get_memory_bank(machine, 0x04);
+    
+    STA_ABL_IX(machine, 0xE000, 0x04);
+    ASSERT_EQ(bank4[0xE018], 0xCC, "STA long,X should store indexed");
+    
+    destroy_machine(machine);
+}
+
+TEST(STA_ABS_IY_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.A.low = 0xDD;
+    machine->processor.Y = 0x20;
+    set_flag(machine, M_FLAG);
+    
+    uint8_t *bank = get_memory_bank(machine, 0);
+    
+    STA_ABS_IY(machine, 0xF000, 0);
+    ASSERT_EQ(bank[0xF020], 0xDD, "STA ABS,Y should store indexed");
+    
+    destroy_machine(machine);
+}
+
+TEST(STX_DP_IY_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.X = 0xEE;
+    machine->processor.DP = 0x00;
+    machine->processor.Y = 0x0A;
+    set_flag(machine, X_FLAG);
+    
+    uint8_t *bank = get_memory_bank(machine, 0);
+    
+    STX_DP_IY(machine, 0x40, 0);
+    ASSERT_EQ(bank[0x4A], 0xEE, "STX DP,Y should store indexed");
+    
+    destroy_machine(machine);
+}
+
+TEST(STY_DP_IX_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.Y = 0xFF;
+    machine->processor.DP = 0x00;
+    machine->processor.X = 0x0C;
+    set_flag(machine, X_FLAG);
+    
+    uint8_t *bank = get_memory_bank(machine, 0);
+    
+    STY_DP_IX(machine, 0x50, 0);
+    ASSERT_EQ(bank[0x5C], 0xFF, "STY DP,X should store indexed");
+    
+    destroy_machine(machine);
+}
+
+// ============================================================================
+// Additional Shift/Rotate Tests
+// ============================================================================
+
+TEST(ASL_DP_IX_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.DP = 0x00;
+    machine->processor.X = 0x05;
+    
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x25] = 0x40;
+    
+    ASL_DP_IX(machine, 0x20, 0);
+    ASSERT_EQ(bank[0x25], 0x80, "ASL DP,X should shift left indexed");
+    
+    destroy_machine(machine);
+}
+
+TEST(ASL_ABS_IX_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.X = 0x10;
+    
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x2010] = 0x20;
+    
+    ASL_ABS_IX(machine, 0x2000, 0);
+    ASSERT_EQ(bank[0x2010], 0x40, "ASL ABS,X should shift left indexed");
+    
+    destroy_machine(machine);
+}
+
+TEST(LSR_DP_IX_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.DP = 0x00;
+    machine->processor.X = 0x08;
+    
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x38] = 0x80;
+    
+    LSR_DP_IX(machine, 0x30, 0);
+    ASSERT_EQ(bank[0x38], 0x40, "LSR DP,X should shift right indexed");
+    
+    destroy_machine(machine);
+}
+
+TEST(LSR_ABS_IX_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.X = 0x20;
+    
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x3020] = 0x40;
+    
+    LSR_ABS_IX(machine, 0x3000, 0);
+    ASSERT_EQ(bank[0x3020], 0x20, "LSR ABS,X should shift right indexed");
+    
+    destroy_machine(machine);
+}
+
+TEST(ROL_DP_IX_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.DP = 0x00;
+    machine->processor.X = 0x10;
+    set_flag(machine, CARRY);
+    
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x40] = 0x40;
+    
+    ROL_DP_IX(machine, 0x30, 0);
+    ASSERT_EQ(bank[0x40], 0x81, "ROL DP,X should rotate left indexed with carry");
+    
+    destroy_machine(machine);
+}
+
+TEST(ROL_ABS_IX_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.X = 0x18;
+    clear_flag(machine, CARRY);
+    
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x4018] = 0x80;
+    
+    ROL_ABS_IX(machine, 0x4000, 0);
+    ASSERT_EQ(bank[0x4018], 0x00, "ROL ABS,X should rotate left indexed");
+    ASSERT_EQ(check_flag(machine, CARRY), true, "ROL should set carry from bit 7");
+    
+    destroy_machine(machine);
+}
+
+TEST(ROR_DP_IX_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.DP = 0x00;
+    machine->processor.X = 0x20;
+    set_flag(machine, CARRY);
+    
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x50] = 0x02;
+    
+    ROR_DP_IX(machine, 0x30, 0);
+    ASSERT_EQ(bank[0x50], 0x81, "ROR DP,X should rotate right indexed with carry");
+    
+    destroy_machine(machine);
+}
+
+TEST(ROR_ABS_IX_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.X = 0x28;
+    clear_flag(machine, CARRY);
+    
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x5028] = 0x01;
+    
+    ROR_ABS_IX(machine, 0x5000, 0);
+    ASSERT_EQ(bank[0x5028], 0x00, "ROR ABS,X should rotate right indexed");
+    ASSERT_EQ(check_flag(machine, CARRY), true, "ROR should set carry from bit 0");
+    
+    destroy_machine(machine);
+}
+
+// ============================================================================
+// Additional INC/DEC Tests
+// ============================================================================
+
+TEST(INC_DP_IX_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.DP = 0x00;
+    machine->processor.X = 0x10;
+    set_flag(machine, M_FLAG);
+    
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x60] = 0x41;
+    
+    INC_DP_IX(machine, 0x50, 0);
+    ASSERT_EQ(bank[0x60], 0x42, "INC DP,X should increment indexed");
+    
+    destroy_machine(machine);
+}
+
+TEST(INC_ABS_IX_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.X = 0x20;
+    set_flag(machine, M_FLAG);
+    
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x6020] = 0x7F;
+    
+    INC_ABS_IX(machine, 0x6000, 0);
+    ASSERT_EQ(bank[0x6020], 0x80, "INC ABS,X should increment indexed");
+    
+    destroy_machine(machine);
+}
+
+TEST(DEC_DP_IX_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.DP = 0x00;
+    machine->processor.X = 0x18;
+    set_flag(machine, M_FLAG);
+    
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x78] = 0x80;
+    
+    DEC_DP_IX(machine, 0x60, 0);
+    ASSERT_EQ(bank[0x78], 0x7F, "DEC DP,X should decrement indexed");
+    
+    destroy_machine(machine);
+}
+
+TEST(DEC_ABS_IX_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.X = 0x30;
+    set_flag(machine, M_FLAG);
+    
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x7030] = 0x01;
+    
+    DEC_ABS_IX(machine, 0x7000, 0);
+    ASSERT_EQ(bank[0x7030], 0x00, "DEC ABS,X should decrement indexed");
+    
+    destroy_machine(machine);
+}
+
+// ============================================================================
+// Additional BIT Tests
+// ============================================================================
+
+TEST(BIT_DP_IX_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.A.low = 0xF0;
+    machine->processor.DP = 0x00;
+    machine->processor.X = 0x08;
+    set_flag(machine, M_FLAG);
+    
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x88] = 0xC0;
+    
+    BIT_DP_IX(machine, 0x80, 0);
+    ASSERT_EQ(check_flag(machine, ZERO), false, "BIT should clear zero when A & M != 0");
+    ASSERT_EQ(check_flag(machine, NEGATIVE), true, "BIT should copy bit 7 to N");
+    ASSERT_EQ(check_flag(machine, OVERFLOW), true, "BIT should copy bit 6 to V");
+    
+    destroy_machine(machine);
+}
+
+TEST(BIT_ABS_IX_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.A.low = 0x0F;
+    machine->processor.X = 0x10;
+    set_flag(machine, M_FLAG);
+    
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x9010] = 0x30;
+    
+    BIT_ABS_IX(machine, 0x9000, 0);
+    ASSERT_EQ(check_flag(machine, ZERO), true, "BIT should set zero when A & M == 0");
+    
+    destroy_machine(machine);
+}
+
+// ============================================================================
+// CPX/CPY Tests
+// ============================================================================
+
+TEST(CPX_IMM_immediate) {
+    state_t *machine = setup_machine();
+    machine->processor.X = 0x50;
+    set_flag(machine, X_FLAG);
+    
+    CPX_IMM(machine, 0x30, 0);
+    ASSERT_EQ(check_flag(machine, CARRY), true, "CPX should set carry when X >= M");
+    
+    destroy_machine(machine);
+}
+
+TEST(CPY_IMM_immediate) {
+    state_t *machine = setup_machine();
+    machine->processor.Y = 0x20;
+    set_flag(machine, X_FLAG);
+    
+    CPY_IMM(machine, 0x30, 0);
+    ASSERT_EQ(check_flag(machine, CARRY), false, "CPY should clear carry when Y < M");
+    
+    destroy_machine(machine);
+}
+
+// ============================================================================
+// Block Move Tests
+// ============================================================================
+
+TEST(MVN_block_move_negative) {
+    state_t *machine = setup_machine();
+    machine->processor.emulation_mode = false;
+    machine->processor.A.full = 0x0002;  // Move 3 bytes
+    machine->processor.X = 0x1000;       // Source
+    machine->processor.Y = 0x2000;       // Destination
+    
+    uint8_t *src_bank = get_memory_bank(machine, 0x00);
+    uint8_t *dst_bank = get_memory_bank(machine, 0x01);
+    
+    src_bank[0x1000] = 0xAA;
+    src_bank[0x1001] = 0xBB;
+    src_bank[0x1002] = 0xCC;
+    
+    MVN(machine, 0x01, 0x00);  // dst_bank=0x01, src_bank=0x00
+    
+    ASSERT_EQ(dst_bank[0x2000], 0xAA, "MVN should move first byte");
+    ASSERT_EQ(dst_bank[0x2001], 0xBB, "MVN should move second byte");
+    ASSERT_EQ(dst_bank[0x2002], 0xCC, "MVN should move third byte");
+    
+    destroy_machine(machine);
+}
+
+TEST(MVP_block_move_positive) {
+    state_t *machine = setup_machine();
+    machine->processor.emulation_mode = false;
+    machine->processor.A.full = 0x0002;  // Move 3 bytes
+    machine->processor.X = 0x1002;       // Source (end)
+    machine->processor.Y = 0x2002;       // Destination (end)
+    
+    uint8_t *src_bank = get_memory_bank(machine, 0x00);
+    uint8_t *dst_bank = get_memory_bank(machine, 0x01);
+    
+    src_bank[0x1000] = 0xDD;
+    src_bank[0x1001] = 0xEE;
+    src_bank[0x1002] = 0xFF;
+    
+    MVP(machine, 0x01, 0x00);  // dst_bank=0x01, src_bank=0x00
+    
+    ASSERT_EQ(dst_bank[0x2000], 0xDD, "MVP should move first byte");
+    ASSERT_EQ(dst_bank[0x2001], 0xEE, "MVP should move second byte");
+    ASSERT_EQ(dst_bank[0x2002], 0xFF, "MVP should move third byte");
+    
+    destroy_machine(machine);
+}
+
+// ============================================================================
+// Additional Immediate Mode Tests
+// ============================================================================
+
+TEST(ADC_IMM_immediate) {
+    state_t *machine = setup_machine();
+    machine->processor.A.low = 0x10;
+    set_flag(machine, M_FLAG);
+    clear_flag(machine, CARRY);
+    
+    ADC_IMM(machine, 0x20, 0);
+    ASSERT_EQ(machine->processor.A.low, 0x30, "ADC #imm should add immediate");
+    
+    destroy_machine(machine);
+}
+
+TEST(SBC_IMM_immediate) {
+    state_t *machine = setup_machine();
+    machine->processor.A.low = 0x50;
+    set_flag(machine, M_FLAG);
+    set_flag(machine, CARRY);
+    
+    SBC_IMM(machine, 0x20, 0);
+    ASSERT_EQ(machine->processor.A.low, 0x30, "SBC #imm should subtract immediate");
+    
+    destroy_machine(machine);
+}
+
+TEST(AND_IMM_immediate) {
+    state_t *machine = setup_machine();
+    machine->processor.A.low = 0xFF;
+    set_flag(machine, M_FLAG);
+    
+    AND_IMM(machine, 0x0F, 0);
+    ASSERT_EQ(machine->processor.A.low, 0x0F, "AND #imm should AND immediate");
+    
+    destroy_machine(machine);
+}
+
+TEST(ORA_IMM_immediate) {
+    state_t *machine = setup_machine();
+    machine->processor.A.low = 0xF0;
+    set_flag(machine, M_FLAG);
+    
+    ORA_IMM(machine, 0x0F, 0);
+    ASSERT_EQ(machine->processor.A.low, 0xFF, "ORA #imm should OR immediate");
+    
+    destroy_machine(machine);
+}
+
+TEST(EOR_IMM_immediate) {
+    state_t *machine = setup_machine();
+    machine->processor.A.low = 0xFF;
+    set_flag(machine, M_FLAG);
+    
+    EOR_IMM(machine, 0xFF, 0);
+    ASSERT_EQ(machine->processor.A.low, 0x00, "EOR #imm should XOR immediate");
+    
+    destroy_machine(machine);
+}
+
+TEST(CMP_IMM_immediate) {
+    state_t *machine = setup_machine();
+    machine->processor.A.low = 0x50;
+    set_flag(machine, M_FLAG);
+    
+    CMP_IMM(machine, 0x30, 0);
+    ASSERT_EQ(check_flag(machine, CARRY), true, "CMP #imm should set carry when A >= M");
+    
+    destroy_machine(machine);
+}
+
+// ============================================================================
+// STZ Tests
+// ============================================================================
+
+TEST(STZ_DP_IX_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.DP = 0x00;
+    machine->processor.X = 0x10;
+    set_flag(machine, M_FLAG);
+    
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0xA0] = 0xFF;
+    
+    STZ_DP_IX(machine, 0x90, 0);
+    ASSERT_EQ(bank[0xA0], 0x00, "STZ DP,X should store zero indexed");
+    
+    destroy_machine(machine);
+}
+
+// ============================================================================
 // Main test runner
 // ============================================================================
 
@@ -3576,6 +4375,81 @@ int main(int argc, char **argv) {
     printf(COLOR_BLUE "--- System Instructions ---\n" COLOR_RESET);
     run_test_RTI_return_from_interrupt();
     run_test_BRK_software_interrupt();
+    
+    // Comprehensive Load/Store tests
+    printf(COLOR_BLUE "--- Comprehensive Load/Store Tests ---\n" COLOR_RESET);
+    run_test_LDA_IMM_8bit_mode();
+    run_test_LDA_SR_stack_relative();
+    run_test_LDA_DP_I_direct_page_indirect();
+    run_test_LDA_DP_I_IX_indexed_indirect();
+    run_test_LDA_DP_I_IY_indirect_indexed();
+    run_test_LDA_DP_IL_indirect_long();
+    run_test_LDA_DP_IL_IY_indirect_long_indexed();
+    run_test_LDA_SR_I_IY_sr_indirect_indexed();
+    run_test_LDX_IMM_immediate();
+    run_test_LDX_DP_IX_indexed();
+    run_test_LDX_ABS_IY_indexed();
+    run_test_LDY_IMM_immediate();
+    run_test_LDY_DP_IX_indexed();
+    run_test_LDY_ABS_IX_indexed();
+    run_test_STA_DP_I_indirect();
+    run_test_STA_DP_I_IX_indexed_indirect();
+    run_test_STA_DP_I_IY_indirect_indexed();
+    run_test_STA_DP_IL_indirect_long();
+    run_test_STA_DP_IL_IY_indirect_long_indexed();
+    run_test_STA_SR_stack_relative();
+    run_test_STA_SR_I_IY_sr_indirect_indexed();
+    run_test_STA_ABL_long_absolute();
+    run_test_STA_ABL_IX_long_indexed();
+    run_test_STA_ABS_IY_indexed();
+    run_test_STX_DP_IY_indexed();
+    run_test_STY_DP_IX_indexed();
+    
+    // Additional Shift/Rotate tests
+    printf(COLOR_BLUE "--- Additional Shift/Rotate Tests ---\n" COLOR_RESET);
+    run_test_ASL_DP_IX_indexed();
+    run_test_ASL_ABS_IX_indexed();
+    run_test_LSR_DP_IX_indexed();
+    run_test_LSR_ABS_IX_indexed();
+    run_test_ROL_DP_IX_indexed();
+    run_test_ROL_ABS_IX_indexed();
+    run_test_ROR_DP_IX_indexed();
+    run_test_ROR_ABS_IX_indexed();
+    
+    // Additional INC/DEC tests
+    printf(COLOR_BLUE "--- Additional INC/DEC Tests ---\n" COLOR_RESET);
+    run_test_INC_DP_IX_indexed();
+    run_test_INC_ABS_IX_indexed();
+    run_test_DEC_DP_IX_indexed();
+    run_test_DEC_ABS_IX_indexed();
+    
+    // Additional BIT tests
+    printf(COLOR_BLUE "--- Additional BIT Tests ---\n" COLOR_RESET);
+    run_test_BIT_DP_IX_indexed();
+    run_test_BIT_ABS_IX_indexed();
+    
+    // CPX/CPY immediate tests
+    printf(COLOR_BLUE "--- CPX/CPY Immediate Tests ---\n" COLOR_RESET);
+    run_test_CPX_IMM_immediate();
+    run_test_CPY_IMM_immediate();
+    
+    // Block move tests
+    printf(COLOR_BLUE "--- Block Move Tests ---\n" COLOR_RESET);
+    run_test_MVN_block_move_negative();
+    run_test_MVP_block_move_positive();
+    
+    // Immediate mode arithmetic/logical tests
+    printf(COLOR_BLUE "--- Immediate Mode Arithmetic/Logical Tests ---\n" COLOR_RESET);
+    run_test_ADC_IMM_immediate();
+    run_test_SBC_IMM_immediate();
+    run_test_AND_IMM_immediate();
+    run_test_ORA_IMM_immediate();
+    run_test_EOR_IMM_immediate();
+    run_test_CMP_IMM_immediate();
+    
+    // Additional STZ tests
+    printf(COLOR_BLUE "--- Additional STZ Tests ---\n" COLOR_RESET);
+    run_test_STZ_DP_IX_indexed();
     
     // Print summary
     printf("\n");
