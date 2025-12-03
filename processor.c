@@ -1361,19 +1361,10 @@ state_t* EOR_DP_IL     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* PHA           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Push Accumulator onto Stack
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->PBR);
-    uint16_t sp_address;
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        sp_address = 0x0100 | (state->SP & 0xFF);
-        memory_bank[sp_address] = state->A.low;
-        state->SP = (state->SP - 1) & 0x1FF;
+        push_byte(machine, state->A.low);
     } else {
-        sp_address = state->SP & 0xFFFF;
-        memory_bank[sp_address] = (uint8_t)(state->A.full & 0xFF);
-        state->SP = (state->SP - 1) & 0xFFFF;
-        sp_address = state->SP & 0xFFFF;
-        memory_bank[sp_address] = (uint8_t)((state->A.full >> 8) & 0xFF);
-        state->SP = (state->SP - 1) & 0xFFFF;
+        push_word(machine, state->A.full);
     }
     return machine;
 }
@@ -1684,19 +1675,10 @@ state_t* EOR_ABS_IY    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* PHY           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Push Y Register onto Stack
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->PBR);
-    uint16_t sp_address;
-    if (state->emulation_mode) {
-        sp_address = 0x0100 | (state->SP & 0xFF);
-        memory_bank[sp_address] = state->Y & 0xFF;
-        state->SP = (state->SP - 1) & 0x1FF;
+    if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
+        push_byte(machine, state->Y & 0xFF);
     } else {
-        sp_address = state->SP & 0xFFFF;
-        memory_bank[sp_address] = state->Y & 0xFF;
-        state->SP = (state->SP - 1) & 0xFFFF;
-        sp_address = state->SP & 0xFFFF;
-        memory_bank[sp_address] = (state->Y >> 8) & 0xFF;
-        state->SP = (state->SP - 1) & 0xFFFF;
+        push_word(machine, state->Y);
     }
     return machine;
 }
@@ -1932,18 +1914,11 @@ state_t* ADC_DP_IL     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* PLA           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Pull Accumulator from Stack
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->PBR);
-    uint16_t sp_address;
-    if (state->emulation_mode) {
-        state->SP = (state->SP + 1) & 0x1FF;
-        sp_address = 0x0100 | (state->SP & 0xFF);
-        state->A.low = memory_bank[sp_address];
+    if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
+        state->A.low = pop_byte(machine);
         set_flags_nz_8(machine, state->A.low);
     } else {
-        // 16-bit mode
-        state->SP = (state->SP + 1) & 0xFFFF;
-        sp_address = state->SP;
-        state->A.full = (memory_bank[sp_address] << 8) | memory_bank[(sp_address + 1) & 0xFFFF];
+        state->A.full = pop_word(machine);
         set_flags_nz_16(machine, state->A.full);
     }
     return machine;
@@ -2304,19 +2279,12 @@ state_t* ADC_ABS_IY    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* PLY           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Pull Y register from the stack
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->PBR);
-    uint16_t sp_address;
-    if (state->emulation_mode) {
-        state->SP = (state->SP + 1) & 0x1FF;
-        sp_address = 0x0100 | (state->SP & 0xFF);
-        state->Y = memory_bank[sp_address];
-        set_flags_nz_8(machine, state->A.low);
+    if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
+        state->Y = pop_byte(machine);
+        set_flags_nz_8(machine, state->Y);
     } else {
-        // 16-bit mode
-        state->SP = (state->SP + 1) & 0xFFFF;
-        sp_address = state->SP;
-        state->Y = (memory_bank[sp_address] << 8) | memory_bank[(sp_address + 1) & 0xFFFF];
-        set_flags_nz_16(machine, state->A.full);
+        state->Y = pop_word(machine);
+        set_flags_nz_16(machine, state->Y);
     }
     return machine;
 }
@@ -3932,14 +3900,10 @@ state_t* CMP_ABS_IY    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* PHX           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // PusH X
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->PBR);
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
-        memory_bank[state->SP] = (uint8_t)(state->X & 0xFF);
-        state->SP = (state->SP - 1) & 0xFFFF;
+        push_byte(machine, state->X & 0xFF);
     } else {
-        memory_bank[state->SP] = (uint8_t)(state->X & 0xFF);
-        memory_bank[(state->SP - 1) & 0xFFFF] = (uint8_t)((state->X >> 8) & 0xFF);
-        state->SP = (state->SP - 2) & 0xFFFF;
+        push_word(machine, state->X);
     }
     return machine;
 }
@@ -4419,25 +4383,8 @@ state_t* SBC_SR_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 
 state_t* PEA_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Push Effective Absolute Address
-    processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->PBR);
     uint16_t effective_address = arg_one & 0xFFFF;
-    
-    if (state->emulation_mode) {
-        state->SP = (state->SP - 1) & 0x1FF;
-        uint16_t sp_address = 0x0100 | (state->SP & 0xFF);
-        memory_bank[sp_address] = (uint8_t)((effective_address >> 8) & 0xFF);
-        state->SP = (state->SP - 1) & 0x1FF;
-        sp_address = 0x0100 | (state->SP & 0xFF);
-        memory_bank[sp_address] = (uint8_t)(effective_address & 0xFF);
-    } else {
-        state->SP = (state->SP - 1) & 0xFFFF;
-        uint16_t sp_address = state->SP & 0xFFFF;
-        memory_bank[sp_address] = (uint8_t)((effective_address >> 8) & 0xFF);
-        state->SP = (state->SP - 1) & 0xFFFF;
-        sp_address = state->SP & 0xFFFF;
-        memory_bank[sp_address] = (uint8_t)(effective_address & 0xFF);
-    }
+    push_word(machine, effective_address);
     return machine;
 }
 
@@ -4554,21 +4501,11 @@ state_t* SBC_ABS_IY    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* PLX           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // PuLl X from stack
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->PBR);
-    
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
-        state->SP = (state->SP + 1) & 0x1FF;
-        uint16_t sp_address = 0x0100 | (state->SP & 0xFF);
-        state->X = memory_bank[sp_address];
+        state->X = pop_byte(machine);
         set_flags_nz_8(machine, state->X);
     } else {
-        state->SP = (state->SP + 1) & 0xFFFF;
-        uint16_t sp_address = state->SP & 0xFFFF;
-        uint8_t low_byte = memory_bank[sp_address];
-        state->SP = (state->SP + 1) & 0xFFFF;
-        sp_address = state->SP & 0xFFFF;
-        uint8_t high_byte = memory_bank[sp_address];
-        state->X = ((uint16_t)high_byte << 8) | low_byte;
+        state->X = pop_word(machine);
         set_flags_nz_16(machine, state->X);
     }
     return machine;
@@ -4585,21 +4522,7 @@ state_t* JSR_ABS_I_IX  (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     
     // Push return address minus 1 onto stack
     uint16_t return_address = (state->PC - 1) & 0xFFFF;
-    if (state->emulation_mode) {
-        uint16_t sp_address = 0x0100 | (state->SP & 0xFF);
-        memory_bank[sp_address] = (return_address >> 8) & 0xFF;
-        state->SP = (state->SP - 1) & 0x1FF;
-        sp_address = 0x0100 | (state->SP & 0xFF);
-        memory_bank[sp_address] = return_address & 0xFF;
-        state->SP = (state->SP - 1) & 0x1FF;
-    } else {
-        uint16_t sp_address = state->SP & 0xFFFF;
-        memory_bank[sp_address] = (return_address >> 8) & 0xFF;
-        state->SP = (state->SP - 1) & 0xFFFF;
-        sp_address = state->SP & 0xFFFF;
-        memory_bank[sp_address] = return_address & 0xFF;
-        state->SP = (state->SP - 1) & 0xFFFF;
-    }
+    push_word(machine, return_address);
     
     state->PC = target_address;
     return machine;
