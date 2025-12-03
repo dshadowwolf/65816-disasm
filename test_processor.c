@@ -1529,6 +1529,613 @@ TEST(SBC_with_borrow) {
 }
 
 // ============================================================================
+// ORA Addressing Mode Tests
+// ============================================================================
+
+TEST(ORA_DP_direct_page) {
+    state_t *machine = setup_machine();
+    machine->processor.A.low = 0x0F;
+    machine->processor.DP = 0x00;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x10] = 0xF0;
+    
+    ORA_DP(machine, 0x10, 0);
+    ASSERT_EQ(machine->processor.A.low, 0xFF, "ORA DP should OR with memory");
+    
+    destroy_machine(machine);
+}
+
+TEST(ORA_ABS_absolute) {
+    state_t *machine = setup_machine();
+    machine->processor.A.low = 0x0F;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x8000] = 0xF0;
+    
+    ORA_ABS(machine, 0x8000, 0);
+    ASSERT_EQ(machine->processor.A.low, 0xFF, "ORA ABS should OR with memory");
+    
+    destroy_machine(machine);
+}
+
+TEST(ORA_DP_IX_direct_page_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.A.low = 0x0F;
+    machine->processor.X = 0x05;
+    machine->processor.DP = 0x00;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x15] = 0xF0;
+    
+    ORA_DP_IX(machine, 0x10, 0);
+    ASSERT_EQ(machine->processor.A.low, 0xFF, "ORA DP,X should OR with indexed memory");
+    
+    destroy_machine(machine);
+}
+
+TEST(ORA_DP_I_IY_dp_indirect_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.A.low = 0x0F;
+    machine->processor.Y = 0x10;
+    machine->processor.DP = 0x00;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x20] = 0x00;
+    bank[0x21] = 0x80;
+    bank[0x8010] = 0xF0;
+    
+    ORA_I_IY(machine, 0x20, 0);
+    ASSERT_EQ(machine->processor.A.low, 0xFF, "ORA (DP),Y should work correctly");
+    
+    destroy_machine(machine);
+}
+
+// ============================================================================
+// AND Addressing Mode Tests
+// ============================================================================
+
+TEST(AND_DP_direct_page) {
+    state_t *machine = setup_machine();
+    machine->processor.A.low = 0xFF;
+    machine->processor.DP = 0x00;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x10] = 0x0F;
+    
+    AND_DP(machine, 0x10, 0);
+    ASSERT_EQ(machine->processor.A.low, 0x0F, "AND DP should AND with memory");
+    
+    destroy_machine(machine);
+}
+
+TEST(AND_ABS_absolute) {
+    state_t *machine = setup_machine();
+    machine->processor.A.low = 0xFF;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x8000] = 0x0F;
+    
+    AND_ABS(machine, 0x8000, 0);
+    ASSERT_EQ(machine->processor.A.low, 0x0F, "AND ABS should AND with memory");
+    
+    destroy_machine(machine);
+}
+
+TEST(AND_DP_IX_direct_page_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.A.low = 0xFF;
+    machine->processor.X = 0x05;
+    machine->processor.DP = 0x00;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x15] = 0x0F;
+    
+    AND_DP_IX(machine, 0x10, 0);
+    ASSERT_EQ(machine->processor.A.low, 0x0F, "AND DP,X should AND with indexed memory");
+    
+    destroy_machine(machine);
+}
+
+// ============================================================================
+// EOR Addressing Mode Tests
+// ============================================================================
+
+TEST(EOR_DP_direct_page) {
+    state_t *machine = setup_machine();
+    machine->processor.A.low = 0xFF;
+    machine->processor.DP = 0x00;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x10] = 0x0F;
+    
+    EOR_DP(machine, 0x10, 0);
+    ASSERT_EQ(machine->processor.A.low, 0xF0, "EOR DP should XOR with memory");
+    
+    destroy_machine(machine);
+}
+
+TEST(EOR_ABS_absolute) {
+    state_t *machine = setup_machine();
+    machine->processor.A.low = 0xFF;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x8000] = 0x0F;
+    
+    EOR_ABS(machine, 0x8000, 0);
+    ASSERT_EQ(machine->processor.A.low, 0xF0, "EOR ABS should XOR with memory");
+    
+    destroy_machine(machine);
+}
+
+TEST(EOR_DP_IX_direct_page_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.A.low = 0xFF;
+    machine->processor.X = 0x05;
+    machine->processor.DP = 0x00;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x15] = 0x0F;
+    
+    EOR_DP_IX(machine, 0x10, 0);
+    ASSERT_EQ(machine->processor.A.low, 0xF0, "EOR DP,X should XOR with indexed memory");
+    
+    destroy_machine(machine);
+}
+
+// ============================================================================
+// ADC Addressing Mode Tests
+// ============================================================================
+
+TEST(ADC_DP_direct_page) {
+    state_t *machine = setup_machine();
+    machine->processor.A.low = 0x10;
+    machine->processor.P |= CARRY;
+    machine->processor.DP = 0x00;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x10] = 0x20;
+    
+    ADC_DP(machine, 0x10, 0);
+    ASSERT_EQ(machine->processor.A.low, 0x31, "ADC DP should add with carry");
+    
+    destroy_machine(machine);
+}
+
+TEST(ADC_ABS_absolute) {
+    state_t *machine = setup_machine();
+    machine->processor.A.low = 0x10;
+    machine->processor.P &= ~CARRY;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x8000] = 0x20;
+    
+    ADC_ABS(machine, 0x8000, 0);
+    ASSERT_EQ(machine->processor.A.low, 0x30, "ADC ABS should add correctly");
+    
+    destroy_machine(machine);
+}
+
+TEST(ADC_DP_IX_direct_page_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.A.low = 0x10;
+    machine->processor.X = 0x05;
+    machine->processor.P &= ~CARRY;
+    machine->processor.DP = 0x00;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x15] = 0x20;
+    
+    ADC_DP_IX(machine, 0x10, 0);
+    ASSERT_EQ(machine->processor.A.low, 0x30, "ADC DP,X should add with indexed memory");
+    
+    destroy_machine(machine);
+}
+
+// ============================================================================
+// SBC Addressing Mode Tests
+// ============================================================================
+
+TEST(SBC_DP_direct_page) {
+    state_t *machine = setup_machine();
+    machine->processor.A.low = 0x50;
+    machine->processor.P |= CARRY;
+    machine->processor.DP = 0x00;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x10] = 0x20;
+    
+    SBC_DP(machine, 0x10, 0);
+    ASSERT_EQ(machine->processor.A.low, 0x30, "SBC DP should subtract from memory");
+    
+    destroy_machine(machine);
+}
+
+TEST(SBC_ABS_absolute) {
+    state_t *machine = setup_machine();
+    machine->processor.A.low = 0x50;
+    machine->processor.P |= CARRY;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x8000] = 0x20;
+    
+    SBC_ABS(machine, 0x8000, 0);
+    ASSERT_EQ(machine->processor.A.low, 0x30, "SBC ABS should subtract correctly");
+    
+    destroy_machine(machine);
+}
+
+TEST(SBC_DP_IX_direct_page_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.A.low = 0x50;
+    machine->processor.X = 0x05;
+    machine->processor.P |= CARRY;
+    machine->processor.DP = 0x00;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x15] = 0x20;
+    
+    SBC_DP_IX(machine, 0x10, 0);
+    ASSERT_EQ(machine->processor.A.low, 0x30, "SBC DP,X should subtract with indexed memory");
+    
+    destroy_machine(machine);
+}
+
+// ============================================================================
+// CMP Addressing Mode Tests
+// ============================================================================
+
+TEST(CMP_DP_direct_page) {
+    state_t *machine = setup_machine();
+    machine->processor.A.low = 0x50;
+    machine->processor.DP = 0x00;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x10] = 0x50;
+    
+    CMP_DP(machine, 0x10, 0);
+    ASSERT_EQ(check_flag(machine, ZERO), true, "CMP DP should set zero when equal");
+    ASSERT_EQ(check_flag(machine, CARRY), true, "CMP DP should set carry when A >= M");
+    
+    destroy_machine(machine);
+}
+
+TEST(CMP_ABS_absolute) {
+    state_t *machine = setup_machine();
+    machine->processor.A.low = 0x50;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x8000] = 0x30;
+    
+    CMP_ABS(machine, 0x8000, 0);
+    ASSERT_EQ(check_flag(machine, ZERO), false, "CMP ABS should clear zero when not equal");
+    ASSERT_EQ(check_flag(machine, CARRY), true, "CMP ABS should set carry when A > M");
+    
+    destroy_machine(machine);
+}
+
+TEST(CMP_DP_IX_direct_page_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.A.low = 0x50;
+    machine->processor.X = 0x05;
+    machine->processor.DP = 0x00;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x15] = 0x60;
+    
+    CMP_DP_IX(machine, 0x10, 0);
+    ASSERT_EQ(check_flag(machine, CARRY), false, "CMP DP,X should clear carry when A < M");
+    ASSERT_EQ(check_flag(machine, NEGATIVE), true, "CMP DP,X should set negative");
+    
+    destroy_machine(machine);
+}
+
+// ============================================================================
+// CPX/CPY Addressing Mode Tests
+// ============================================================================
+
+TEST(CPX_DP_direct_page) {
+    state_t *machine = setup_machine();
+    machine->processor.X = 0x50;
+    machine->processor.DP = 0x00;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x10] = 0x50;
+    
+    CPX_DP(machine, 0x10, 0);
+    ASSERT_EQ(check_flag(machine, ZERO), true, "CPX DP should set zero when equal");
+    
+    destroy_machine(machine);
+}
+
+TEST(CPX_ABS_absolute) {
+    state_t *machine = setup_machine();
+    machine->processor.X = 0x50;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x8000] = 0x30;
+    
+    CPX_ABS(machine, 0x8000, 0);
+    ASSERT_EQ(check_flag(machine, CARRY), true, "CPX ABS should set carry when X >= M");
+    
+    destroy_machine(machine);
+}
+
+TEST(CPY_DP_direct_page) {
+    state_t *machine = setup_machine();
+    machine->processor.Y = 0x50;
+    machine->processor.DP = 0x00;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x10] = 0x50;
+    
+    CPY_DP(machine, 0x10, 0);
+    ASSERT_EQ(check_flag(machine, ZERO), true, "CPY DP should set zero when equal");
+    
+    destroy_machine(machine);
+}
+
+TEST(CPY_ABS_absolute) {
+    state_t *machine = setup_machine();
+    machine->processor.Y = 0x50;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x8000] = 0x30;
+    
+    CPY_ABS(machine, 0x8000, 0);
+    ASSERT_EQ(check_flag(machine, CARRY), true, "CPY ABS should set carry when Y >= M");
+    
+    destroy_machine(machine);
+}
+
+// ============================================================================
+// Shift/Rotate Memory Operation Tests
+// ============================================================================
+
+TEST(ASL_DP_direct_page) {
+    state_t *machine = setup_machine();
+    machine->processor.DP = 0x00;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x10] = 0x40;
+    
+    ASL_DP(machine, 0x10, 0);
+    ASSERT_EQ(bank[0x10], 0x80, "ASL DP should shift memory left");
+    
+    destroy_machine(machine);
+}
+
+TEST(ASL_ABS_absolute) {
+    state_t *machine = setup_machine();
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x8000] = 0x40;
+    
+    ASL_ABS(machine, 0x8000, 0);
+    ASSERT_EQ(bank[0x8000], 0x80, "ASL ABS should shift memory left");
+    
+    destroy_machine(machine);
+}
+
+TEST(LSR_DP_direct_page) {
+    state_t *machine = setup_machine();
+    machine->processor.DP = 0x00;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x10] = 0x80;
+    
+    LSR_DP(machine, 0x10, 0);
+    ASSERT_EQ(bank[0x10], 0x40, "LSR DP should shift memory right");
+    
+    destroy_machine(machine);
+}
+
+TEST(LSR_ABS_absolute) {
+    state_t *machine = setup_machine();
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x8000] = 0x80;
+    
+    LSR_ABS(machine, 0x8000, 0);
+    ASSERT_EQ(bank[0x8000], 0x40, "LSR ABS should shift memory right");
+    
+    destroy_machine(machine);
+}
+
+TEST(ROL_DP_direct_page) {
+    state_t *machine = setup_machine();
+    machine->processor.P |= CARRY;
+    machine->processor.DP = 0x00;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x10] = 0x40;
+    
+    ROL_DP(machine, 0x10, 0);
+    ASSERT_EQ(bank[0x10], 0x81, "ROL DP should rotate memory left with carry");
+    
+    destroy_machine(machine);
+}
+
+TEST(ROL_ABS_absolute) {
+    state_t *machine = setup_machine();
+    machine->processor.P |= CARRY;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x8000] = 0x40;
+    
+    ROL_ABS(machine, 0x8000, 0);
+    ASSERT_EQ(bank[0x8000], 0x81, "ROL ABS should rotate memory left with carry");
+    
+    destroy_machine(machine);
+}
+
+TEST(ROR_DP_direct_page) {
+    state_t *machine = setup_machine();
+    machine->processor.P |= CARRY;
+    machine->processor.DP = 0x00;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x10] = 0x02;
+    
+    ROR_DP(machine, 0x10, 0);
+    ASSERT_EQ(bank[0x10], 0x81, "ROR DP should rotate memory right with carry");
+    
+    destroy_machine(machine);
+}
+
+TEST(ROR_ABS_absolute) {
+    state_t *machine = setup_machine();
+    machine->processor.P |= CARRY;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x8000] = 0x02;
+    
+    ROR_ABS(machine, 0x8000, 0);
+    ASSERT_EQ(bank[0x8000], 0x81, "ROR ABS should rotate memory right with carry");
+    
+    destroy_machine(machine);
+}
+
+// ============================================================================
+// LDA/STA Addressing Mode Tests
+// ============================================================================
+
+TEST(LDA_DP_IX_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.X = 0x05;
+    machine->processor.DP = 0x00;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x15] = 0x42;
+    
+    LDA_DP_IX(machine, 0x10, 0);
+    ASSERT_EQ(machine->processor.A.low, 0x42, "LDA DP,X should load from indexed memory");
+    
+    destroy_machine(machine);
+}
+
+TEST(LDA_ABS_IX_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.X = 0x10;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x8010] = 0x42;
+    
+    LDA_ABS_IX(machine, 0x8000, 0);
+    ASSERT_EQ(machine->processor.A.low, 0x42, "LDA ABS,X should load from indexed memory");
+    
+    destroy_machine(machine);
+}
+
+TEST(STA_DP_direct_page) {
+    state_t *machine = setup_machine();
+    machine->processor.A.low = 0x42;
+    machine->processor.DP = 0x20;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    
+    STA_DP(machine, 0x10, 0);
+    ASSERT_EQ(bank[0x30], 0x42, "STA DP should store to direct page");
+    
+    destroy_machine(machine);
+}
+
+TEST(STA_DP_IX_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.A.low = 0x42;
+    machine->processor.X = 0x05;
+    machine->processor.DP = 0x20;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    
+    STA_DP_IX(machine, 0x10, 0);
+    ASSERT_EQ(bank[0x35], 0x42, "STA DP,X should store to indexed memory");
+    
+    destroy_machine(machine);
+}
+
+TEST(STA_ABS_IX_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.A.low = 0x42;
+    machine->processor.X = 0x10;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    
+    STA_ABS_IX(machine, 0x8000, 0);
+    ASSERT_EQ(bank[0x8010], 0x42, "STA ABS,X should store to indexed memory");
+    
+    destroy_machine(machine);
+}
+
+// ============================================================================
+// LDX/LDY/STX/STY Addressing Mode Tests
+// ============================================================================
+
+TEST(LDX_ABS_absolute) {
+    state_t *machine = setup_machine();
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x8000] = 0x42;
+    
+    LDX_ABS(machine, 0x8000, 0);
+    ASSERT_EQ(machine->processor.X, 0x42, "LDX ABS should load X from memory");
+    
+    destroy_machine(machine);
+}
+
+TEST(LDY_ABS_absolute) {
+    state_t *machine = setup_machine();
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x8000] = 0x42;
+    
+    LDY_ABS(machine, 0x8000, 0);
+    ASSERT_EQ(machine->processor.Y, 0x42, "LDY ABS should load Y from memory");
+    
+    destroy_machine(machine);
+}
+
+TEST(STX_DP_direct_page) {
+    state_t *machine = setup_machine();
+    machine->processor.X = 0x42;
+    machine->processor.DP = 0x20;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    
+    STX_DP(machine, 0x10, 0);
+    ASSERT_EQ(bank[0x30], 0x42, "STX DP should store X to direct page");
+    
+    destroy_machine(machine);
+}
+
+TEST(STX_ABS_absolute) {
+    state_t *machine = setup_machine();
+    machine->processor.X = 0x42;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    
+    STX_ABS(machine, 0x8000, 0);
+    ASSERT_EQ(bank[0x8000], 0x42, "STX ABS should store X to memory");
+    
+    destroy_machine(machine);
+}
+
+TEST(STY_DP_direct_page) {
+    state_t *machine = setup_machine();
+    machine->processor.Y = 0x42;
+    machine->processor.DP = 0x20;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    
+    STY_DP(machine, 0x10, 0);
+    ASSERT_EQ(bank[0x30], 0x42, "STY DP should store Y to direct page");
+    
+    destroy_machine(machine);
+}
+
+// ============================================================================
+// System Instruction Tests
+// ============================================================================
+
+TEST(RTI_return_from_interrupt) {
+    state_t *machine = setup_machine();
+    machine->processor.emulation_mode = false;
+    machine->processor.SP = 0x1F0;
+    uint8_t *stack = get_memory_bank(machine, 0);
+    
+    // Push test data to stack (as if an interrupt pushed them)
+    stack[0x01F1] = 0x30;  // Status
+    stack[0x01F2] = 0x00;  // PCL
+    stack[0x01F3] = 0x80;  // PCH
+    stack[0x01F4] = 0x01;  // PBR
+    
+    RTI(machine, 0, 0);
+    
+    ASSERT_EQ(machine->processor.PC, 0x8000, "RTI should restore PC");
+    ASSERT_EQ(machine->processor.PBR, 0x01, "RTI should restore PBR");
+    
+    destroy_machine(machine);
+}
+
+TEST(BRK_software_interrupt) {
+    state_t *machine = setup_machine();
+    machine->processor.emulation_mode = false;
+    machine->processor.PC = 0x8000;
+    machine->processor.PBR = 0x01;
+    machine->processor.SP = 0x1FF;
+    uint8_t *bank0 = get_memory_bank(machine, 0);
+    
+    // Set up interrupt vector
+    bank0[0xFFE6] = 0x00;  // BRK vector low
+    bank0[0xFFE7] = 0x90;  // BRK vector high
+    
+    BRK(machine, 0, 0);
+    
+    ASSERT_EQ(check_flag(machine, INTERRUPT_DISABLE), true, "BRK should set interrupt flag");
+    
+    destroy_machine(machine);
+}
+
+// ============================================================================
 // Main test runner
 // ============================================================================
 
@@ -1711,6 +2318,82 @@ int main(int argc, char **argv) {
     printf(COLOR_BLUE "--- Additional SBC Instructions ---\n" COLOR_RESET);
     run_test_SBC_8bit_no_borrow_extended();
     run_test_SBC_with_borrow();
+    
+    // ORA addressing modes
+    printf(COLOR_BLUE "--- ORA Addressing Modes ---\n" COLOR_RESET);
+    run_test_ORA_DP_direct_page();
+    run_test_ORA_ABS_absolute();
+    run_test_ORA_DP_IX_direct_page_indexed();
+    run_test_ORA_DP_I_IY_dp_indirect_indexed();
+    
+    // AND addressing modes
+    printf(COLOR_BLUE "--- AND Addressing Modes ---\n" COLOR_RESET);
+    run_test_AND_DP_direct_page();
+    run_test_AND_ABS_absolute();
+    run_test_AND_DP_IX_direct_page_indexed();
+    
+    // EOR addressing modes
+    printf(COLOR_BLUE "--- EOR Addressing Modes ---\n" COLOR_RESET);
+    run_test_EOR_DP_direct_page();
+    run_test_EOR_ABS_absolute();
+    run_test_EOR_DP_IX_direct_page_indexed();
+    
+    // ADC addressing modes
+    printf(COLOR_BLUE "--- ADC Addressing Modes ---\n" COLOR_RESET);
+    run_test_ADC_DP_direct_page();
+    run_test_ADC_ABS_absolute();
+    run_test_ADC_DP_IX_direct_page_indexed();
+    
+    // SBC addressing modes
+    printf(COLOR_BLUE "--- SBC Addressing Modes ---\n" COLOR_RESET);
+    run_test_SBC_DP_direct_page();
+    run_test_SBC_ABS_absolute();
+    run_test_SBC_DP_IX_direct_page_indexed();
+    
+    // CMP addressing modes
+    printf(COLOR_BLUE "--- CMP Addressing Modes ---\n" COLOR_RESET);
+    run_test_CMP_DP_direct_page();
+    run_test_CMP_ABS_absolute();
+    run_test_CMP_DP_IX_direct_page_indexed();
+    
+    // CPX/CPY addressing modes
+    printf(COLOR_BLUE "--- CPX/CPY Addressing Modes ---\n" COLOR_RESET);
+    run_test_CPX_DP_direct_page();
+    run_test_CPX_ABS_absolute();
+    run_test_CPY_DP_direct_page();
+    run_test_CPY_ABS_absolute();
+    
+    // Shift/Rotate memory operations
+    printf(COLOR_BLUE "--- Shift/Rotate Memory Operations ---\n" COLOR_RESET);
+    run_test_ASL_DP_direct_page();
+    run_test_ASL_ABS_absolute();
+    run_test_LSR_DP_direct_page();
+    run_test_LSR_ABS_absolute();
+    run_test_ROL_DP_direct_page();
+    run_test_ROL_ABS_absolute();
+    run_test_ROR_DP_direct_page();
+    run_test_ROR_ABS_absolute();
+    
+    // LDA/STA with various addressing modes
+    printf(COLOR_BLUE "--- LDA/STA Addressing Modes ---\n" COLOR_RESET);
+    run_test_LDA_DP_IX_indexed();
+    run_test_LDA_ABS_IX_indexed();
+    run_test_STA_DP_direct_page();
+    run_test_STA_DP_IX_indexed();
+    run_test_STA_ABS_IX_indexed();
+    
+    // LDX/LDY/STX/STY addressing modes
+    printf(COLOR_BLUE "--- LDX/LDY/STX/STY Modes ---\n" COLOR_RESET);
+    run_test_LDX_ABS_absolute();
+    run_test_LDY_ABS_absolute();
+    run_test_STX_DP_direct_page();
+    run_test_STX_ABS_absolute();
+    run_test_STY_DP_direct_page();
+    
+    // Special/System instructions
+    printf(COLOR_BLUE "--- System Instructions ---\n" COLOR_RESET);
+    run_test_RTI_return_from_interrupt();
+    run_test_BRK_software_interrupt();
     
     // Print summary
     printf("\n");
