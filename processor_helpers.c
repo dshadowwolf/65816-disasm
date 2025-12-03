@@ -137,15 +137,19 @@ uint16_t get_dp_address(state_t *machine, uint16_t dp_offset) {
 
 uint16_t get_dp_address_indirect(state_t *machine, uint16_t dp_offset) {
     uint16_t dp_address = get_dp_address(machine, dp_offset);
-    uint8_t *memory_bank = get_memory_bank(machine, machine->processor.PBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     uint8_t low_byte = memory_bank[dp_address];
     uint8_t high_byte = memory_bank[(dp_address + 1) & 0xFFFF];
     return (high_byte << 8) | low_byte;
 }
 
 uint16_t get_dp_address_indirect_indexed_x(state_t *machine, uint16_t dp_offset) {
-    uint16_t effective_address = get_dp_address_indirect(machine, dp_offset);
-    return (effective_address + machine->processor.X) & 0xFFFF;
+    // (DP,X) - Indexed Indirect: add X to DP offset, then read pointer
+    uint16_t dp_address = get_dp_address(machine, (dp_offset + machine->processor.X) & 0xFF);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
+    uint8_t low_byte = memory_bank[dp_address];
+    uint8_t high_byte = memory_bank[(dp_address + 1) & 0xFFFF];
+    return (high_byte << 8) | low_byte;
 }
 
 uint16_t get_dp_address_indirect_indexed_y(state_t *machine, uint16_t dp_offset) {
@@ -155,7 +159,7 @@ uint16_t get_dp_address_indirect_indexed_y(state_t *machine, uint16_t dp_offset)
 
 uint16_t get_dp_address_indirect_long(state_t *machine, uint16_t dp_offset) {
     uint16_t dp_address = get_dp_address(machine, dp_offset);
-    uint8_t *memory_bank = get_memory_bank(machine, machine->processor.PBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     uint8_t low_byte = memory_bank[dp_address];
     uint8_t mid_byte = memory_bank[(dp_address + 1) & 0xFFFF];
     uint8_t high_byte = memory_bank[(dp_address + 2) & 0xFFFF];
