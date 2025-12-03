@@ -132,7 +132,6 @@ state_t* ORA_DP_I_IX   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint8_t result = state->A.low | value;
         state->A.low = result;
         set_flags_nz_8(machine, result);
-        check_and_set_negative_8(machine, result);
         machine->processor.A.low = result;
     } else {
         uint16_t result = state->A.full | value;
@@ -230,7 +229,6 @@ state_t* ASL_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint16_t result = ((uint16_t)value) << 1;
         memory_bank[dp_address] = (uint8_t)(result & 0xFF);
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
     } else {
         uint32_t full_value = (uint32_t)(value << 1);
         memory_bank[dp_address] = (uint8_t)(full_value & 0xFF);
@@ -252,7 +250,6 @@ state_t* ORA_DP_IL     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low |= value;
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.full |= value;
         set_flags_nz_16(machine, state->A.full);
@@ -278,7 +275,6 @@ state_t* ORA_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint8_t result = state->A.low | value;
         state->A.low = result;
         set_flags_nz_8(machine, result);
-        check_and_set_negative_8(machine, result);
     } else {
         uint16_t result = state->A.full | value;
         state->A.full = result;
@@ -293,7 +289,6 @@ state_t* ASL           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint16_t result = (uint16_t)(state->A.low << 1);
         state->A.low = (uint8_t)(result & 0xFF);
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
     } else {
         uint32_t full_result = (uint32_t)(state->A.full << 1);
         state->A.full = (uint16_t)(full_result & 0xFFFF);
@@ -327,7 +322,6 @@ state_t* TSB_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint8_t value = memory_bank[address];
         value &= state->A.low;
         set_flags_nz_8(machine, value);
-        check_and_set_negative_8(machine, value);
         memory_bank[address]= value;
     } else {
         uint16_t value = (memory_bank[address] &0xFF) << 8 | (memory_bank[(address + 1)] & 0xFF);
@@ -346,7 +340,6 @@ state_t* ORA_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint8_t result = state->A.low | value;
         state->A.low = result;
         set_flags_nz_8(machine, result);
-        check_and_set_negative_8(machine, result);
         machine->processor.A.low = result;
     } else {
         uint16_t result = state->A.full | value;
@@ -366,7 +359,6 @@ state_t* ASL_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint16_t result = (uint16_t)(value << 1);
         memory_bank[address] = (uint8_t)(result & 0xFF);
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
     } else {
         uint32_t full_value = (uint32_t)(value << 1);
         memory_bank[address] = (uint8_t)(full_value & 0xFF);
@@ -389,7 +381,6 @@ state_t* ORA_ABL       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint8_t result = state->A.low | value;
         state->A.low = result;
         set_flags_nz_8(machine, result);
-        check_and_set_negative_8(machine, result);
     } else {
         uint16_t result = state->A.full | value;
         state->A.full = result;
@@ -417,7 +408,6 @@ state_t* ORA_I_IY      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint8_t result = state->A.low | value;
         state->A.low = result;
         set_flags_nz_8(machine, result);
-        check_and_set_negative_8(machine, result);
         machine->processor.A.low = result;
     } else {
         uint16_t result = state->A.full | value;
@@ -438,7 +428,6 @@ state_t* ORA_DP_I      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint8_t result = state->A.low | value;
         state->A.low = result;
         set_flags_nz_8(machine, result);
-        check_and_set_negative_8(machine, result);
     } else {
         uint16_t result = state->A.full | value;
         state->A.full = result;
@@ -461,7 +450,6 @@ state_t* ORA_SR_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint8_t result = state->A.low | value;
         state->A.low = result;
         set_flags_nz_8(machine, result);
-        check_and_set_negative_8(machine, result);
     } else {
         uint16_t result = state->A.full | value;
         state->A.full = result;
@@ -480,7 +468,6 @@ state_t* TRB_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint8_t result = value & (~state->A.low);
         // Set Zero and Negative flags
         set_flags_nz_8(machine, result);
-        check_and_set_negative_8(machine, result);
     } else {
         uint16_t result = value & (~state->A.full);
         set_flags_nz_16(machine, result);
@@ -498,7 +485,6 @@ state_t* ORA_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint8_t result = state->A.low | value;
         state->A.low = result;
         set_flags_nz_8(machine, result);
-        check_and_set_negative_8(machine, result);
     } else {
         uint16_t result = state->A.full | value;
         state->A.full = result;
@@ -518,7 +504,6 @@ state_t* ASL_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint16_t result = (uint16_t)(value << 1);
         memory_bank[effective_address] = (uint8_t)(result & 0xFF);
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
     } else {
         uint32_t full_value = (uint32_t)(value << 1);
         memory_bank[effective_address] = (uint8_t)(full_value & 0xFF);
@@ -542,7 +527,6 @@ state_t* ORA_DP_IL_IY  (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint8_t result = state->A.low | value;
         state->A.low = result;
         set_flags_nz_8(machine, result);
-        check_and_set_negative_8(machine, result);
     } else {
         uint16_t result = state->A.full | value;
         state->A.full = result;
@@ -560,7 +544,6 @@ state_t* ORA_ABS_IY    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint8_t result = state->A.low | value;
         state->A.low = result;
         set_flags_nz_8(machine, result);
-        check_and_set_negative_8(machine, result);
     } else {
         uint16_t result = state->A.full | value;
         state->A.full = result;
@@ -575,7 +558,6 @@ state_t* INC           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low = (state->A.low + 1) & 0xFF;
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.full = (state->A.full + 1) & 0xFFFF;
         set_flags_nz_16(machine, state->A.full);
@@ -598,7 +580,6 @@ state_t* TRB_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (is_flag_set(machine, M_FLAG)) {
         uint8_t result = value & (~state->A.low);
         set_flags_nz_8(machine, result);
-        check_and_set_negative_8(machine, result);
     } else {
         uint16_t result = value & (~state->A.full);
         set_flags_nz_16(machine, result);
@@ -615,7 +596,6 @@ state_t* ORA_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint8_t result = state->A.low | value;
         state->A.low = result;
         set_flags_nz_8(machine, result);
-        check_and_set_negative_8(machine, result);
     } else {
         uint16_t result = state->A.full | value;
         state->A.full = result;
@@ -655,7 +635,6 @@ state_t* ORA_ABL_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint8_t result = state->A.low | value;
         state->A.low = result;
         set_flags_nz_8(machine, result);
-        check_and_set_negative_8(machine, result);
     } else {
         uint16_t result = state->A.full | value;
         state->A.full = result;
@@ -698,7 +677,6 @@ state_t* AND_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low &= value;
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.full &= value;
         set_flags_nz_16(machine, state->A.full);
@@ -750,7 +728,6 @@ state_t* AND_SR        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low &= value;
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.full &= value;
         set_flags_nz_16(machine, state->A.full);
@@ -781,7 +758,6 @@ state_t* AND_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low &= value;
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.full &= value;
         set_flags_nz_16(machine, state->A.full);
@@ -832,7 +808,6 @@ state_t* AND_DP_IL     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low &= value;
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.full &= value;
         set_flags_nz_16(machine, state->A.full);
@@ -867,7 +842,6 @@ state_t* AND_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low &= value;
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.full &= value;
         set_flags_nz_16(machine, state->A.full);
@@ -887,7 +861,6 @@ state_t* ROL           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         }
         state->A.low = (uint8_t)(result & 0xFF);
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
     } else {
         // Handle 16-bit accumulator case here
         uint32_t result = (uint32_t)(state->A.full << 1);
@@ -949,7 +922,6 @@ state_t* AND_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low &= value;
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.full &= value;
         set_flags_nz_16(machine, state->A.full);
@@ -971,7 +943,6 @@ state_t* ROL_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
             result &= 0xFE;
         }
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
         memory_bank[address] = (uint8_t)(result & 0xFF);
     } else {
         uint32_t result = (uint32_t)(state->A.full << 1);
@@ -998,7 +969,6 @@ state_t* AND_ABL       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low &= value;
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.full &= value;
         set_flags_nz_16(machine, state->A.full);
@@ -1025,7 +995,6 @@ state_t* AND_DP_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low &= value;
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.full &= value;
         set_flags_nz_16(machine, state->A.full);
@@ -1042,7 +1011,6 @@ state_t* AND_DP_I      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low &= value;
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.full &= value;
         set_flags_nz_16(machine, state->A.full);
@@ -1067,7 +1035,6 @@ state_t* AND_SR_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low &= value;
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.full &= value;
         set_flags_nz_16(machine, state->A.full);
@@ -1138,7 +1105,6 @@ state_t* AND_DP_IL_IY  (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low &= value;
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.full &= value;
         set_flags_nz_16(machine, state->A.full);
@@ -1156,7 +1122,6 @@ state_t* AND_ABS_IY    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low &= value;
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.full &= value;
         set_flags_nz_16(machine, state->A.full);
@@ -1170,7 +1135,6 @@ state_t* DEC           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low = (state->A.low - 1) & 0xFF;
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.full = (state->A.full - 1) & 0xFFFF;
         set_flags_nz_16(machine, state->A.full);
@@ -1184,7 +1148,6 @@ state_t* TSC           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low = (uint8_t)(state->SP & 0xFF);
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.full = state->SP & 0xFFFF;
         // Set Zero and Negative flags
@@ -1220,7 +1183,6 @@ state_t* AND_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low &= value;
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.full &= value;
         set_flags_nz_16(machine, state->A.full);
@@ -1270,7 +1232,6 @@ state_t* AND_ABL_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low &= value;
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.full &= value;
         set_flags_nz_16(machine, state->A.full);
@@ -1325,7 +1286,6 @@ state_t* EOR_DP_I_IX   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low ^= value;
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.full ^= value;
         set_flags_nz_16(machine, state->A.full);
@@ -1335,6 +1295,7 @@ state_t* EOR_DP_I_IX   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 
 state_t* WDM           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // WDM - Reserved for future use
+    // TODO: trap on this, its technically an illegal instruction
     return machine;
 }
 
@@ -1351,7 +1312,6 @@ state_t* EOR_SR        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low ^= value;
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.full ^= value;
         set_flags_nz_16(machine, state->A.full);
@@ -1387,7 +1347,6 @@ state_t* EOR_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low ^= value;
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.full ^= value;
         set_flags_nz_16(machine, state->A.full);
@@ -1412,7 +1371,6 @@ state_t* LSR_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         value >>= 1;
         memory_bank[dp_address] = value;
         set_flags_nz_8(machine, value);
-        check_and_set_negative_8(machine, value);
     } else {
         // 16-bit mode
         uint16_t value16 = memory_bank[dp_address] | (memory_bank[(dp_address + 1) & 0xFFFF] << 8);
@@ -1445,7 +1403,6 @@ state_t* EOR_DP_IL     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low ^= value;
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.full ^= value;
         set_flags_nz_16(machine, state->A.full);
@@ -1480,7 +1437,6 @@ state_t* EOR_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low ^= value;
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.full ^= value;
         set_flags_nz_16(machine, state->A.full);
@@ -1501,7 +1457,6 @@ state_t* LSR           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         }
         state->A.low >>= 1;
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         // 16-bit mode
         // Set Carry flag based on bit 0
@@ -1550,7 +1505,6 @@ state_t* EOR_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low ^= value;
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.full ^= value;
         set_flags_nz_16(machine, state->A.full);
@@ -1572,7 +1526,6 @@ state_t* LSR_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         memory_bank[address] = value;
         // Set Zero and Negative flags
         set_flags_nz_8(machine, value);
-        check_and_set_negative_8(machine, value);
     } else {
         // 16-bit mode
         uint16_t value16 = memory_bank[address] | (memory_bank[(address + 1) & 0xFFFF] << 8);
@@ -1587,7 +1540,6 @@ state_t* LSR_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-// TODO: Fix for Long Addressing
 state_t* EOR_ABL       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Exclusive OR Accumulator with Memory (Absolute Long Addressing)
     processor_state_t *state = &machine->processor;
@@ -1598,7 +1550,6 @@ state_t* EOR_ABL       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low ^= value;
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.full ^= value;
         set_flags_nz_16(machine, state->A.full);
@@ -1624,7 +1575,6 @@ state_t* EOR_DP_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low ^= value;
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.full ^= value;
         set_flags_nz_16(machine, state->A.full);
@@ -1641,7 +1591,6 @@ state_t* EOR_DP_I      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low ^= value;
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.full ^= value;
         set_flags_nz_16(machine, state->A.full);
@@ -1666,7 +1615,6 @@ state_t* EOR_SR_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low ^= value;
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.full ^= value;
         set_flags_nz_16(machine, state->A.full);
@@ -1702,7 +1650,6 @@ state_t* EOR_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low ^= value;
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.full ^= value;
         set_flags_nz_16(machine, state->A.full);
@@ -1735,8 +1682,7 @@ state_t* LSR_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         memory_bank[effective_address] = value16 & 0xFF;
         memory_bank[(effective_address + 1) & 0xFFFF] = (value16 >> 8) & 0xFF;
         // Set Zero and Negative flags
-        check_and_set_zero_16(machine, value16);
-        clear_flag(machine, NEGATIVE);
+        set_flags_nz_16(machine, value16);
     }
     return machine;
 }
@@ -1756,7 +1702,6 @@ state_t* EOR_DP_IL_IY  (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low ^= value;
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.full ^= value;
         set_flags_nz_16(machine, state->A.full);
@@ -1781,7 +1726,6 @@ state_t* EOR_ABS_IY    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low ^= value;
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.full ^= value;
         set_flags_nz_16(machine, state->A.full);
@@ -1820,7 +1764,6 @@ state_t* TCD           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-// TODO: Fix for Long Addressing
 state_t* JMP_AL        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Jump to Absolute Long Address
     processor_state_t *state = &machine->processor;
@@ -1840,7 +1783,6 @@ state_t* EOR_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low ^= value;
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.full ^= value;
         set_flags_nz_16(machine, state->A.full);
@@ -1866,7 +1808,6 @@ state_t* LSR_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         check_and_set_carry_16(machine, result);
         memory_bank[effective_address] = result & 0xFF;
         memory_bank[(effective_address + 1) & 0xFFFF] = (result >> 8) & 0xFF;
-        check_and_set_zero_16(machine, result);
         clear_flag(machine, NEGATIVE);
     }
     return machine;
@@ -1886,7 +1827,6 @@ state_t* EOR_AL_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         if (is_flag_set(machine, M_FLAG)) {
             state->A.low ^= result;
             set_flags_nz_8(machine, state->A.low);
-            check_and_set_negative_8(machine, state->A.low);
         } else {
             state->A.full ^= result;
             set_flags_nz_16(machine, state->A.full);
@@ -1897,7 +1837,6 @@ state_t* EOR_AL_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         if (is_flag_set(machine, M_FLAG)) {
             state->A.low ^= result;
             set_flags_nz_8(machine, state->A.low);
-            check_and_set_negative_8(machine, state->A.low);
         } else {
             state->A.full ^= result;
             set_flags_nz_16(machine, state->A.full);
@@ -1939,7 +1878,6 @@ state_t* ADC_DP_I_IX   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint16_t result = (uint16_t)state->A.low + (uint16_t)(value) + carry;
         state->A.low = (uint8_t)(result & 0xFF);
         set_flags_nzc_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);        
     } else {
         uint32_t result = (uint32_t)state->A.full + (uint32_t)(value) + carry;
         state->A.full = (uint16_t)(result & 0xFFFF);
@@ -1988,7 +1926,6 @@ state_t* ADC_SR        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint16_t result = (uint16_t)state->A.low + (uint16_t)(value) + carry;
         state->A.low = (uint8_t)(result & 0xFF);
         set_flags_nzc_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);        
     } else {
         uint32_t result = (uint32_t)state->A.full + (uint32_t)(value) + carry;
         state->A.full = (uint16_t)(result & 0xFFFF);
@@ -2017,7 +1954,6 @@ state_t* ADC_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint16_t result = (uint16_t)state->A.low + (uint16_t)(value) + carry;
         state->A.low = (uint8_t)(result & 0xFF);
         set_flags_nzc_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);        
     } else {
         uint32_t result = (uint32_t)state->A.full + (uint32_t)(value) + carry;
         state->A.full = (uint16_t)(result & 0xFFFF);
@@ -2039,8 +1975,7 @@ state_t* ROR_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint16_t result = (value >> 1) | carry_in;
         memory_bank[dp_address] = (uint8_t)(result & 0xFF);
         clear_flag(machine, NEGATIVE);
-        set_flags_nz_8(machine, (uint8_t)(result & 0xFF));
-        check_and_set_carry_8(machine, value);
+        set_flags_nzc_8(machine, (uint8_t)(result & 0xFF));
     } else {
         // 16-bit mode
         uint16_t carry_in = is_flag_set(machine, CARRY) ? 0x8000 : 0x0000;
@@ -2048,13 +1983,11 @@ state_t* ROR_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         memory_bank[dp_address] = (uint8_t)((result >> 8) & 0xFF);
         memory_bank[(dp_address + 1) & 0xFFFF] = (uint8_t)(result & 0xFF);
         clear_flag(machine, NEGATIVE);
-        check_and_set_zero_16(machine, (uint16_t)(result & 0xFFFF));
-        check_and_set_carry_16(machine, value);
+        set_flags_nzc_16(machine, result);
     }
     return machine;
 }
 
-// TODO: Fix for Long Addressing
 state_t* ADC_DP_IL     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry (Direct Page Indirect Long)
     processor_state_t *state = &machine->processor;
@@ -2070,7 +2003,6 @@ state_t* ADC_DP_IL     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint16_t result = (uint16_t)state->A.low + (uint16_t)(value) + carry;
         state->A.low = (uint8_t)(result & 0xFF);
         set_flags_nzc_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);        
     } else {
         uint32_t result = (uint32_t)state->A.full + (uint32_t)(value) + carry;
         state->A.full = (uint16_t)(result & 0xFFFF);
@@ -2090,7 +2022,6 @@ state_t* PLA           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         sp_address = 0x0100 | (state->SP & 0xFF);
         state->A.low = memory_bank[sp_address];
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         // 16-bit mode
         state->SP = (state->SP + 1) & 0xFFFF;
@@ -2110,11 +2041,7 @@ state_t* ADC_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint16_t result = (uint16_t)state->A.low + (uint16_t)(arg_one & 0xFF) + carry;
         state->A.low = (uint8_t)(result & 0xFF);
         // Set Carry flag
-        if (result > 0xFF) {
-            set_flag(machine, CARRY);
-        } else {
-            clear_flag(machine, CARRY);
-        }
+check_and_set_carry_8(machine, result);
     } else {
         // 16-bit mode
         uint32_t result = (uint32_t)state->A.full + (uint32_t)(arg_one & 0xFFFF) + carry;
@@ -2205,21 +2132,13 @@ state_t* ADC_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint16_t result = (uint16_t)state->A.low + (uint16_t)(arg_one & 0xFF) + carry;
         state->A.low = (uint8_t)(result & 0xFF);
         // Set Carry flag
-        if (result > 0xFF) {
-            set_flag(machine, CARRY);
-        } else {
-            clear_flag(machine, CARRY);
-        }
+        check_and_set_carry_8(machine, result);
     } else {
         // 16-bit mode
         uint32_t result = (uint32_t)state->A.full + (uint32_t)(arg_one & 0xFFFF) + carry;
         state->A.full = (uint16_t)(result & 0xFFFF);
         // Set Carry flag
-        if (result > 0xFFFF) {
-            set_flag(machine, CARRY);
-        } else {
-            clear_flag(machine, CARRY);
-        }
+        check_and_set_carry_16(machine, result);
     }
     return machine;
 }
@@ -2236,7 +2155,6 @@ state_t* ROR_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         check_and_set_carry_8(machine, value);
         memory_bank[base_address] = (value >> 1) | carry_in;
         set_flags_nz_8(machine, memory_bank[base_address]);
-        check_and_set_negative_8(machine, memory_bank[base_address]);
     } else {
         // 16-bit mode
         uint16_t carry_in = is_flag_set(machine, CARRY) ? 0x8000 : 0x0000;
@@ -2264,21 +2182,13 @@ state_t* ADC_ABL       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint16_t result = (uint16_t)state->A.low + (uint16_t)(value & 0xFF) + carry;
         state->A.low = (uint8_t)(result & 0xFF);
         // Set Carry flag
-        if (result > 0xFF) {
-            set_flag(machine, CARRY);
-        } else {
-            clear_flag(machine, CARRY);
-        }
+        check_and_set_carry_8(machine, result);
     } else {
         // 16-bit mode
         uint32_t result = (uint32_t)state->A.full + (uint32_t)(arg_one & 0xFFFF) + carry;
         state->A.full = (uint16_t)(result & 0xFFFF);
         // Set Carry flag
-        if (result > 0xFFFF) {
-            set_flag(machine, CARRY);
-        } else {
-            clear_flag(machine, CARRY);
-        }
+        check_and_set_carry_16(machine, result);
     }
     return machine;
 }
@@ -2305,21 +2215,13 @@ state_t* ADC_DP_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint16_t result = (uint16_t)state->A.low + (uint16_t)(arg_one & 0xFF) + carry;
         state->A.low = (uint8_t)(result & 0xFF);
         // Set Carry flag
-        if (result > 0xFF) {
-            set_flag(machine, CARRY);
-        } else {
-            clear_flag(machine, CARRY);
-        }
+        check_and_set_carry_8(machine, result);
     } else {
         // 16-bit mode
         uint32_t result = (uint32_t)state->A.full + (uint32_t)(arg_one & 0xFFFF) + carry;
         state->A.full = (uint16_t)(result & 0xFFFF);
         // Set Carry flag
-        if (result > 0xFFFF) {
-            set_flag(machine, CARRY);
-        } else {
-            clear_flag(machine, CARRY);
-        }
+        check_and_set_carry_16(machine, result);
     }
     return machine;
 }
@@ -2336,21 +2238,13 @@ state_t* ADC_DP_I      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint16_t result = (uint16_t)state->A.low + (uint16_t)(arg_one & 0xFF) + carry;
         state->A.low = (uint8_t)(result & 0xFF);
         // Set Carry flag
-        if (result > 0xFF) {
-            set_flag(machine, CARRY);
-        } else {
-            clear_flag(machine, CARRY);
-        }
+        check_and_set_carry_8(machine, result);
     } else {
         // 16-bit mode
         uint32_t result = (uint32_t)state->A.full + (uint32_t)(arg_one & 0xFFFF) + carry;
         state->A.full = (uint16_t)(result & 0xFFFF);
         // Set Carry flag
-        if (result > 0xFFFF) {
-            set_flag(machine, CARRY);
-        } else {
-            clear_flag(machine, CARRY);
-        }
+        check_and_set_carry_16(machine, result);
     }
     return machine;
 }
@@ -2375,21 +2269,13 @@ state_t* ADC_SR_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint16_t result = (uint16_t)state->A.low + (uint16_t)(arg_one & 0xFF) + carry;
         state->A.low = (uint8_t)(result & 0xFF);
         // Set Carry flag
-        if (result > 0xFF) {
-            set_flag(machine, CARRY);
-        } else {
-            clear_flag(machine, CARRY);
-        }
+        check_and_set_carry_8(machine, result);
     } else {
         // 16-bit mode
         uint32_t result = (uint32_t)state->A.full + (uint32_t)(arg_one & 0xFFFF) + carry;
         state->A.full = (uint16_t)(result & 0xFFFF);
         // Set Carry flag
-        if (result > 0xFFFF) {
-            set_flag(machine, CARRY);
-        } else {
-            clear_flag(machine, CARRY);
-        }
+        check_and_set_carry_16(machine, result);
     }
     return machine;
 }
@@ -2417,21 +2303,13 @@ state_t* ADC_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint16_t result = (uint16_t)state->A.low + (uint16_t)(arg_one & 0xFF) + carry;
         state->A.low = (uint8_t)(result & 0xFF);
         // Set Carry flag
-        if (result > 0xFF) {
-            set_flag(machine, CARRY);
-        } else {
-            clear_flag(machine, CARRY);
-        }
+        check_and_set_carry_8(machine, result);
     } else {
         // 16-bit mode
         uint32_t result = (uint32_t)state->A.full + (uint32_t)(arg_one & 0xFFFF) + carry;
         state->A.full = (uint16_t)(result & 0xFFFF);
         // Set Carry flag
-        if (result > 0xFFFF) {
-            set_flag(machine, CARRY);
-        } else {
-            clear_flag(machine, CARRY);
-        }
+        check_and_set_carry_16(machine, result);
     }
     return machine;
 }
@@ -2482,21 +2360,13 @@ state_t* ADC_DP_IL_IY  (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint16_t result = (uint16_t)state->A.low + (uint16_t)(value & 0xFF) + carry;
         state->A.low = (uint8_t)(result & 0xFF);
         // Set Carry flag
-        if (result > 0xFF) {
-            set_flag(machine, CARRY);
-        } else {
-            clear_flag(machine, CARRY);
-        }
+        check_and_set_carry_8(machine, result);
     } else {
         // 16-bit mode
         uint32_t result = (uint32_t)state->A.full + (uint32_t)(value & 0xFFFF) + carry;
         state->A.full = (uint16_t)(result & 0xFFFF);
         // Set Carry flag
-        if (result > 0xFFFF) {
-            set_flag(machine, CARRY);
-        } else {
-            clear_flag(machine, CARRY);
-        }
+        check_and_set_carry_16(machine, result);
     }
     return machine;
 }
@@ -2539,7 +2409,6 @@ state_t* PLY           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         sp_address = 0x0100 | (state->SP & 0xFF);
         state->Y = memory_bank[sp_address];
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         // 16-bit mode
         state->SP = (state->SP + 1) & 0xFFFF;
@@ -2806,7 +2675,7 @@ state_t* BIT_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         set_flags_nz_8(machine, result);
     } else {
         uint16_t result = state->A.full & value;
-        check_and_set_zero_16(machine, result);
+        set_flags_nz_16(machine, result);
     }
     return machine;
 }
@@ -3030,7 +2899,6 @@ state_t* TYA           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (state->emulation_mode || (is_flag_set(machine, X_FLAG) && is_flag_set(machine, M_FLAG))) {
         state->A.low = state->Y & 0xFF;
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else if (is_flag_set(machine, X_FLAG) && !is_flag_set(machine, M_FLAG)) {
         state->A.full = (uint16_t)state->Y & 0xFF;
         set_flags_nz_16(machine, state->A.full);
@@ -3073,7 +2941,6 @@ state_t* TXY           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (state->emulation_mode || (is_flag_set(machine, X_FLAG) && is_flag_set(machine, X_FLAG))) {
         state->Y = state->X & 0xFF;
         set_flags_nz_8(machine, state->Y);
-        check_and_set_negative_8(machine, state->Y);
     } else if (is_flag_set(machine, X_FLAG) && !is_flag_set(machine, X_FLAG)) {
         state->Y = (uint16_t)(state->X & 0xFF);
         set_flags_nz_16(machine, state->Y);
@@ -3148,7 +3015,6 @@ state_t* LDY_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
         state->Y = (uint8_t)(arg_one & 0xFF);
         set_flags_nz_8(machine, state->Y);
-        check_and_set_negative_8(machine, state->Y);
     } else {
         state->Y = arg_one & 0xFFFF;
         set_flags_nz_16(machine, state->Y);
@@ -3172,7 +3038,6 @@ state_t* LDA_DP_I_IX   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         state->A.low = memory_bank[effective_address];
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.low = memory_bank[effective_address];
         state->A.high = memory_bank[(effective_address + 1) & 0xFFFF];
@@ -3187,7 +3052,6 @@ state_t* LDX_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
         state->X = (uint8_t)(arg_one & 0xFF);
         set_flags_nz_8(machine, state->X);
-        check_and_set_negative_8(machine, state->X);
     } else {
         state->X = arg_one & 0xFFFF;
         set_flags_nz_16(machine, state->X);
@@ -3207,7 +3071,6 @@ state_t* LDA_SR        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         state->A.low = memory_bank[effective_address];
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.low = memory_bank[effective_address];
         state->A.high = memory_bank[(effective_address + 1) & 0xFFFF];
@@ -3228,7 +3091,6 @@ state_t* LDY_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
         state->Y = memory_bank[effective_address];
         set_flags_nz_8(machine, state->Y);
-        check_and_set_negative_8(machine, state->Y);
     } else {
         state->Y = memory_bank[effective_address];
         state->Y |= ((uint16_t)memory_bank[effective_address+1] << 8);
@@ -3249,7 +3111,6 @@ state_t* LDA_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         state->A.low = memory_bank[effective_address];
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.low = memory_bank[effective_address];
         state->A.high = memory_bank[effective_address+1];
@@ -3270,7 +3131,6 @@ state_t* LDX_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
         state->X = memory_bank[effective_address];
         set_flags_nz_8(machine, state->X);
-        check_and_set_negative_8(machine, state->X);
     } else {
         state->X = memory_bank[effective_address];
         state->X |= ((uint16_t)memory_bank[effective_address+1] << 8);
@@ -3296,7 +3156,6 @@ state_t* LDA_DP_IL     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         state->A.low = act_bank[base_address];
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.low = act_bank[base_address];
         state->A.high = act_bank[(base_address + 1) & 0xFFFF];
@@ -3311,7 +3170,6 @@ state_t* TAY           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (state->emulation_mode || (is_flag_set(machine, X_FLAG) && is_flag_set(machine, M_FLAG))) {
         state->Y = state->A.low & 0xFF;
         set_flags_nz_8(machine, state->Y);
-        check_and_set_negative_8(machine, state->Y);
     } else if (is_flag_set(machine, X_FLAG) && !is_flag_set(machine, M_FLAG)) {
         state->Y = (uint16_t)state->A.low & 0xFF;
         set_flags_nz_16(machine, state->Y);
@@ -3328,7 +3186,6 @@ state_t* LDA_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         state->A.low = (uint8_t)(arg_one & 0xFF);
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.full = arg_one & 0xFFFF;
         set_flags_nz_16(machine, state->A.full);
@@ -3342,7 +3199,6 @@ state_t* TAX           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (state->emulation_mode || (is_flag_set(machine, X_FLAG) && is_flag_set(machine, M_FLAG))) {
         state->X = state->A.low & 0xFF;
         set_flags_nz_8(machine, state->X);
-        check_and_set_negative_8(machine, state->X);
     } else if (is_flag_set(machine, X_FLAG) && !is_flag_set(machine, M_FLAG)) {
         state->X = (uint16_t)state->A.low & 0xFF;
         set_flags_nz_16(machine, state->X);
@@ -3365,7 +3221,6 @@ state_t* PLB           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         state->A.high = stack_bank[state->SP & 0xFFFF];
     }
     set_flags_nz_8(machine, state->A.high);
-    check_and_set_negative_8(machine, state->A.high);
     return machine;
 }
 
@@ -3376,7 +3231,6 @@ state_t* LDY_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
         state->Y = memory_bank[arg_one];
         set_flags_nz_8(machine, state->Y);
-        check_and_set_negative_8(machine, state->Y);
     } else {
         state->Y = memory_bank[arg_one];
         state->Y |= ((uint16_t)memory_bank[(arg_one + 1) & 0xFFFF] << 8);
@@ -3392,7 +3246,6 @@ state_t* LDA_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         state->A.low = memory_bank[arg_one];
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.low = memory_bank[arg_one];
         state->A.high = memory_bank[(arg_one + 1) & 0xFFFF];
@@ -3408,7 +3261,6 @@ state_t* LDX_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
         state->X = memory_bank[arg_one];
         set_flags_nz_8(machine, state->X);
-        check_and_set_negative_8(machine, state->X);
     } else {
         state->X = memory_bank[arg_one];
         state->X |= ((uint16_t)memory_bank[(arg_one + 1) & 0xFFFF] << 8);
@@ -3424,7 +3276,6 @@ state_t* LDA_ABL       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         state->A.low = memory_bank[arg_one];
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.low = memory_bank[arg_one];
         state->A.high = memory_bank[(arg_one + 1) & 0xFFFF];
@@ -3458,7 +3309,6 @@ state_t* LDA_DP_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         state->A.low = memory_bank[effective_address];
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.low = memory_bank[effective_address];
         state->A.high = memory_bank[(effective_address + 1) & 0xFFFF];
@@ -3482,7 +3332,6 @@ state_t* LDA_DP_I      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         state->A.low = memory_bank[effective_address];
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.low = memory_bank[effective_address];
         state->A.high = memory_bank[(effective_address + 1) & 0xFFFF];
@@ -3507,7 +3356,6 @@ state_t* LDA_SR_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         state->A.low = memory_bank[effective_address];
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.low = memory_bank[effective_address];
         state->A.high = memory_bank[(effective_address + 1) & 0xFFFF];
@@ -3528,7 +3376,6 @@ state_t* LDY_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
         state->Y = memory_bank[effective_address];
         set_flags_nz_8(machine, state->Y);
-        check_and_set_negative_8(machine, state->Y);
     } else {
         state->Y = memory_bank[effective_address];
         state->Y |= ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
@@ -3549,7 +3396,6 @@ state_t* LDA_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         state->A.low = memory_bank[effective_address];
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.low = memory_bank[effective_address];
         state->A.high = memory_bank[(effective_address + 1) & 0xFFFF];
@@ -3570,7 +3416,6 @@ state_t* LDX_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
         state->X = memory_bank[effective_address];
         set_flags_nz_8(machine, state->X);
-        check_and_set_negative_8(machine, state->X);
     } else {
         state->X = memory_bank[effective_address];
         state->X |= ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
@@ -3597,7 +3442,6 @@ state_t* LDA_DP_IL_IY  (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         state->A.low = act_bank[effective_address];
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.low = act_bank[effective_address];
         state->A.high = act_bank[(effective_address + 1) & 0xFFFF];
@@ -3620,7 +3464,6 @@ state_t* LDA_ABS_IY    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         state->A.low = memory_bank[effective_address];
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.low = memory_bank[effective_address];
         state->A.high = memory_bank[(effective_address + 1) & 0xFFFF];
@@ -3648,7 +3491,6 @@ state_t* TYX           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
         state->X = state->Y & 0xFF;
         set_flags_nz_8(machine, state->X);
-        check_and_set_negative_8(machine, state->X);
     } else {
         state->X = state->Y & 0xFFFF;
         set_flags_nz_16(machine, state->X);
@@ -3664,7 +3506,6 @@ state_t* LDY_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
         state->Y = memory_bank[effective_address];
         set_flags_nz_8(machine, state->Y);
-        check_and_set_negative_8(machine, state->Y);
     } else {
         state->Y = memory_bank[effective_address];
         state->Y |= ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
@@ -3681,7 +3522,6 @@ state_t* LDA_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         state->A.low = memory_bank[effective_address];
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.low = memory_bank[effective_address];
         state->A.high = memory_bank[(effective_address + 1) & 0xFFFF];
@@ -3698,7 +3538,6 @@ state_t* LDX_ABS_IY    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
         state->X = memory_bank[effective_address];
         set_flags_nz_8(machine, state->X);
-        check_and_set_negative_8(machine, state->X);
     } else {
         state->X = memory_bank[effective_address];
         state->X |= ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
@@ -3715,7 +3554,6 @@ state_t* LDA_AL_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         state->A.low = memory_bank[effective_address];
         set_flags_nz_8(machine, state->A.low);
-        check_and_set_negative_8(machine, state->A.low);
     } else {
         state->A.low = memory_bank[effective_address];
         state->A.high = memory_bank[(effective_address + 1) & 0xFFFF];
@@ -3732,7 +3570,6 @@ state_t* CPY_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         value_to_compare = (uint8_t)(arg_one & 0xFF);
         uint8_t result = (state->Y & 0xFF) - (value_to_compare & 0xFF);
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
     } else {
         value_to_compare = arg_one & 0xFFFF;
         uint16_t result = (state->Y & 0xFFFF) - (value_to_compare & 0xFFFF);
@@ -3764,11 +3601,10 @@ state_t* CMP_DP_I_IX   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         value_to_compare = (uint8_t)memory_bank[effective_address];
         uint8_t result = (state->A.low & 0xFF) - (value_to_compare & 0xFF);
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
     } else {
         value_to_compare = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
         uint16_t result = (state->A.full & 0xFFFF) - (value_to_compare & 0xFFFF);
-check_and_set_carry_16(machine, result);        set_flags_nz_16(machine, result);
+        set_flags_nzc_16(machine, result);
     }
     return machine;
 }
@@ -3787,11 +3623,10 @@ state_t* CMP_SR        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         value_to_compare = (uint8_t)memory_bank[effective_address];
         uint8_t result = (state->A.low & 0xFF) - (value_to_compare & 0xFF);
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
     } else {
         value_to_compare = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
         uint16_t result = (state->A.full & 0xFFFF) - (value_to_compare & 0xFFFF);
-check_and_set_carry_16(machine, result);        set_flags_nz_16(machine, result);
+        set_flags_nzc_16(machine, result);
     }
     return machine;
 }
@@ -3810,16 +3645,10 @@ state_t* CPY_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         value_to_compare = (uint8_t)memory_bank[effective_address];
         uint8_t result = (state->Y & 0xFF) - (value_to_compare & 0xFF);
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
     } else {
         value_to_compare = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
         uint16_t result = (state->Y & 0xFFFF) - (value_to_compare & 0xFFFF);
-        if ((state->Y & 0xFFFF) >= (value_to_compare & 0xFFFF)) {
-            set_flag(machine, CARRY);
-        } else {
-            clear_flag(machine, CARRY);
-        }
-        set_flags_nz_16(machine, result);
+        set_flags_nzc_16(machine, result);
     }
     return machine;
 }
@@ -3838,11 +3667,10 @@ state_t* CMP_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         value_to_compare = (uint8_t)memory_bank[effective_address];
         uint8_t result = (state->A.low & 0xFF) - (value_to_compare & 0xFF);
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
     } else {
         value_to_compare = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
         uint16_t result = (state->A.full & 0xFFFF) - (value_to_compare & 0xFFFF);
-check_and_set_carry_16(machine, result);        set_flags_nz_16(machine, result);
+        set_flags_nzc_16(machine, result);
     }
     return machine;
 }
@@ -3861,7 +3689,6 @@ state_t* DEC_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         value = (value - 1) & 0xFF;
         memory_bank[effective_address] = value;
         set_flags_nz_8(machine, value);
-        check_and_set_negative_8(machine, value);
     } else {
         uint16_t value = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
         value = (value - 1) & 0xFFFF;
@@ -3891,11 +3718,10 @@ state_t* CMP_DP_IL     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         value_to_compare = (uint8_t)act_bank[effective_address];
         uint8_t result = (state->A.low & 0xFF) - (value_to_compare & 0xFF);
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
     } else {
         value_to_compare = ((uint16_t)act_bank[effective_address]) | ((uint16_t)act_bank[(effective_address + 1) & 0xFFFF] << 8);
         uint16_t result = (state->A.full & 0xFFFF) - (value_to_compare & 0xFFFF);
-check_and_set_carry_16(machine, result);        set_flags_nz_16(machine, result);
+        set_flags_nzc_16(machine, result);
     }
     return machine;
 }
@@ -3906,7 +3732,6 @@ state_t* INY           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
         state->Y = (state->Y + 1) & 0xFF;
         set_flags_nz_8(machine, state->Y);
-        check_and_set_negative_8(machine, state->Y);
     } else {
         state->Y = (state->Y + 1) & 0xFFFF;
         set_flags_nz_16(machine, state->Y);
@@ -3922,11 +3747,10 @@ state_t* CMP_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         value_to_compare = (uint8_t)(arg_one & 0xFF);
         uint8_t result = (state->A.low & 0xFF) - (value_to_compare & 0xFF);
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
     } else {
         value_to_compare = arg_one & 0xFFFF;
         uint16_t result = (state->A.full & 0xFFFF) - (value_to_compare & 0xFFFF);
-check_and_set_carry_16(machine, result);        set_flags_nz_16(machine, result);
+        set_flags_nz_16(machine, result);
     }
     return machine;
 }
@@ -3937,7 +3761,6 @@ state_t* DEX           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
         state->X = (state->X - 1) & 0xFF;
         set_flags_nz_8(machine, state->X);
-        check_and_set_negative_8(machine, state->X);
     } else {
         state->X = (state->X - 1) & 0xFFFF;
         set_flags_nz_16(machine, state->X);
@@ -3966,16 +3789,10 @@ state_t* CPY_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
             clear_flag(machine, CARRY);
         }
         set_flags_nz_8(machine, result);
-        check_and_set_negative_8(machine, result);
     } else {
         value_to_compare = arg_one & 0xFFFF;
         uint16_t result = (state->Y & 0xFFFF) - (value_to_compare & 0xFFFF);
-        if ((state->Y & 0xFFFF) >= (value_to_compare & 0xFFFF)) {
-            set_flag(machine, CARRY);
-        } else {
-            clear_flag(machine, CARRY);
-        }
-        set_flags_nz_16(machine, result);
+        set_flags_nzc_16(machine, result);
     }
     return machine;
 }
@@ -3988,11 +3805,10 @@ state_t* CMP_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         value_to_compare = (uint8_t)(arg_one & 0xFF);
         uint8_t result = (state->A.low & 0xFF) - (value_to_compare & 0xFF);
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
     } else {
         value_to_compare = arg_one & 0xFFFF;
         uint16_t result = (state->A.full & 0xFFFF) - (value_to_compare & 0xFFFF);
-check_and_set_carry_16(machine, result);        set_flags_nz_16(machine, result);
+        set_flags_nzc_16(machine, result);
     }
     return machine;
 }
@@ -4007,7 +3823,6 @@ state_t* DEC_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         value = (value - 1) & 0xFF;
         memory_bank[effective_address] = value;
         set_flags_nz_8(machine, value);
-        check_and_set_negative_8(machine, value);
     } else {
         uint16_t value = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
         value = (value - 1) & 0xFFFF;
@@ -4028,11 +3843,10 @@ state_t* CMP_ABL       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         value_to_compare = (uint8_t)memory_bank[effective_address];
         uint8_t result = (state->A.low & 0xFF) - (value_to_compare & 0xFF);
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
     } else {
         value_to_compare = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
         uint16_t result = (state->A.full & 0xFFFF) - (value_to_compare & 0xFFFF);
-check_and_set_carry_16(machine, result);        set_flags_nz_16(machine, result);
+        set_flags_nzc_16(machine, result);
     }
     return machine;
 }
@@ -4064,11 +3878,10 @@ state_t* CMP_DP_I      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         value_to_compare = (uint8_t)memory_bank[effective_address];
         uint8_t result = (state->A.low & 0xFF) - (value_to_compare & 0xFF);
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
     } else {
         value_to_compare = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
         uint16_t result = (state->A.full & 0xFFFF) - (value_to_compare & 0xFFFF);
-check_and_set_carry_16(machine, result);        set_flags_nz_16(machine, result);
+        set_flags_nzc_16(machine, result);
     }
     return machine;
 }
@@ -4091,11 +3904,10 @@ state_t* CMP_SR_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         value_to_compare = (uint8_t)memory_bank[effective_address];
         uint8_t result = (state->A.low & 0xFF) - (value_to_compare & 0xFF);
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
     } else {
         value_to_compare = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
         uint16_t result = (state->A.full & 0xFFFF) - (value_to_compare & 0xFFFF);
-check_and_set_carry_16(machine, result);        set_flags_nz_16(machine, result);
+        set_flags_nzc_16(machine, result);
     }
     return machine;
 }
@@ -4133,11 +3945,10 @@ state_t* CMP_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         value_to_compare = (uint8_t)memory_bank[effective_address];
         uint8_t result = (state->A.low & 0xFF) - (value_to_compare & 0xFF);
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
     } else {
         value_to_compare = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
         uint16_t result = (state->A.full & 0xFFFF) - (value_to_compare & 0xFFFF);
-check_and_set_carry_16(machine, result);        set_flags_nz_16(machine, result);
+        set_flags_nzc_16(machine, result);
     }
     return machine;
 }
@@ -4156,7 +3967,6 @@ state_t* DEC_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         value = (value - 1) & 0xFF;
         memory_bank[effective_address] = value;
         set_flags_nz_8(machine, value);
-        check_and_set_negative_8(machine, value);
     } else {
         uint16_t value = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
         value = (value - 1) & 0xFFFF;
@@ -4185,11 +3995,10 @@ state_t* CMP_DP_IL_IY  (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         value_to_compare = (uint8_t)memory_bank[effective_address];
         uint8_t result = (state->A.low & 0xFF) - (value_to_compare & 0xFF);
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
     } else {
         value_to_compare = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
         uint16_t result = (state->A.full & 0xFFFF) - (value_to_compare & 0xFFFF);
-check_and_set_carry_16(machine, result);        set_flags_nz_16(machine, result);
+        set_flags_nzc_16(machine, result);
     }
     return machine;
 }
@@ -4210,7 +4019,6 @@ state_t* CMP_ABS_IY    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         value_to_compare = (uint8_t)memory_bank[effective_address];
         uint8_t result = (state->A.low & 0xFF) - (value_to_compare & 0xFF);
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
     } else {
         value_to_compare = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
         uint16_t result = (state->A.full & 0xFFFF) - (value_to_compare & 0xFFFF);
@@ -4264,7 +4072,6 @@ state_t* CMP_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         value_to_compare = (uint8_t)memory_bank[effective_address];
         uint8_t result = (state->A.low & 0xFF) - (value_to_compare & 0xFF);
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
     } else {
         value_to_compare = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
         uint16_t result = (state->A.full & 0xFFFF) - (value_to_compare & 0xFFFF);
@@ -4283,7 +4090,6 @@ state_t* DEC_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         value = (value - 1) & 0xFF;
         memory_bank[effective_address] = value;
         set_flags_nz_8(machine, value);
-        check_and_set_negative_8(machine, value);
     } else {
         uint16_t value = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
         value = (value - 1) & 0xFFFF;
@@ -4304,7 +4110,6 @@ state_t* CMP_ABL_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         value_to_compare = (uint8_t)memory_bank[effective_address];
         uint8_t result = (state->A.low & 0xFF) - (value_to_compare & 0xFF);
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
     } else {
         value_to_compare = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
         uint16_t result = (state->A.full & 0xFFFF) - (value_to_compare & 0xFFFF);
@@ -4321,7 +4126,6 @@ state_t* CPX_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         value_to_compare = (uint8_t)(arg_one & 0xFF);
         uint8_t result = (state->X & 0xFF) - (value_to_compare & 0xFF);
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
     } else {
         value_to_compare = arg_one & 0xFFFF;
         uint16_t result = (state->X & 0xFFFF) - (value_to_compare & 0xFFFF);
@@ -4341,7 +4145,6 @@ state_t* SBC_DP_I_IX   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
         uint8_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) - carry;
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
         state->A.low = result & 0xFF;
     } else {
         value_to_subtract = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
@@ -4368,7 +4171,6 @@ state_t* SBC_SR        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
         uint8_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) - carry;
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
         state->A.low = result & 0xFF;
     } else {
         value_to_subtract = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
@@ -4394,7 +4196,6 @@ state_t* CPX_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         value_to_compare = (uint8_t)memory_bank[effective_address];
         uint8_t result = (state->X & 0xFF) - (value_to_compare & 0xFF);
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
     } else {
         value_to_compare = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
         uint16_t result = (state->X & 0xFFFF) - (value_to_compare & 0xFFFF);
@@ -4418,7 +4219,6 @@ state_t* SBC_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
         uint8_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) - carry;
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
         state->A.low = result & 0xFF;
     } else {
         value_to_subtract = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
@@ -4444,7 +4244,6 @@ state_t* INC_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         value = (value + 1) & 0xFF;
         memory_bank[effective_address] = value;
         set_flags_nz_8(machine, value);
-        check_and_set_negative_8(machine, value);
     } else {
         uint16_t value = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
         value = (value + 1) & 0xFFFF;
@@ -4474,7 +4273,6 @@ state_t* SBC_DP_IL     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
         uint8_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) - carry;
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
         state->A.low = result & 0xFF;
     } else {
         value_to_subtract = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
@@ -4492,7 +4290,6 @@ state_t* INX           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
         state->X = (state->X + 1) & 0xFF;
         set_flags_nz_8(machine, state->X & 0xFF);
-        check_and_set_negative_8(machine, state->X & 0xFF);
     } else {
         state->X = (state->X + 1) & 0xFFFF;
         set_flags_nz_16(machine, state->X & 0xFFFF);
@@ -4509,7 +4306,6 @@ state_t* SBC_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
         uint8_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) - carry;
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
         state->A.low = result & 0xFF;
     } else {
         value_to_subtract = arg_one & 0xFFFF;
@@ -4535,7 +4331,6 @@ state_t* XBA           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     state->A.high = temp;
     // Set flags based on new A low byte
     set_flags_nz_8(machine, state->A.low & 0xFF);
-    check_and_set_negative_8(machine, state->A.low & 0xFF);
     return machine;
 }
 
@@ -4549,7 +4344,6 @@ state_t* CPX_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         value_to_compare = (uint8_t)memory_bank[effective_address];
         uint8_t result = (state->X & 0xFF) - (value_to_compare & 0xFF);
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
     } else {
         value_to_compare = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
         uint16_t result = (state->X & 0xFFFF) - (value_to_compare & 0xFFFF);
@@ -4569,7 +4363,6 @@ state_t* SBC_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
         uint8_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) - carry;
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
         state->A.low = result & 0xFF;
     } else {
         value_to_subtract = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
@@ -4591,7 +4384,6 @@ state_t* INC_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         value = (value + 1) & 0xFF;
         memory_bank[effective_address] = value;
         set_flags_nz_8(machine, value);
-        check_and_set_negative_8(machine, value);
     } else {
         uint16_t value = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
         value = (value + 1) & 0xFFFF;
@@ -4613,7 +4405,6 @@ state_t* SBC_ABL       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
         uint8_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) - carry;
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
         state->A.low = result & 0xFF;
     } else {
         value_to_subtract = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
@@ -4654,7 +4445,6 @@ state_t* SBC_DP_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
         uint8_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) - carry;
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
         state->A.low = result & 0xFF;
     } else {
         value_to_subtract = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
@@ -4684,7 +4474,6 @@ state_t* SBC_DP_I      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
         uint8_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) - carry;
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
         state->A.low = result & 0xFF;
     } else {
         value_to_subtract = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
@@ -4715,7 +4504,6 @@ state_t* SBC_SR_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
         uint8_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) - carry;
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
         state->A.low = result & 0xFF;
     } else {
         value_to_subtract = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
@@ -4766,7 +4554,6 @@ state_t* SBC_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
         uint8_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) - carry;
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
         state->A.low = result & 0xFF;
     } else {
         value_to_subtract = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
@@ -4792,7 +4579,6 @@ state_t* INC_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         value = (value + 1) & 0xFF;
         memory_bank[effective_address] = value;
         set_flags_nz_8(machine, value);
-        check_and_set_negative_8(machine, value);
     } else {
         uint16_t value = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
         value = (value + 1) & 0xFFFF;
@@ -4824,7 +4610,6 @@ state_t* SBC_DP_IL_IY  (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
         uint8_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) - carry;
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
         state->A.low = result & 0xFF;
     } else {
         value_to_subtract = ((uint16_t)act_bank[effective_address]) | ((uint16_t)act_bank[(effective_address + 1) & 0xFFFF] << 8);
@@ -4853,7 +4638,6 @@ state_t* SBC_ABS_IY    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
         uint8_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) - carry;
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
         state->A.low = result & 0xFF;
     } else {
         value_to_subtract = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
@@ -4875,7 +4659,6 @@ state_t* PLX           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint16_t sp_address = 0x0100 | (state->SP & 0xFF);
         state->X = memory_bank[sp_address];
         set_flags_nz_8(machine, state->X);
-        check_and_set_negative_8(machine, state->X);
     } else {
         state->SP = (state->SP + 1) & 0xFFFF;
         uint16_t sp_address = state->SP & 0xFFFF;
@@ -4931,7 +4714,6 @@ state_t* SBC_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
         uint8_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) - carry;
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
         state->A.low = result & 0xFF;
     } else {
         value_to_subtract = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
@@ -4953,7 +4735,6 @@ state_t* INC_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         value = (value + 1) & 0xFF;
         memory_bank[effective_address] = value;
         set_flags_nz_8(machine, value);
-        check_and_set_negative_8(machine, value);
     } else {
         uint16_t value = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
         value = (value + 1) & 0xFFFF;
@@ -4975,7 +4756,6 @@ state_t* SBC_ABL_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
         uint8_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) - carry;
         set_flags_nzc_8(machine, result);
-        check_and_set_negative_8(machine, result);
         state->A.low = result & 0xFF;
     } else {
         value_to_subtract = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
