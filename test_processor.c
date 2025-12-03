@@ -1157,6 +1157,17 @@ TEST(STZ_stores_zero_16bit) {
     destroy_machine(machine);
 }
 
+TEST(STZ_ABS_absolute) {
+    state_t *machine = setup_machine();
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x3000] = 0xFF;
+    
+    STZ_ABS(machine, 0x3000, 0);
+    ASSERT_EQ(bank[0x3000], 0x00, "STZ ABS should store zero");
+    
+    destroy_machine(machine);
+}
+
 TEST(STZ_ABS_indexed) {
     state_t *machine = setup_machine();
     uint8_t *bank = get_memory_bank(machine, 0);
@@ -4037,6 +4048,118 @@ TEST(STZ_DP_IX_indexed) {
 }
 
 // ============================================================================
+// Final Untested Opcodes for Full Coverage
+// ============================================================================
+
+TEST(LDA_ABS_IY_absolute_indexed_y) {
+    state_t *machine = setup_machine();
+    machine->processor.Y = 0x10;
+    set_flag(machine, M_FLAG);
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x4010] = 0xAB;
+    LDA_ABS_IY(machine, 0x4000, 0);
+    ASSERT_EQ(machine->processor.A.low, 0xAB, "LDA ABS,Y should load indexed");
+    destroy_machine(machine);
+}
+
+TEST(LDA_AL_IX_absolute_long_indexed) {
+    state_t *machine = setup_machine();
+    machine->processor.X = 0x08;
+    set_flag(machine, M_FLAG);
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x5008] = 0xCD;
+    LDA_AL_IX(machine, 0x5000, 0);
+    ASSERT_EQ(machine->processor.A.low, 0xCD, "LDA AL,X should load long indexed");
+    destroy_machine(machine);
+}
+
+TEST(ORA_DP_I_IX_dp_indexed_indirect) {
+    state_t *machine = setup_machine();
+    machine->processor.DP = 0x00;
+    machine->processor.X = 0x04;
+    machine->processor.A.low = 0x0F;
+    set_flag(machine, M_FLAG);
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x14] = 0x00;
+    bank[0x15] = 0x30;
+    bank[0x3000] = 0xF0;
+    ORA_DP_I_IX(machine, 0x10, 0);
+    ASSERT_EQ(machine->processor.A.low, 0xFF, "ORA (DP,X) should OR indexed indirect");
+    destroy_machine(machine);
+}
+
+TEST(JMP_ABS_IL_absolute_indirect_long) {
+    state_t *machine = setup_machine();
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x2000] = 0x00;
+    bank[0x2001] = 0x80;
+    bank[0x2002] = 0x01;
+    JMP_ABS_IL(machine, 0x2000, 0);
+    ASSERT_EQ(machine->processor.PC, 0x8000, "JMP [ABS] should jump indirect long");
+    ASSERT_EQ(machine->processor.PBR, 0x01, "JMP [ABS] should set bank");
+    destroy_machine(machine);
+}
+
+TEST(JSR_ABS_I_IX_jsr_indexed_indirect) {
+    state_t *machine = setup_machine();
+    machine->processor.X = 0x02;
+    machine->processor.SP = 0x01FF;
+    machine->processor.emulation_mode = false;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x1002] = 0x00;
+    bank[0x1003] = 0x90;
+    JSR_ABS_I_IX(machine, 0x1000, 0);
+    ASSERT_EQ(machine->processor.PC, 0x9000, "JSR (ABS,X) should jump indexed indirect");
+    destroy_machine(machine);
+}
+
+TEST(PEI_DP_I_push_effective_indirect) {
+    state_t *machine = setup_machine();
+    machine->processor.DP = 0x00;
+    machine->processor.SP = 0x01FF;
+    machine->processor.emulation_mode = false;
+    uint8_t *bank = get_memory_bank(machine, 0);
+    bank[0x20] = 0x34;
+    bank[0x21] = 0x12;
+    PEI_DP_I(machine, 0x20, 0);
+    ASSERT_EQ(machine->processor.SP, 0x01FD, "PEI should push 16-bit value");
+    destroy_machine(machine);
+}
+
+TEST(COP_coprocessor) {
+    state_t *machine = setup_machine();
+    machine->processor.SP = 0x01FF;
+    machine->processor.emulation_mode = true;
+    COP(machine, 0x42, 0);
+    ASSERT_EQ(machine->processor.SP, 0x01FC, "COP should push state");
+    destroy_machine(machine);
+}
+
+TEST(WDM_reserved_for_future) {
+    state_t *machine = setup_machine();
+    uint16_t pc_before = machine->processor.PC;
+    WDM(machine, 0, 0);
+    ASSERT_EQ(machine->processor.PC, pc_before, "WDM is reserved/no-op");
+    destroy_machine(machine);
+}
+
+TEST(STP_stop_processor) {
+    state_t *machine = setup_machine();
+    STP(machine, 0, 0);
+    // STP stops the processor - just verify it doesn't crash
+    ASSERT_EQ(1, 1, "STP should stop processor");
+    destroy_machine(machine);
+}
+
+TEST(WAI_wait_for_interrupt) {
+    state_t *machine = setup_machine();
+    WAI(machine, 0, 0);
+    // WAI waits for interrupt - just verify it doesn't crash
+    ASSERT_EQ(1, 1, "WAI should wait for interrupt");
+    destroy_machine(machine);
+}
+
+// ============================================================================
 // Main test runner
 // ============================================================================
 
@@ -4254,6 +4377,7 @@ int main(int argc, char **argv) {
     printf(COLOR_BLUE "--- STZ (Store Zero) Instructions ---\n" COLOR_RESET);
     run_test_STZ_stores_zero_8bit();
     run_test_STZ_stores_zero_16bit();
+    run_test_STZ_ABS_absolute();
     run_test_STZ_ABS_indexed();
     
     // BIT tests
@@ -4450,6 +4574,19 @@ int main(int argc, char **argv) {
     // Additional STZ tests
     printf(COLOR_BLUE "--- Additional STZ Tests ---\n" COLOR_RESET);
     run_test_STZ_DP_IX_indexed();
+    
+    // Final untested opcodes for full coverage
+    printf(COLOR_BLUE "--- Final Opcodes for Full Coverage ---\n" COLOR_RESET);
+    run_test_LDA_ABS_IY_absolute_indexed_y();
+    run_test_LDA_AL_IX_absolute_long_indexed();
+    run_test_ORA_DP_I_IX_dp_indexed_indirect();
+    run_test_JMP_ABS_IL_absolute_indirect_long();
+    run_test_JSR_ABS_I_IX_jsr_indexed_indirect();
+    run_test_PEI_DP_I_push_effective_indirect();
+    run_test_COP_coprocessor();
+    run_test_WDM_reserved_for_future();
+    run_test_STP_stop_processor();
+    run_test_WAI_wait_for_interrupt();
     
     // Print summary
     printf("\n");

@@ -116,11 +116,12 @@ state_t* BRK           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* ORA_DP_I_IX   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t dp_address = get_dp_address(machine, arg_one);
+    dp_address = (dp_address + state->X) & 0xFFFF;
     uint8_t *memory_bank = get_memory_bank(machine, state->PBR);
     uint8_t low_byte = memory_bank[dp_address];
     uint8_t high_byte = memory_bank[(dp_address + 1) & 0xFFFF];
     uint16_t effective_address = (high_byte << 8) | low_byte;
-    uint8_t value = memory_bank[(effective_address + state->X) & 0xFFFF];
+    uint8_t value = memory_bank[effective_address];
     
     if (is_flag_set(machine, M_FLAG)) {
         uint8_t result = state->A.low | value;
