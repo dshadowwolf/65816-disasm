@@ -63,12 +63,7 @@ void destroy_machine(state_t *machine) {
     free(machine);
 }
 
-// TODO: Fix callbacks for Long Addressing
-// TODO: Refactor common code into helper functions
-//       (in progress)
-// TODO: Fix memory lookups to account for machine->processor->DP
-//       and to handle dynamic allocation of banks beyond bank 0
-
+// TODO: refactor more to use the get_dp_address_XXX helpers
 state_t* XCE_CB(state_t *machine, uint16_t unused1, uint16_t unused2) {
     bool carry = is_flag_set(machine, CARRY); // Check Carry flag (bit 0)
     if (carry) {
@@ -107,8 +102,7 @@ state_t* BRK           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (!state->emulation_mode) {
         push_byte(machine, state->PBR); // Push PBR
     }
-    push_byte(machine, (pc >> 8) & 0xFF); // Push high byte of PC
-    push_byte(machine, pc & 0xFF); // Push low byte of PC
+    push_word(machine, pc); // Push PC
     push_byte(machine, state->P); // Push status register
     // Set Interrupt Disable flag
     set_flag(machine, INTERRUPT_DISABLE);
@@ -132,12 +126,10 @@ state_t* ORA_DP_I_IX   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint8_t result = state->A.low | value;
         state->A.low = result;
         set_flags_nz_8(machine, result);
-        machine->processor.A.low = result;
     } else {
         uint16_t result = state->A.full | value;
         state->A.full = result;
         set_flags_nz_16(machine, result);
-        machine->processor.A.full = result;
     }
 
     return machine;
@@ -151,8 +143,7 @@ state_t* COP           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (!state->emulation_mode) {
         push_byte(machine, state->PBR); // Push PBR
     }
-    push_byte(machine, (pc >> 8) & 0xFF); // Push high byte of PC
-    push_byte(machine, pc & 0xFF); // Push low byte of PC
+    push_word(machine, pc); // Push PC
     push_byte(machine, state->P); // Push status register
     // Set Interrupt Disable flag
     set_flag(machine, INTERRUPT_DISABLE);
@@ -177,12 +168,10 @@ state_t* ORA_SR        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint8_t result = state->A.low | value;
         state->A.low = result;
         set_flags_nz_8(machine, result);
-        machine->processor.A.low = result;
     } else {
         uint16_t result = state->A.full | value;
         state->A.full = result;
         set_flags_nz_16(machine, result);
-        machine->processor.A.full = result;
     }
     return machine;
 }
@@ -210,12 +199,10 @@ state_t* ORA_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint8_t result = state->A.low | value;
         state->A.low = result;
         set_flags_nz_8(machine, result);
-        machine->processor.A.low = result;
     } else {
         uint16_t result = state->A.full | value;
         state->A.full = result;
         set_flags_nz_16(machine, result);
-        machine->processor.A.full = result;
     }
     return machine;
 }
@@ -340,12 +327,10 @@ state_t* ORA_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint8_t result = state->A.low | value;
         state->A.low = result;
         set_flags_nz_8(machine, result);
-        machine->processor.A.low = result;
     } else {
         uint16_t result = state->A.full | value;
         state->A.full = result;
         set_flags_nz_16(machine, result);
-        machine->processor.A.full = result;
     }
     return machine;
 }
@@ -408,12 +393,10 @@ state_t* ORA_I_IY      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint8_t result = state->A.low | value;
         state->A.low = result;
         set_flags_nz_8(machine, result);
-        machine->processor.A.low = result;
     } else {
         uint16_t result = state->A.full | value;
-        state->A.full = result;
         set_flags_nz_16(machine, result);
-        machine->processor.A.full = result;
+        state->A.full = result;
     }
 
     return machine;

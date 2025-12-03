@@ -31,6 +31,8 @@ uint8_t *get_memory_bank(state_t *machine, uint8_t bank);
 // Stack operations
 void push_byte(state_t *machine, uint8_t value);
 uint8_t pop_byte(state_t *machine);
+void push_word(state_t *machine, uint16_t value);
+uint16_t pop_word(state_t *machine);
 
 // Memory read helpers
 uint16_t read_word(uint8_t *memory, uint16_t address);

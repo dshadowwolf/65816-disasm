@@ -107,6 +107,17 @@ uint8_t pop_byte(state_t *machine) {
     return memory_bank[0x0100 | (state->SP & 0xFF)];
 }
 
+void push_word(state_t *machine, uint16_t value) {
+    push_byte(machine, (value >> 8) & 0xFF);  // Push high byte first
+    push_byte(machine, value & 0xFF);         // Push low byte second
+}
+
+uint16_t pop_word(state_t *machine) {
+    uint8_t low_byte = pop_byte(machine);     // Pop low byte first
+    uint8_t high_byte = pop_byte(machine);    // Pop high byte second
+    return (high_byte << 8) | low_byte;
+}
+
 uint16_t read_word(uint8_t *memory, uint16_t address) {
     uint8_t low_byte = memory[address];
     uint8_t high_byte = memory[(address + 1) & 0xFFFF];
