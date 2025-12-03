@@ -769,7 +769,8 @@ TEST(CPX_and_CPY) {
 TEST(TAX_and_TXA) {
     state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
-    machine->processor.P &= ~M_FLAG;
+    machine->processor.P &= ~M_FLAG;  // 16-bit accumulator
+    machine->processor.P &= ~X_FLAG;  // 16-bit index registers
     machine->processor.A.full = 0x1234;
     machine->processor.X = 0;
     
@@ -786,7 +787,8 @@ TEST(TAX_and_TXA) {
 TEST(TAY_and_TYA) {
     state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
-    machine->processor.P &= ~M_FLAG;
+    machine->processor.P &= ~M_FLAG;  // 16-bit accumulator
+    machine->processor.P &= ~X_FLAG;  // 16-bit index registers
     machine->processor.A.full = 0x5678;
     machine->processor.Y = 0;
     
@@ -825,10 +827,10 @@ TEST(TXY_and_TYX) {
     machine->processor.Y = 0xBBBB;
     
     TXY(machine, 0, 0);
-    ASSERT_EQ(machine->processor.Y, 0xAAAA, "Y should equal X");
+    ASSERT_EQ(machine->processor.Y, 0xAAAA, "Y should equal X (0xAAAA)");
     
     TYX(machine, 0, 0);
-    ASSERT_EQ(machine->processor.X, 0xBBBB, "X should equal Y");
+    ASSERT_EQ(machine->processor.X, 0xAAAA, "X should equal Y (0xAAAA after TXY)");
     
     destroy_machine(machine);
 }

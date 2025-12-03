@@ -2529,7 +2529,7 @@ state_t* DEY           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint32_t ns = state->Y;
         ns -= 1;
         set_flags_nz_16(machine, ns);
-        state->Y = ((uint8_t)ns & 0xFF);
+        state->Y = ((uint16_t)ns & 0xFFFF);
     }
     
     return machine;
@@ -2605,7 +2605,7 @@ state_t* STX_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         memory_bank[arg_one] = (uint8_t)(state->X & 0xFF);
     } else {
         memory_bank[arg_one] = (uint8_t)(state->X & 0xFF);
-        memory_bank[arg_one+1] = ((uint8_t)(state->X & 0xFF00)) >> 8;
+        memory_bank[arg_one+1] = (uint8_t)((state->X >> 8) & 0xFF);
     }
     return machine;
 }
@@ -3037,14 +3037,13 @@ state_t* LDA_DP_IL     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* TAY           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Transfer A to Y
     processor_state_t *state = &machine->processor;
-    if (state->emulation_mode || (is_flag_set(machine, X_FLAG) && is_flag_set(machine, M_FLAG))) {
-        state->Y = state->A.low & 0xFF;
+    if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
+        // 8-bit index register
+        state->Y = state->A.full & 0xFF;
         set_flags_nz_8(machine, state->Y);
-    } else if (is_flag_set(machine, X_FLAG) && !is_flag_set(machine, M_FLAG)) {
-        state->Y = (uint16_t)state->A.low & 0xFF;
-        set_flags_nz_16(machine, state->Y);
     } else {
-        state->Y = state->A.full;
+        // 16-bit index register
+        state->Y = state->A.full & 0xFFFF;
         set_flags_nz_16(machine, state->Y);
     }
     return machine;
@@ -3066,14 +3065,13 @@ state_t* LDA_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* TAX           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Transfer A to X
     processor_state_t *state = &machine->processor;
-    if (state->emulation_mode || (is_flag_set(machine, X_FLAG) && is_flag_set(machine, M_FLAG))) {
-        state->X = state->A.low & 0xFF;
+    if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
+        // 8-bit index register
+        state->X = state->A.full & 0xFF;
         set_flags_nz_8(machine, state->X);
-    } else if (is_flag_set(machine, X_FLAG) && !is_flag_set(machine, M_FLAG)) {
-        state->X = (uint16_t)state->A.low & 0xFF;
-        set_flags_nz_16(machine, state->X);
     } else {
-        state->X = state->A.full;
+        // 16-bit index register
+        state->X = state->A.full & 0xFFFF;
         set_flags_nz_16(machine, state->X);
     }
     return machine;
