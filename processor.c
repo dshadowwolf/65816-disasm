@@ -289,13 +289,13 @@ state_t* PHD           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     uint16_t sp_address = 0x0100 | (state->SP & 0xFF);
     uint8_t *memory_bank = get_memory_bank(machine, state->PBR);
     if (is_flag_set(machine, M_FLAG)) {
-        memory_bank[sp_address] = state->A.low;
+        memory_bank[sp_address] = state->DP & 0xFF;
         state->SP = (state->SP - 1) & 0x1FF; // Decrement SP in emulation mode
     } else {
-        memory_bank[sp_address] = state->A.full & 0xFF;
+        memory_bank[sp_address] = state->DP & 0xFF;
         state->SP = (state->SP - 1) & 0x1FF; // Decrement SP in emulation mode
         sp_address = 0x0100 | (state->SP & 0xFF);
-        memory_bank[sp_address] = (state->A.full >> 8) & 0xFF;
+        memory_bank[sp_address] = (state->DP >> 8) & 0xFF;
         state->SP = (state->SP - 1) & 0x1FF; // Decrement SP in emulation mode
     }
     return machine;
@@ -630,24 +630,9 @@ state_t* JSR_CB        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Jump to Subroutine
     processor_state_t *state = &machine->processor;
     uint16_t return_address = (state->PC - 1) & 0xFFFF;
-    uint8_t *memory_bank = get_memory_bank(machine, state->PBR);
     state->PC = arg_one & 0xFFFF; // Set PC to target address
     // Push return address onto stack
-    if (state->emulation_mode) {
-        uint16_t sp_address = 0x0100 | (state->SP & 0xFF);
-        memory_bank[sp_address] = (return_address >> 8) & 0xFF;
-        state->SP = (state->SP - 1) & 0x1FF;
-        sp_address = 0x0100 | (state->SP & 0xFF);
-        memory_bank[sp_address] = return_address & 0xFF;
-        state->SP = (state->SP - 1) & 0x1FF;
-    } else {
-        uint16_t sp_address = state->SP & 0xFFFF;
-        memory_bank[sp_address] = (return_address >> 8) & 0xFF;
-        state->SP = (state->SP - 1) & 0xFFFF;
-        sp_address = state->SP & 0xFFFF;
-        memory_bank[sp_address] = return_address & 0xFF;
-        state->SP = (state->SP - 1) & 0xFFFF;
-    }
+    push_word(machine, return_address);
     return machine;
 }
 
@@ -672,29 +657,9 @@ state_t* JSL_CB        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Jump to Subroutine Long
     processor_state_t *state = &machine->processor;
     uint16_t return_address = (state->PC - 1) & 0xFFFF;
-    uint8_t *memory_bank = get_memory_bank(machine, state->PBR);
-    // Push return address onto stack
-    if (state->emulation_mode) {
-        uint16_t sp_address = 0x0100 | (state->SP & 0xFF);
-        memory_bank[sp_address] = (return_address >> 16) & 0xFF;
-        state->SP = (state->SP - 1) & 0x1FF;
-        sp_address = 0x0100 | (state->SP & 0xFF);
-        memory_bank[sp_address] = (return_address >> 8) & 0xFF;
-        state->SP = (state->SP - 1) & 0x1FF;
-        sp_address = 0x0100 | (state->SP & 0xFF);
-        memory_bank[sp_address] = return_address & 0xFF;
-        state->SP = (state->SP - 1) & 0x1FF;
-    } else {
-        uint16_t sp_address = state->SP & 0xFFFF;
-        memory_bank[sp_address] = (return_address >> 16) & 0xFF;
-        state->SP = (state->SP - 1) & 0xFFFF;
-        sp_address = state->SP & 0xFFFF;
-        memory_bank[sp_address] = (return_address >> 8) & 0xFF;
-        state->SP = (state->SP - 1) & 0xFFFF;
-        sp_address = state->SP & 0xFFFF;
-        memory_bank[sp_address] = return_address & 0xFF;
-        state->SP = (state->SP - 1) & 0xFFFF;
-    }
+    // Push 24-bit return address: bank byte first, then 16-bit address
+    push_byte(machine, state->PBR);
+    push_word(machine, return_address);
     state->PC = arg_one & 0xFFFF; // Set PC to target address (ignoring bank for now)
     return machine;
 }
@@ -1831,22 +1796,7 @@ state_t* EOR_AL_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* RTS           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Return from Subroutine
     processor_state_t *state = &machine->processor;
-    uint16_t sp_address;
-    uint8_t low_byte, high_byte;
-    if (state->emulation_mode) {
-        sp_address = (state->SP + 1) & 0x1FF;
-        low_byte = machine->memory[0][sp_address];
-        sp_address = (state->SP + 2) & 0x1FF;
-        high_byte = machine->memory[0][sp_address];
-        state->SP = (state->SP + 2) & 0x1FF;
-    } else {
-        sp_address = (state->SP + 1) & 0xFFFF;
-        low_byte = machine->memory[0][sp_address];
-        sp_address = (state->SP + 2) & 0xFFFF;
-        high_byte = machine->memory[0][sp_address];
-        state->SP = (state->SP + 2) & 0xFFFF;
-    }
-    state->PC = ((uint16_t)high_byte << 8) | low_byte;
+    state->PC = pop_word(machine);
     return machine;
 }
 
@@ -1873,24 +1823,8 @@ state_t* ADC_DP_I_IX   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* PER           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Push Program Counter Relative
     processor_state_t *state = &machine->processor;
-    uint16_t sp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->PBR);
     uint16_t pc_relative = (state->PC + (int8_t)arg_one) & 0xFFFF;
-    if (state->emulation_mode) {
-        sp_address = 0x0100 | (state->SP & 0xFF);
-        memory_bank[sp_address] = pc_relative & 0xFF;
-        state->SP = (state->SP - 1) & 0x1FF;
-        sp_address = 0x0100 | (state->SP & 0xFF);
-        memory_bank[sp_address] = (pc_relative >> 8) & 0xFF;
-        state->SP = (state->SP - 1) & 0x1FF;
-    } else {
-        sp_address = state->SP & 0xFFFF;
-        memory_bank[sp_address] = pc_relative & 0xFF;
-        state->SP = (state->SP - 1) & 0xFFFF;
-        sp_address = state->SP & 0xFFFF;
-        memory_bank[sp_address] = (pc_relative >> 8) & 0xFF;
-        state->SP = (state->SP - 1) & 0xFFFF;
-    }
+    push_word(machine, pc_relative);
     return machine;
 }
 
@@ -2069,26 +2003,11 @@ state_t* ROR           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* RTL           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Return from Subroutine Long
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->PBR);
-    uint16_t sp_address;
-    uint8_t low_byte, high_byte, bank_byte;
-    if (state->emulation_mode) {
-        sp_address = (state->SP + 1) & 0x1FF;
-        low_byte = memory_bank[sp_address];
-        sp_address = (state->SP + 2) & 0x1FF;
-        high_byte = memory_bank[sp_address];
-        sp_address = (state->SP + 3) & 0x1FF;
-        bank_byte = memory_bank[sp_address];
-        state->SP = (state->SP + 3) & 0x1FF;
-    } else {
-        sp_address = (state->SP + 1) & 0xFFFF;
-        low_byte = memory_bank[sp_address];
-        sp_address = (state->SP + 2) & 0xFFFF;
-        high_byte = memory_bank[sp_address];
-        sp_address = (state->SP + 3) & 0xFFFF;
-        bank_byte = memory_bank[sp_address];
-        state->SP = (state->SP + 3) & 0xFFFF;
-    }
+    // Pop 24-bit return address: 16-bit address first, then bank byte
+    uint16_t return_address = pop_word(machine);
+    uint8_t bank_byte = pop_byte(machine);
+    state->PC = return_address;
+    state->PBR = bank_byte;
     return machine;
 }
 
