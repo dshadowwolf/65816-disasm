@@ -177,15 +177,24 @@ state_t* ORA_SR        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 }
 
 state_t* TSB_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+    // Test and Set Bits - Direct Page
     processor_state_t *state = &machine->processor;
     uint16_t dp_address = get_dp_address(machine, arg_one);
-    uint8_t value = get_memory_bank(machine, state->PBR)[dp_address];
+    uint8_t *memory_bank = get_memory_bank(machine, state->PBR);
     if (is_flag_set(machine, M_FLAG)) {
-        state->A.low &= value;
-        set_flags_nz_8(machine, state->A.low);
+        uint8_t value = memory_bank[dp_address];
+        uint8_t test_result = state->A.low & value;
+        if (test_result == 0) set_flag(machine, ZERO);
+        else clear_flag(machine, ZERO);
+        memory_bank[dp_address] = value | state->A.low;  // Set bits
     } else {
-        state->A.full &= value;
-        set_flags_nz_16(machine, state->A.full);
+        uint16_t value = memory_bank[dp_address] | ((uint16_t)memory_bank[dp_address + 1] << 8);
+        uint16_t test_result = state->A.full & value;
+        if (test_result == 0) set_flag(machine, ZERO);
+        else clear_flag(machine, ZERO);
+        uint16_t new_value = value | state->A.full;
+        memory_bank[dp_address] = new_value & 0xFF;
+        memory_bank[dp_address + 1] = (new_value >> 8) & 0xFF;
     }
     return machine;
 }
@@ -302,19 +311,24 @@ state_t* PHD           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 }
 
 state_t* TSB_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+    // Test and Set Bits - Absolute
     processor_state_t *state = &machine->processor;
     uint16_t address = arg_one;
-    uint8_t *memory_bank = get_memory_bank(machine, 0);
+    uint8_t *memory_bank = get_memory_bank(machine, state->PBR);
     if (is_flag_set(machine, M_FLAG)) {
         uint8_t value = memory_bank[address];
-        value &= state->A.low;
-        set_flags_nz_8(machine, value);
-        memory_bank[address]= value;
+        uint8_t test_result = state->A.low & value;
+        if (test_result == 0) set_flag(machine, ZERO);
+        else clear_flag(machine, ZERO);
+        memory_bank[address] = value | state->A.low;  // Set bits
     } else {
-        uint16_t value = (memory_bank[address] &0xFF) << 8 | (memory_bank[(address + 1)] & 0xFF);
-        value &= state->A.full;
-        set_flags_nz_16(machine, value);
-        memory_bank[address]= value;
+        uint16_t value = memory_bank[address] | ((uint16_t)memory_bank[address + 1] << 8);
+        uint16_t test_result = state->A.full & value;
+        if (test_result == 0) set_flag(machine, ZERO);
+        else clear_flag(machine, ZERO);
+        uint16_t new_value = value | state->A.full;
+        memory_bank[address] = new_value & 0xFF;
+        memory_bank[address + 1] = (new_value >> 8) & 0xFF;
     }
     return machine;
 }
@@ -442,18 +456,24 @@ state_t* ORA_SR_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 }
 
 state_t* TRB_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
-    // test and reset bit, Direct Page
+    // Test and Reset Bits - Direct Page
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->PBR);
     uint16_t dp_address = get_dp_address(machine, arg_one);
-    uint8_t value = memory_bank[dp_address];
     if (is_flag_set(machine, M_FLAG)) {
-        uint8_t result = value & (~state->A.low);
-        // Set Zero and Negative flags
-        set_flags_nz_8(machine, result);
+        uint8_t value = memory_bank[dp_address];
+        uint8_t test_result = state->A.low & value;
+        if (test_result == 0) set_flag(machine, ZERO);
+        else clear_flag(machine, ZERO);
+        memory_bank[dp_address] = value & (~state->A.low);  // Clear bits
     } else {
-        uint16_t result = value & (~state->A.full);
-        set_flags_nz_16(machine, result);
+        uint16_t value = memory_bank[dp_address] | ((uint16_t)memory_bank[dp_address + 1] << 8);
+        uint16_t test_result = state->A.full & value;
+        if (test_result == 0) set_flag(machine, ZERO);
+        else clear_flag(machine, ZERO);
+        uint16_t new_value = value & (~state->A.full);
+        memory_bank[dp_address] = new_value & 0xFF;
+        memory_bank[dp_address + 1] = (new_value >> 8) & 0xFF;
     }
     return machine;
 }
@@ -556,16 +576,24 @@ state_t* TCS           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 }
 
 state_t* TRB_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
-    // test and reset bit, Absolute
+    // Test and Reset Bits - Absolute
     processor_state_t *state = &machine->processor;
     uint16_t address = arg_one;
-    uint8_t value = get_memory_bank(machine, state->PBR)[address];
+    uint8_t *memory_bank = get_memory_bank(machine, state->PBR);
     if (is_flag_set(machine, M_FLAG)) {
-        uint8_t result = value & (~state->A.low);
-        set_flags_nz_8(machine, result);
+        uint8_t value = memory_bank[address];
+        uint8_t test_result = state->A.low & value;
+        if (test_result == 0) set_flag(machine, ZERO);
+        else clear_flag(machine, ZERO);
+        memory_bank[address] = value & (~state->A.low);  // Clear bits
     } else {
-        uint16_t result = value & (~state->A.full);
-        set_flags_nz_16(machine, result);
+        uint16_t value = memory_bank[address] | ((uint16_t)memory_bank[address + 1] << 8);
+        uint16_t test_result = state->A.full & value;
+        if (test_result == 0) set_flag(machine, ZERO);
+        else clear_flag(machine, ZERO);
+        uint16_t new_value = value & (~state->A.full);
+        memory_bank[address] = new_value & 0xFF;
+        memory_bank[address + 1] = (new_value >> 8) & 0xFF;
     }
     return machine;
 }
@@ -849,15 +877,28 @@ state_t* PLD           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 
 state_t* BIT_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Test bits against accumulator, Absolute addressing
+    // Sets Z based on A & M, N from bit 7 of M, V from bit 6 of M
     processor_state_t *state = &machine->processor;
     uint16_t address = arg_one;
-    uint8_t value = machine->memory[state->PBR][address];
+    uint8_t *memory_bank = get_memory_bank(machine, state->PBR);
     if (is_flag_set(machine, M_FLAG)) {
+        uint8_t value = memory_bank[address];
         uint8_t result = state->A.low & value;
-        set_flags_nz_8(machine, result);
+        if (result == 0) set_flag(machine, ZERO);
+        else clear_flag(machine, ZERO);
+        if (value & 0x80) set_flag(machine, NEGATIVE);
+        else clear_flag(machine, NEGATIVE);
+        if (value & 0x40) set_flag(machine, OVERFLOW);
+        else clear_flag(machine, OVERFLOW);
     } else {
+        uint16_t value = memory_bank[address] | ((uint16_t)memory_bank[address + 1] << 8);
         uint16_t result = state->A.full & value;
-        check_and_set_zero_16(machine, result);
+        if (result == 0) set_flag(machine, ZERO);
+        else clear_flag(machine, ZERO);
+        if (value & 0x8000) set_flag(machine, NEGATIVE);
+        else clear_flag(machine, NEGATIVE);
+        if (value & 0x4000) set_flag(machine, OVERFLOW);
+        else clear_flag(machine, OVERFLOW);
     }
     return machine;
 }
@@ -1414,7 +1455,7 @@ state_t* LSR           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* PHK           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Push Program Bank onto Stack
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->PBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);  // Stack is always in bank 0
     uint16_t sp_address;
     if (state->emulation_mode) {
         sp_address = 0x0100 | (state->SP & 0xFF);
@@ -1500,7 +1541,7 @@ state_t* BVC_CB        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Branch if Overflow Clear (Callback)
     processor_state_t *state = &machine->processor;
     if (!is_flag_set(machine, OVERFLOW)) {
-        state->PC = arg_one;
+        state->PC = arg_one & 0xFFFF;
     }
     return machine;
 }
@@ -1696,10 +1737,10 @@ state_t* TCD           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 
 state_t* JMP_AL        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Jump to Absolute Long Address
+    // arg_one = address (16-bit), arg_two = bank (8-bit)
     processor_state_t *state = &machine->processor;
-    uint32_t address = arg_one;
-    state->PC = address & 0xFFFF;
-    state->PBR = (address >> 16) & 0xFF;
+    state->PC = arg_one & 0xFFFF;
+    state->PBR = arg_two & 0xFF;
     return machine;
 }
 
@@ -1838,7 +1879,12 @@ state_t* STZ           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Store Zero
     processor_state_t *state = &machine->processor;
     uint16_t address = arg_one;
-    get_memory_bank(machine, state->PBR)[address] = 0x00;
+    uint8_t *bank = get_memory_bank(machine, state->PBR);
+    bank[address] = 0x00;
+    if (!state->emulation_mode && !is_flag_set(machine, M_FLAG)) {
+        // 16-bit mode - store zero in both bytes
+        bank[(address + 1) & 0xFFFF] = 0x00;
+    }
     return machine;
 }
 
@@ -2300,12 +2346,11 @@ state_t* JMP_ABS_I_IX  (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Jump (Absolute Indirect Indexed by X)
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->PBR);
-    uint16_t base_address = arg_one;
-    uint8_t pointer_low  = memory_bank[base_address];
-    uint8_t pointer_high = memory_bank[(base_address + 1) & 0xFFFF];
-    uint16_t pointer = ((pointer_high << 8) | pointer_low) & 0xFFFF;
-    uint16_t effective_address = memory_bank[(pointer + state->X) & 0xFFFF];
-    state->PC = effective_address;
+    uint16_t indexed_address = (arg_one + state->X) & 0xFFFF;
+    uint8_t pointer_low  = memory_bank[indexed_address];
+    uint8_t pointer_high = memory_bank[(indexed_address + 1) & 0xFFFF];
+    uint16_t target_address = (pointer_high << 8) | pointer_low;
+    state->PC = target_address;
     return machine;
 }
 
@@ -2385,7 +2430,7 @@ state_t* ADC_AL_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* BRA_CB        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Branch Immediate
     processor_state_t *state = &machine->processor;
-    state->PC = arg_one;
+    state->PC = arg_one & 0xFFFF;
     return machine;
 }
 
@@ -2536,16 +2581,18 @@ state_t* DEY           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 }
 
 state_t* BIT_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+    // BIT Immediate - only sets Z flag based on A & value
     processor_state_t *state = &machine->processor;
-    uint16_t base_address = arg_one;
-    uint8_t *memory_bank = get_memory_bank(machine, state->PBR);
-    uint8_t value = memory_bank[base_address];
     if (is_flag_set(machine, M_FLAG)) {
+        uint8_t value = arg_one & 0xFF;
         uint8_t result = state->A.low & value;
-        set_flags_nz_8(machine, result);
+        if (result == 0) set_flag(machine, ZERO);
+        else clear_flag(machine, ZERO);
     } else {
+        uint16_t value = arg_one & 0xFFFF;
         uint16_t result = state->A.full & value;
-        set_flags_nz_16(machine, result);
+        if (result == 0) set_flag(machine, ZERO);
+        else clear_flag(machine, ZERO);
     }
     return machine;
 }
@@ -2567,8 +2614,8 @@ state_t* TXA           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* PHB           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Push Data Bank register onto stack
     processor_state_t *state = &machine->processor;
-    uint16_t stack_addr = state->emulation_mode ? 0x100&(state->SP & 0xFF) : state->SP & 0xFFFF;
-    uint8_t *memory_bank = get_memory_bank(machine, state->PBR);
+    uint16_t stack_addr = state->emulation_mode ? (0x100 | (state->SP & 0xFF)) : (state->SP & 0xFFFF);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);  // Stack is always in bank 0
     memory_bank[stack_addr] = state->PBR;
     state->SP = state->emulation_mode ? (state->SP - 1) & 0x1FF : (state->SP - 1) & 0xFFFF;
     return machine;
@@ -2625,7 +2672,7 @@ state_t* STA_ABL       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* BCC_CB        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     if (!is_flag_set(machine, CARRY)) {
-        state->PC = arg_one;
+        state->PC = arg_one & 0xFFFF;
     }
     return machine;
 }
@@ -3078,17 +3125,17 @@ state_t* TAX           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 }
 
 state_t* PLB           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
-    // PuLl B from stack
+    // PuLl Data Bank register from stack
     processor_state_t *state = &machine->processor;
-    uint8_t *stack_bank = get_memory_bank(machine, state->PBR);
+    uint8_t *stack_bank = get_memory_bank(machine, 0);  // Stack is in bank 0
     if (state->emulation_mode) {
-        state->SP = (state->SP + 1) & 0xFF;
-        state->A.high = stack_bank[0x0100 | (state->SP & 0xFF)];
+        state->SP = (state->SP + 1) & 0x1FF;
+        state->PBR = stack_bank[0x0100 | (state->SP & 0xFF)];
     } else {
         state->SP = (state->SP + 1) & 0xFFFF;
-        state->A.high = stack_bank[state->SP & 0xFFFF];
+        state->PBR = stack_bank[state->SP & 0xFFFF];
     }
-    set_flags_nz_8(machine, state->A.high);
+    set_flags_nz_8(machine, state->PBR);
     return machine;
 }
 
@@ -3156,7 +3203,7 @@ state_t* BCS_CB        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Branch if Carry Set, Callback
     processor_state_t *state = &machine->processor;
     if (is_flag_set(machine, CARRY)) {
-        state->PC = arg_one;
+        state->PC = arg_one & 0xFFFF;
     }
     return machine;
 }
@@ -4167,16 +4214,22 @@ state_t* SBC_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     uint16_t value_to_subtract;
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         value_to_subtract = (uint8_t)(arg_one & 0xFF);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
-        uint8_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) - carry;
-        set_flags_nzc_8(machine, result);
+        uint16_t borrow = is_flag_set(machine, CARRY) ? 0 : 1;
+        uint16_t result = (uint16_t)state->A.low - (uint16_t)value_to_subtract - borrow;
         state->A.low = result & 0xFF;
+        // Carry is set if no borrow occurred (result >= 0)
+        if (result & 0x8000) clear_flag(machine, CARRY);  // Borrow occurred
+        else set_flag(machine, CARRY);  // No borrow
+        set_flags_nz_8(machine, state->A.low);
     } else {
         value_to_subtract = arg_one & 0xFFFF;
-        uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
-        uint16_t result = (state->A.full & 0xFFFF) - (value_to_subtract & 0xFFFF) - carry;
-        set_flags_nzc_16(machine, result);
+        uint32_t borrow = is_flag_set(machine, CARRY) ? 0 : 1;
+        uint32_t result = (uint32_t)state->A.full - (uint32_t)value_to_subtract - borrow;
         state->A.full = result & 0xFFFF;
+        // Carry is set if no borrow occurred
+        if (result & 0x80000000) clear_flag(machine, CARRY);  // Borrow occurred
+        else set_flag(machine, CARRY);  // No borrow
+        set_flags_nz_16(machine, state->A.full);
     }
     return machine;
 }
