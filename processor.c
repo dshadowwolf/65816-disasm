@@ -302,16 +302,11 @@ state_t* ASL           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* PHD           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t sp_address = 0x0100 | (state->SP & 0xFF);
-    uint8_t *memory_bank = get_memory_bank(machine, state->PBR);
+    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     if (is_flag_set(machine, M_FLAG)) {
-        memory_bank[sp_address] = state->DP & 0xFF;
-        state->SP = (state->SP - 1) & 0x1FF; // Decrement SP in emulation mode
+        push_byte(machine, state->DP & 0xFF);
     } else {
-        memory_bank[sp_address] = state->DP & 0xFF;
-        state->SP = (state->SP - 1) & 0x1FF; // Decrement SP in emulation mode
-        sp_address = 0x0100 | (state->SP & 0xFF);
-        memory_bank[sp_address] = (state->DP >> 8) & 0xFF;
-        state->SP = (state->SP - 1) & 0x1FF; // Decrement SP in emulation mode
+        push_word(machine, state->DP);
     }
     return machine;
 }
