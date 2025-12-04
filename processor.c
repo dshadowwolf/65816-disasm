@@ -3416,27 +3416,18 @@ state_t* DEC_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* CMP_DP_IL     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // CoMPare A, Direct Page Indirect Long
     processor_state_t *state = &machine->processor;
-    uint16_t dp_address;
-    uint8_t *dp_bank = get_memory_bank(machine, 0);
-    if (state->emulation_mode) dp_address = 0x0000 | (state->DP & 0xFF);
-    else dp_address = state->DP & 0xFFFF;
-    uint8_t offset = (uint8_t)arg_one;
-    uint16_t effective_address_ptr = (dp_address + offset) & 0xFFFF;
-    uint8_t low_byte = dp_bank[effective_address_ptr];
-    uint8_t high_byte = dp_bank[(effective_address_ptr + 1) & 0xFFFF];
-    uint8_t page = dp_bank[(effective_address_ptr + 2) & 0xFFFF];
-    uint8_t *act_bank = get_memory_bank(machine, page);
-    uint16_t effective_address = (((uint16_t)high_byte << 8) | low_byte) & 0xFFFF;
+    long_address_t address = get_dp_address_indirect_long(machine, arg_one);
+    uint8_t *memory_bank = get_memory_bank(machine, address.bank);
     uint16_t value_to_compare;
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        value_to_compare = (uint8_t)act_bank[effective_address];
+        value_to_compare = read_byte(memory_bank, address.address);
         uint16_t result = (uint16_t)(state->A.low & 0xFF) - (uint16_t)(value_to_compare & 0xFF);
         // Carry is set if no borrow occurred
         if (result & 0x8000) clear_flag(machine, CARRY);  // Borrow occurred
         else set_flag(machine, CARRY);  // No borrow
         set_flags_nz_8(machine, result & 0xFF);
     } else {
-        value_to_compare = ((uint16_t)act_bank[effective_address]) | ((uint16_t)act_bank[(effective_address + 1) & 0xFFFF] << 8);
+        value_to_compare = read_word(memory_bank, address.address);
         uint32_t result = (uint32_t)(state->A.full & 0xFFFF) - (uint32_t)(value_to_compare & 0xFFFF);
         // Carry is set if no borrow occurred
         if (result & 0x80000000) clear_flag(machine, CARRY);  // Borrow occurred
@@ -3505,9 +3496,10 @@ state_t* WAI           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* CPY_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // ComPare Y, Absolute
     processor_state_t *state = &machine->processor;
+    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     uint16_t value_to_compare;
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
-        value_to_compare = (uint8_t)(arg_one & 0xFF);
+        value_to_compare = read_byte(memory_bank, arg_one);
         uint8_t result = (state->Y & 0xFF) - (value_to_compare & 0xFF);
         if ((state->Y & 0xFF) >= (value_to_compare & 0xFF)) {
             set_flag(machine, CARRY);
@@ -3516,7 +3508,7 @@ state_t* CPY_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         }
         set_flags_nz_8(machine, result);
     } else {
-        value_to_compare = arg_one & 0xFFFF;
+        value_to_compare = read_word(memory_bank, arg_one);
         uint16_t result = (state->Y & 0xFFFF) - (value_to_compare & 0xFFFF);
         set_flags_nzc_16(machine, result);
     }
@@ -3527,17 +3519,16 @@ state_t* CMP_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // CoMPare A, Absolute
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
-    uint16_t effective_address = arg_one & 0xFFFF;
     uint16_t value_to_compare;
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        value_to_compare = (uint8_t)memory_bank[effective_address];
+        value_to_compare = read_byte(memory_bank, arg_one);
         uint16_t result = (uint16_t)(state->A.low & 0xFF) - (uint16_t)(value_to_compare & 0xFF);
         // Carry is set if no borrow occurred
         if (result & 0x8000) clear_flag(machine, CARRY);  // Borrow occurred
         else set_flag(machine, CARRY);  // No borrow
         set_flags_nz_8(machine, result & 0xFF);
     } else {
-        value_to_compare = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[effective_address + 1] << 8);
+        value_to_compare = read_word(memory_bank, arg_one);
         uint32_t result = (uint32_t)(state->A.full & 0xFFFF) - (uint32_t)(value_to_compare & 0xFFFF);
         // Carry is set if no borrow occurred
         if (result & 0x80000000) clear_flag(machine, CARRY);  // Borrow occurred
@@ -3551,17 +3542,15 @@ state_t* DEC_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // DECrement Absolute
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
-    uint16_t effective_address = arg_one & 0xFFFF;
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        uint8_t value = memory_bank[effective_address];
+        uint8_t value = read_byte(memory_bank, arg_one);
         value = (value - 1) & 0xFF;
-        memory_bank[effective_address] = value;
+        write_byte(memory_bank, arg_one, value);
         set_flags_nz_8(machine, value);
     } else {
-        uint16_t value = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
+        uint16_t value = read_word(memory_bank, arg_one);
         value = (value - 1) & 0xFFFF;
-        memory_bank[effective_address] = (uint8_t)(value & 0xFF);
-        memory_bank[(effective_address + 1) & 0xFFFF] = (uint8_t)((value >> 8) & 0xFF);
+        write_word(memory_bank, arg_one, value);
         set_flags_nz_16(machine, value);
     }
     return machine;
@@ -3571,17 +3560,16 @@ state_t* CMP_ABL       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // CoMPare A, Absolute Long
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, (uint8_t)arg_two);
-    uint16_t effective_address = arg_one & 0xFFFF;
     uint16_t value_to_compare;
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        value_to_compare = (uint8_t)memory_bank[effective_address];
+        value_to_compare = read_byte(memory_bank, arg_one);
         uint16_t result = (uint16_t)(state->A.low & 0xFF) - (uint16_t)(value_to_compare & 0xFF);
         // Carry is set if no borrow occurred
         if (result & 0x8000) clear_flag(machine, CARRY);  // Borrow occurred
         else set_flag(machine, CARRY);  // No borrow
         set_flags_nz_8(machine, result & 0xFF);
     } else {
-        value_to_compare = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
+        value_to_compare = read_word(memory_bank, arg_one);
         uint32_t result = (uint32_t)(state->A.full & 0xFFFF) - (uint32_t)(value_to_compare & 0xFFFF);
         // Carry is set if no borrow occurred
         if (result & 0x80000000) clear_flag(machine, CARRY);  // Borrow occurred
@@ -3604,22 +3592,15 @@ state_t* BNE_CB        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* CMP_DP_I      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // CoMPare A, Direct Page Indirect
     processor_state_t *state = &machine->processor;
-    uint16_t dp_address;
+    uint16_t address = get_dp_address_indirect(machine, arg_one);
     uint8_t *memory_bank = get_memory_bank(machine, 0);
-    if (state->emulation_mode) dp_address = 0x0000 | (state->DP & 0xFF);
-    else dp_address = state->DP & 0xFFFF;
-    uint8_t offset = (uint8_t)arg_one;
-    uint16_t effective_address_ptr = (dp_address + offset) & 0xFFFF;
-    uint8_t low_byte = memory_bank[effective_address_ptr];
-    uint8_t high_byte = memory_bank[(effective_address_ptr + 1) & 0xFFFF];
-    uint16_t effective_address = ((uint16_t)high_byte << 8) | low_byte;
     uint16_t value_to_compare;
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        value_to_compare = (uint8_t)memory_bank[effective_address];
+        value_to_compare = read_byte(memory_bank, address);
         uint8_t result = (state->A.low & 0xFF) - (value_to_compare & 0xFF);
         set_flags_nzc_8(machine, result);
     } else {
-        value_to_compare = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
+        value_to_compare = read_word(memory_bank, address);
         uint16_t result = (state->A.full & 0xFFFF) - (value_to_compare & 0xFFFF);
         set_flags_nzc_16(machine, result);
     }
