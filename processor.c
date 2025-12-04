@@ -266,9 +266,7 @@ state_t* PHP           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     uint16_t sp_address;
     if(state->emulation_mode) sp_address = 0x0100 | (state->SP & 0xFF);
     else sp_address = state->SP;
-    get_memory_bank(machine, state->PBR)[sp_address] = state->P;
-    if(state->emulation_mode) state->SP = (state->SP - 1) & 0x1FF; // Decrement SP in emulation mode
-    else state->SP = (state->SP - 1) & 0xFFFF; // Decrement SP in native mode
+    push_byte(machine, state->P);
     return machine;
 }
 
