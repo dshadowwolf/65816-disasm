@@ -674,7 +674,6 @@ state_t* AND_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-// TODO: Fix for long addressing
 state_t* JSL_CB        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Jump to Subroutine Long
     processor_state_t *state = &machine->processor;
@@ -694,7 +693,7 @@ state_t* AND_SR        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     else sp_address = state->SP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
     uint16_t effective_address = (sp_address + offset) & 0xFFFF;
-    uint8_t value = machine->memory[state->PBR][effective_address];
+    uint8_t value = read_byte(get_memory_bank(machine, state->PBR), effective_address);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low &= value;
         set_flags_nz_8(machine, state->A.low);
@@ -724,7 +723,7 @@ state_t* AND_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // AND Accumulator with Memory (Direct Page)
     processor_state_t *state = &machine->processor;
     uint16_t dp_address = get_dp_address(machine, arg_one);
-    uint8_t value = machine->memory[state->PBR][dp_address];
+    uint8_t value = read_byte(get_memory_bank(machine, state->DBR), dp_address);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low &= value;
         set_flags_nz_8(machine, state->A.low);
@@ -739,7 +738,7 @@ state_t* ROL_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Roll Left, Direct Page
     processor_state_t *state = &machine->processor;
     uint16_t dp_address = get_dp_address(machine, arg_one);
-    uint8_t value = machine->memory[state->PBR][dp_address];
+    uint8_t value = read_byte(get_memory_bank(machine, state->DBR), dp_address);
     if (is_flag_set(machine, M_FLAG)) {
         uint16_t result = (uint16_t)(value << 1);
         if (is_flag_set(machine, CARRY)) {
@@ -747,18 +746,18 @@ state_t* ROL_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         } else {
             result &= 0xFE;
         }
-        machine->memory[state->PBR][dp_address] = (uint8_t)(result & 0xFF);
+        write_byte(get_memory_bank(machine, state->PBR), dp_address, (uint8_t)(result & 0xFF));
         // Set Carry flag
         check_and_set_carry_8(machine, result);
     } else {
         // Handle 16-bit mode
-        uint32_t result = (uint32_t)(machine->memory[state->PBR][dp_address] << 1);
+        uint32_t result = (uint32_t)(read_word(get_memory_bank(machine, state->DBR), dp_address) << 1);
         if (is_flag_set(machine, CARRY)) {
             result |= 0x0001;
         } else {
             result &= 0xFFFE;
         }
-        machine->memory[state->PBR][dp_address] = (uint8_t)(result & 0xFFFF);
+        write_word(get_memory_bank(machine, state->DBR), dp_address, (uint16_t)(result & 0xFFFF));
         // Set Carry flag
         check_and_set_carry_16(machine, result);
     }
