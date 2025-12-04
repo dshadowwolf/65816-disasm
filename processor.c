@@ -13,6 +13,7 @@ void initialize_processor(processor_state_t *state) {
     state->DP = 0;
     state->P = 0x34;              // Default status register value -- this is kinda arbitrary
     state->PBR = 0;               // Start in bank 0
+    state->DBR = 0;               // Start in bank 0
     state->emulation_mode = true; // Start in emulation mode
 }
 
@@ -78,8 +79,6 @@ state_t* XCE_CB(state_t *machine, uint16_t unused1, uint16_t unused2) {
     
     if (carry) {
         // Switch to emulation mode
-        set_flag(machine, M_FLAG); // Set M flag (bit 5)
-        set_flag(machine, X_FLAG); // Set X flag (bit 4)
         machine->processor.emulation_mode = true;
         machine->processor.SP |= 0x0100; // Set high byte of SP in emulation mode
     } else {
@@ -105,12 +104,13 @@ state_t* SEC_CB(state_t *machine, uint16_t unused1, uint16_t unused2) {
     return set_flag(machine, CARRY);
 }
 
+// Causes a software interrupt. The PC is loaded from the interrupt vector table from $00FFE6 in native mode, or $00FFF6 in emulation mode.
 state_t* BRK           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     // In native mode push the PBR onto the stack,
     // followed by the PC then the P register
     uint16_t pc = state->PC + 2; // BRK is a 2-byte instruction
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0); // always bank 0 for BRK vectors
     if (!state->emulation_mode) {
         push_byte(machine, state->DBR); // Push PBR
     }
@@ -118,17 +118,20 @@ state_t* BRK           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     push_byte(machine, state->P); // Push status register
     // Set Interrupt Disable flag
     set_flag(machine, INTERRUPT_DISABLE);
-    // Load new PC from IRQ vector at $FFFE/$FFFF
-    uint8_t low_byte = read_byte(memory_bank, 0xFFFE);
-    uint8_t high_byte = read_byte(memory_bank, 0xFFFF);
-    state->PC = (high_byte << 8) | low_byte;
+    if (state->emulation_mode) {
+        // Load new PC from IRQ vector at $FFFE/$FFFF
+        state->PC = read_word(memory_bank, 0xFFFE);
+    } else {
+        // Load new PC from IRQ vector at $FFE6/$FFE7
+        state->PC = read_word(memory_bank, 0xFFE6);
+    }
     return machine;
 }
 
 state_t* ORA_DP_I_IX   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_dp_address_indirect_indexed_x(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->PBR);
+    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     uint8_t value = memory_bank[effective_address];
     
     if (is_flag_set(machine, M_FLAG)) {
@@ -156,11 +159,14 @@ state_t* COP           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     push_byte(machine, state->P); // Push status register
     // Set Interrupt Disable flag
     set_flag(machine, INTERRUPT_DISABLE);
-    // Load new PC from COP vector at $FFF4/$FFF5
     uint8_t *memory_bank = get_memory_bank(machine, 0);
-    uint8_t low_byte = memory_bank[0xFFF4];
-    uint8_t high_byte = memory_bank[0xFFF5];
-    state->PC = (high_byte << 8) | low_byte;
+    if (state->emulation_mode) {
+        // In emulation mode, the vector is at $FFF4/$FFF5
+        state->PC = read_word(memory_bank, 0xFFF4);
+    } else {
+        // In native mode the vector is at $FFE4/$FFE5
+        state->PC = read_word(memory_bank, 0xFFE4);
+    }
     return machine;
 }
 
