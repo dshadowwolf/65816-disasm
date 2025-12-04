@@ -336,7 +336,7 @@ state_t* TSB_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* ORA_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t address = arg_one;
-    uint8_t value = get_memory_bank(machine, state->PBR)[address];
+    uint8_t value = read_byte(get_memory_bank(machine, state->DBR), address);
     if (is_flag_set(machine, M_FLAG)) {
         uint8_t result = state->A.low | value;
         state->A.low = result;
@@ -355,15 +355,13 @@ state_t* ASL_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (is_flag_set(machine, M_FLAG)) {
         // 8-bit mode
-        uint8_t value = memory_bank[address];
+        uint8_t value = read_byte(memory_bank, address);
         uint16_t result = (uint16_t)(value << 1);
         write_byte(memory_bank, address, (uint8_t)(result & 0xFF));
         set_flags_nzc_8(machine, result);
     } else {
         // 16-bit mode - read and write 16 bits
-        uint8_t low_byte = memory_bank[address];
-        uint8_t high_byte = memory_bank[(address + 1) & 0xFFFF];
-        uint16_t value = (high_byte << 8) | low_byte;
+        uint16_t value = read_word(memory_bank, address);
         uint32_t result = (uint32_t)(value << 1);
         write_word(memory_bank, address, (uint16_t)(result & 0xFFFF));
         set_flags_nzc_16(machine, result);
@@ -379,7 +377,7 @@ state_t* ORA_ABL       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     uint16_t address = arg_one;
     uint8_t bank = (uint8_t)(arg_two & 0xFF);
     uint8_t *memory_bank = get_memory_bank(machine, bank);
-    uint8_t value = memory_bank[address];
+    uint8_t value = read_byte(memory_bank, address);
     if (is_flag_set(machine, M_FLAG)) {
         uint8_t result = state->A.low | value;
         state->A.low = result;
@@ -403,10 +401,8 @@ state_t* BPL_CB        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* ORA_I_IY      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint8_t *memory = get_memory_bank(machine,state->DP);
-    uint8_t low_byte = memory[(uint8_t)arg_one];
-    uint8_t high_byte = memory[((uint8_t)arg_one + 1) & 0xFF];
-    uint16_t effective_address = ((high_byte << 8) | low_byte) + state->Y;
-    uint8_t value = memory[effective_address & 0xFFFF];
+    uint16_t effective_address = read_word(memory, arg_one);
+    uint8_t value = read_byte(memory, effective_address & 0xFFFF);
     if (is_flag_set(machine, M_FLAG)) {
         uint8_t result = state->A.low | value;
         state->A.low = result;
