@@ -912,14 +912,11 @@ state_t* ROL_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-// TODO: Fix for long addressing
-//       maybe pass Bank byte as arg_two?
 state_t* AND_ABL       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // AND Accumulator with Memory (Absolute Long Addressing)
     processor_state_t *state = &machine->processor;
-    uint16_t address = arg_one;
     uint8_t *memory_bank = get_memory_bank(machine, (uint8_t)(arg_two & 0xFF));
-    uint8_t value = memory_bank[address];
+    uint8_t value = read_word(memory_bank, arg_one);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low &= value;
         set_flags_nz_8(machine, state->A.low);
@@ -945,7 +942,7 @@ state_t* AND_DP_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_dp_address_indirect_indexed_y(machine, arg_one);
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
-    uint8_t value = memory_bank[effective_address];
+    uint8_t value = read_byte(memory_bank, effective_address);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low &= value;
         set_flags_nz_8(machine, state->A.low);
@@ -985,7 +982,7 @@ state_t* AND_SR_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     uint8_t high_byte = memory_bank[(effective_dp_address + 1) & 0xFFFF];
     uint16_t base_address = ((uint16_t)high_byte << 8) | low_byte;
     uint16_t effective_address = (base_address + state->Y) & 0xFFFF;
-    uint8_t value = memory_bank[effective_address];
+    uint8_t value = read_byte(memory_bank, effective_address);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low &= value;
         set_flags_nz_8(machine, state->A.low);
@@ -999,24 +996,21 @@ state_t* AND_SR_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* BIT_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Test bits in memory with accumulator, Direct Page Indexed with X
     processor_state_t *state = &machine->processor;
-    uint16_t dp_address = get_dp_address(machine, arg_one);
-    uint16_t effective_address = (dp_address + state->X) & 0xFFFF;
-    uint8_t value = machine->memory[0][effective_address];
+    uint16_t address = get_dp_address_indexed_x(machine, arg_one);
+    uint8_t value = read_byte(get_memory_bank(machine, state->DBR), address);
     if (is_flag_set(machine, M_FLAG)) {
         uint8_t result = state->A.low & value;
         set_flags_nz_8(machine, result);
         // BIT also copies bit 7 to N and bit 6 to V
-        if (value & 0x80) set_flag(machine, NEGATIVE);
-        else clear_flag(machine, NEGATIVE);
+        check_and_set_negative_8(machine, result);
         if (value & 0x40) set_flag(machine, OVERFLOW);
         else clear_flag(machine, OVERFLOW);
     } else {
-        uint16_t value16 = ((uint16_t)machine->memory[0][(effective_address + 1) & 0xFFFF] << 8) | value;
+        uint16_t value16 = (uint16_t)read_word(get_memory_bank(machine, state->DBR), address);
         uint16_t result = state->A.full & value16;
         check_and_set_zero_16(machine, result);
         // BIT also copies bit 15 to N and bit 14 to V
-        if (value16 & 0x8000) set_flag(machine, NEGATIVE);
-        else clear_flag(machine, NEGATIVE);
+        check_and_set_negative_16(machine, result);
         if (value16 & 0x4000) set_flag(machine, OVERFLOW);
         else clear_flag(machine, OVERFLOW);
     }
@@ -1026,10 +1020,9 @@ state_t* BIT_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* ROL_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Rotate Left, Direct Page Indexed with X
     processor_state_t *state = &machine->processor;
-    uint16_t dp_address = get_dp_address(machine, arg_one);
-    uint16_t effective_address = (dp_address + state->X) & 0xFFFF;
-    uint8_t *memory_bank = get_memory_bank(machine, 0);
-    uint8_t value = memory_bank[effective_address];
+    uint16_t effective_address = get_dp_address_indexed_x(machine, arg_one);
+    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t value = read_byte(memory_bank, effective_address);
     if (is_flag_set(machine, M_FLAG)) {
         uint16_t result = (uint16_t)(value << 1);
         if (is_flag_set(machine, CARRY)) {
@@ -1037,18 +1030,18 @@ state_t* ROL_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         } else {
             result &= 0xFE;
         }
-        memory_bank[effective_address] = (uint8_t)(result & 0xFF);
+        write_byte(memory_bank, effective_address, (uint8_t)(result & 0xFF));
         // Set Carry flag
         check_and_set_carry_8(machine, result);
     } else {
         // Handle 16-bit mode
-        uint32_t result = (uint32_t)(memory_bank[effective_address] << 1);
+        uint32_t result = (uint32_t)(read_word(memory_bank, effective_address) << 1);
         if (is_flag_set(machine, CARRY)) {
             result |= 0x0001;
         } else {
             result &= 0xFFFE;
         }
-        memory_bank[effective_address] = (uint8_t)(result & 0xFFFF);
+        write_word(memory_bank, effective_address, (uint16_t)(result & 0xFFFF));
         // Set Carry flag
         check_and_set_carry_16(machine, result);
     }
@@ -1059,20 +1052,14 @@ state_t* ROL_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* AND_DP_IL_IY  (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // AND Accumulator with Memory (Direct Page Indirect Long Indexed with Y)
     processor_state_t *state = &machine->processor;
-    uint16_t dp_address = get_dp_address(machine, arg_one);
-    uint8_t *dp_bank = get_memory_bank(machine, 0);
-    uint8_t low_byte = dp_bank[dp_address];
-    uint8_t mid_byte = dp_bank[(dp_address + 1) & 0xFFFF];
-    uint8_t high_byte = dp_bank[(dp_address + 2) & 0xFFFF];
-    uint16_t base_address = (mid_byte << 8) | low_byte;
-    uint16_t effective_address = (base_address + state->Y) & 0xFFFF;
-    uint8_t *memory_bank = get_memory_bank(machine, high_byte);
-    uint8_t value = memory_bank[effective_address];
+    long_address_t effective_address = get_dp_address_indirect_long_indexed_y(machine, arg_one);
+    uint8_t *effective_bank = get_memory_bank(machine, effective_address.bank);
+    uint8_t value = read_byte(effective_bank, effective_address.address);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low &= value;
         set_flags_nz_8(machine, state->A.low);
     } else {
-        uint16_t value16 = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
+        uint16_t value16 = read_word( effective_bank, effective_address.address );
         state->A.full &= value16;
         set_flags_nz_16(machine, state->A.full);
     }
@@ -1085,7 +1072,7 @@ state_t* AND_ABS_IY    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     uint16_t base_address = arg_one;
     uint16_t effective_address = (base_address + state->Y) & 0xFFFF;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
-    uint8_t value = memory_bank[effective_address];
+    uint8_t value = read_byte(memory_bank, effective_address);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low &= value;
         set_flags_nz_8(machine, state->A.low);
@@ -1129,7 +1116,7 @@ state_t* BIT_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     uint16_t base_address = arg_one;
     uint16_t effective_address = (base_address + state->X) & 0xFFFF;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
-    uint8_t value = memory_bank[effective_address];
+    uint8_t value = read_byte(memory_bank, effective_address);
     if (is_flag_set(machine, M_FLAG)) {
         uint8_t result = state->A.low & value;
         set_flags_nz_8(machine, result);
