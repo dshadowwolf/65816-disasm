@@ -321,15 +321,14 @@ state_t* TSB_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         uint8_t test_result = state->A.low & value;
         if (test_result == 0) set_flag(machine, ZERO);
         else clear_flag(machine, ZERO);
-        memory_bank[address] = value | state->A.low;  // Set bits
+        write_byte(memory_bank, address, value | state->A.low);
     } else {
         uint16_t value = memory_bank[address] | ((uint16_t)memory_bank[address + 1] << 8);
         uint16_t test_result = state->A.full & value;
         if (test_result == 0) set_flag(machine, ZERO);
         else clear_flag(machine, ZERO);
         uint16_t new_value = value | state->A.full;
-        memory_bank[address] = new_value & 0xFF;
-        memory_bank[address + 1] = (new_value >> 8) & 0xFF;
+        write_word(memory_bank, address, new_value);
     }
     return machine;
 }
@@ -354,16 +353,20 @@ state_t* ASL_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t address = arg_one;
     uint8_t *memory_bank = get_memory_bank(machine, 0);
-    uint8_t value = memory_bank[address];
     if (is_flag_set(machine, M_FLAG)) {
+        // 8-bit mode
+        uint8_t value = memory_bank[address];
         uint16_t result = (uint16_t)(value << 1);
-        memory_bank[address] = (uint8_t)(result & 0xFF);
+        write_byte(memory_bank, address, (uint8_t)(result & 0xFF));
         set_flags_nzc_8(machine, result);
     } else {
-        uint32_t full_value = (uint32_t)(value << 1);
-        memory_bank[address] = (uint8_t)(full_value & 0xFF);
-        // Set Carry flag
-        set_flags_nzc_16(machine, full_value);
+        // 16-bit mode - read and write 16 bits
+        uint8_t low_byte = memory_bank[address];
+        uint8_t high_byte = memory_bank[(address + 1) & 0xFFFF];
+        uint16_t value = (high_byte << 8) | low_byte;
+        uint32_t result = (uint32_t)(value << 1);
+        write_word(memory_bank, address, (uint16_t)(result & 0xFFFF));
+        set_flags_nzc_16(machine, result);
     }
     return machine;
 }
