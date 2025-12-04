@@ -58,6 +58,12 @@ long_address_t get_dp_address_indirect_long(state_t *machine, uint16_t dp_offset
 long_address_t get_dp_address_indirect_long_indexed_x(state_t *machine, uint16_t dp_offset);
 long_address_t get_dp_address_indirect_long_indexed_y(state_t *machine, uint16_t dp_offset);
 
+// Stack relative addressing helpers
+uint16_t get_stack_relative_address(state_t *machine, uint8_t offset);
+uint16_t get_stack_relative_address_indexed_y(state_t *machine, uint8_t offset);
+uint16_t get_stack_relative_address_indirect(state_t *machine, uint8_t offset);
+uint16_t get_stack_relative_address_indirect_indexed_y(state_t *machine, uint8_t offset);
+
 // Absolute addressing helper
 uint16_t get_absolute_address(state_t *machine, uint16_t address);
 

@@ -212,3 +212,32 @@ long_address_t get_dp_address_indirect_long_indexed_y(state_t *machine, uint16_t
     long_addr.address = (long_addr.address + machine->processor.Y) & 0xFFFF;
     return long_addr;
 }
+
+uint16_t get_stack_relative_address(state_t *machine, uint8_t offset) {
+    processor_state_t *state = &machine->processor;
+    uint16_t sp_address;
+    if (state->emulation_mode) {
+        sp_address = 0x0100 | (state->SP & 0xFF);
+    } else {
+        sp_address = state->SP & 0xFFFF;
+    }
+    return (sp_address + offset) & 0xFFFF;
+}
+
+uint16_t get_stack_relative_address_indexed_y(state_t *machine, uint8_t offset) {
+    uint16_t base_address = get_stack_relative_address(machine, offset);
+    return (base_address + machine->processor.Y) & 0xFFFF;
+}
+
+uint16_t get_stack_relative_address_indirect(state_t *machine, uint8_t offset) {
+    uint16_t base_address = get_stack_relative_address(machine, offset);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
+    return read_word(memory_bank, base_address);
+}
+
+uint16_t get_stack_relative_address_indirect_indexed_y(state_t *machine, uint8_t offset) {
+    uint16_t pointer_address = get_stack_relative_address(machine, offset);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
+    uint16_t effective_address = read_word(memory_bank, pointer_address);
+    return (effective_address + machine->processor.Y) & 0xFFFF;
+}
