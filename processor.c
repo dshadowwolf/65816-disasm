@@ -767,19 +767,15 @@ state_t* ROL_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* AND_DP_IL     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // AND Direct Page Indirect Long
     processor_state_t *state = &machine->processor;
-    uint8_t *dp_bank = get_memory_bank(machine, 0);
-    uint16_t dp_address = get_dp_address(machine, arg_one);
-    uint8_t low_byte = dp_bank[dp_address];
-    uint8_t mid_byte = dp_bank[(dp_address + 1) & 0xFFFF];
-    uint8_t high_byte = dp_bank[(dp_address + 2) & 0xFFFF];
-    uint16_t effective_address = (mid_byte << 8) | low_byte;
-    uint8_t *memory_bank = get_memory_bank(machine, high_byte);
-    uint8_t value = memory_bank[effective_address];
+    uint8_t *dp_bank = get_memory_bank(machine, state->DBR);
+    long_address_t effective_address = get_dp_address_indirect_long(machine, arg_one);
+    uint8_t *memory_bank = get_memory_bank(machine, effective_address.bank);
+    uint8_t value = read_byte(memory_bank, effective_address.address);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low &= value;
         set_flags_nz_8(machine, state->A.low);
     } else {
-        uint16_t value16 = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
+        uint16_t value16 = read_word(memory_bank, effective_address.address);
         state->A.full &= value16;
         set_flags_nz_16(machine, state->A.full);
     }
