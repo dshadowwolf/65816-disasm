@@ -195,3 +195,20 @@ long_address_t get_dp_address_indirect_long(state_t *machine, uint16_t dp_offset
 uint16_t get_absolute_address(state_t *machine, uint16_t address) {
     return address & 0xFFFF;
 }
+
+uint16_t get_dp_address_indexed_x(state_t *machine, uint16_t dp_offset) {
+    uint16_t dp_address = get_dp_address(machine, dp_offset);
+    return (dp_address + machine->processor.X) & 0xFFFF;
+}
+
+long_address_t get_dp_address_indirect_long_indexed_x(state_t *machine, uint16_t dp_offset) {
+    long_address_t long_addr = get_dp_address_indirect_long(machine, dp_offset);
+    long_addr.address = (long_addr.address + machine->processor.X) & 0xFFFF;
+    return long_addr;
+}
+
+long_address_t get_dp_address_indirect_long_indexed_y(state_t *machine, uint16_t dp_offset) {
+    long_address_t long_addr = get_dp_address_indirect_long(machine, dp_offset);
+    long_addr.address = (long_addr.address + machine->processor.Y) & 0xFFFF;
+    return long_addr;
+}
