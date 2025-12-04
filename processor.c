@@ -2,6 +2,7 @@
 #include "machine.h"
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "processor_helpers.h"
 
 void initialize_processor(processor_state_t *state) {
@@ -131,7 +132,7 @@ state_t* BRK           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* ORA_DP_I_IX   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_dp_address_indirect_indexed_x(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     uint8_t value = memory_bank[effective_address];
     
     if (is_flag_set(machine, M_FLAG)) {
@@ -177,7 +178,7 @@ state_t* ORA_SR        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     else sp_address = state->SP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
     uint16_t effective_address = (sp_address + offset) & 0xFFFF;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     uint8_t value = read_byte(memory_bank, effective_address);
 
     if (is_flag_set(machine, M_FLAG)) {
@@ -194,7 +195,7 @@ state_t* TSB_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Test and Set Bits - Direct Page
     processor_state_t *state = &machine->processor;
     uint16_t dp_address = get_dp_address(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (is_flag_set(machine, M_FLAG)) {
         uint8_t value = read_byte(memory_bank, dp_address);
         uint8_t test_result = state->A.low & value;
@@ -215,7 +216,7 @@ state_t* TSB_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* ORA_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t dp_address = get_dp_address(machine, arg_one);
-    uint8_t value = get_memory_bank(machine, state->DBR)[dp_address];
+    uint8_t value = get_memory_bank(machine, 0)[dp_address];
 
     if (is_flag_set(machine, M_FLAG)) {
         uint8_t result = state->A.low | value;
@@ -232,7 +233,7 @@ state_t* ORA_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* ASL_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t dp_address = get_dp_address(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     uint8_t value = memory_bank[dp_address];
     if (is_flag_set(machine, M_FLAG)) {
         uint16_t result = ((uint16_t)value) << 1;
@@ -419,7 +420,7 @@ state_t* ORA_I_IY      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* ORA_DP_I      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_dp_address_indirect(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     uint8_t value = read_byte(memory_bank, effective_address);
     if (is_flag_set(machine, M_FLAG)) {
         uint8_t result = state->A.low | value;
@@ -438,12 +439,12 @@ state_t* ORA_SR_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     uint16_t sp_address;
     if (state->emulation_mode) sp_address = 0x0100 | (state->SP & 0xFF);
     else sp_address = state->SP & 0xFFFF;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     uint8_t offset = (uint8_t)arg_one;
     uint16_t effective_address_ptr = (sp_address + offset) & 0xFFFF;
     uint16_t base_address = read_word(memory_bank, effective_address_ptr);
     uint16_t effective_address = (base_address + state->Y) & 0xFFFF;
-    uint8_t *pbr_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *pbr_bank = get_memory_bank(machine, 0);
     uint8_t value = read_byte(pbr_bank, effective_address);
     if (is_flag_set(machine, M_FLAG)) {
         uint8_t result = state->A.low | value;
@@ -461,7 +462,7 @@ state_t* ORA_SR_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* TRB_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Test and Reset Bits - Direct Page
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     uint16_t dp_address = get_dp_address(machine, arg_one);
     if (is_flag_set(machine, M_FLAG)) {
         uint8_t value = read_byte(memory_bank, dp_address);
@@ -484,7 +485,7 @@ state_t* TRB_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* ORA_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_dp_address_indexed_x(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     uint8_t value = read_byte(memory_bank, effective_address);
     if (is_flag_set(machine, M_FLAG)) {
         uint8_t result = state->A.low | value;
@@ -502,7 +503,7 @@ state_t* ASL_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // ASL Direct Page Indexed with X
     processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_dp_address_indexed_x(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     uint8_t value = read_byte(memory_bank, effective_address);
     if (is_flag_set(machine, M_FLAG)) {
         uint16_t result = (uint16_t)(value << 1);
@@ -663,7 +664,7 @@ state_t* AND_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // AND Direct Page Indexed with X
     processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_dp_address_indexed_x(machine, arg_one);
-    uint8_t value = read_byte(get_memory_bank(machine, state->DBR), effective_address);
+    uint8_t value = read_byte(get_memory_bank(machine, 0), effective_address);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low &= value;
         set_flags_nz_8(machine, state->A.low);
@@ -723,7 +724,7 @@ state_t* AND_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // AND Accumulator with Memory (Direct Page)
     processor_state_t *state = &machine->processor;
     uint16_t dp_address = get_dp_address(machine, arg_one);
-    uint8_t value = read_byte(get_memory_bank(machine, state->DBR), dp_address);
+    uint8_t value = read_byte(get_memory_bank(machine, 0), dp_address);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low &= value;
         set_flags_nz_8(machine, state->A.low);
@@ -738,7 +739,7 @@ state_t* ROL_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Roll Left, Direct Page
     processor_state_t *state = &machine->processor;
     uint16_t dp_address = get_dp_address(machine, arg_one);
-    uint8_t value = read_byte(get_memory_bank(machine, state->DBR), dp_address);
+    uint8_t value = read_byte(get_memory_bank(machine, 0), dp_address);
     if (is_flag_set(machine, M_FLAG)) {
         uint16_t result = (uint16_t)(value << 1);
         if (is_flag_set(machine, CARRY)) {
@@ -751,13 +752,13 @@ state_t* ROL_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         check_and_set_carry_8(machine, result);
     } else {
         // Handle 16-bit mode
-        uint32_t result = (uint32_t)(read_word(get_memory_bank(machine, state->DBR), dp_address) << 1);
+        uint32_t result = (uint32_t)(read_word(get_memory_bank(machine, 0), dp_address) << 1);
         if (is_flag_set(machine, CARRY)) {
             result |= 0x0001;
         } else {
             result &= 0xFFFE;
         }
-        write_word(get_memory_bank(machine, state->DBR), dp_address, (uint16_t)(result & 0xFFFF));
+        write_word(get_memory_bank(machine, 0), dp_address, (uint16_t)(result & 0xFFFF));
         // Set Carry flag
         check_and_set_carry_16(machine, result);
     }
@@ -767,7 +768,7 @@ state_t* ROL_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* AND_DP_IL     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // AND Direct Page Indirect Long
     processor_state_t *state = &machine->processor;
-    uint8_t *dp_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *dp_bank = get_memory_bank(machine, 0);
     long_address_t effective_address = get_dp_address_indirect_long(machine, arg_one);
     uint8_t *memory_bank = get_memory_bank(machine, effective_address.bank);
     uint8_t value = read_byte(memory_bank, effective_address.address);
@@ -941,7 +942,7 @@ state_t* AND_DP_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // AND Accumulator with Memory (Direct Page Indirect Indexed with Y)
     processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_dp_address_indirect_indexed_y(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     uint8_t value = read_byte(memory_bank, effective_address);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low &= value;
@@ -997,7 +998,7 @@ state_t* BIT_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Test bits in memory with accumulator, Direct Page Indexed with X
     processor_state_t *state = &machine->processor;
     uint16_t address = get_dp_address_indexed_x(machine, arg_one);
-    uint8_t value = read_byte(get_memory_bank(machine, state->DBR), address);
+    uint8_t value = read_byte(get_memory_bank(machine, 0), address);
     if (is_flag_set(machine, M_FLAG)) {
         uint8_t result = state->A.low & value;
         set_flags_nz_8(machine, result);
@@ -1006,7 +1007,7 @@ state_t* BIT_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
         if (value & 0x40) set_flag(machine, OVERFLOW);
         else clear_flag(machine, OVERFLOW);
     } else {
-        uint16_t value16 = (uint16_t)read_word(get_memory_bank(machine, state->DBR), address);
+        uint16_t value16 = (uint16_t)read_word(get_memory_bank(machine, 0), address);
         uint16_t result = state->A.full & value16;
         check_and_set_zero_16(machine, result);
         // BIT also copies bit 15 to N and bit 14 to V
@@ -1021,7 +1022,7 @@ state_t* ROL_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Rotate Left, Direct Page Indexed with X
     processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_dp_address_indexed_x(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     uint8_t value = read_byte(memory_bank, effective_address);
     if (is_flag_set(machine, M_FLAG)) {
         uint16_t result = (uint16_t)(value << 1);
@@ -1211,7 +1212,7 @@ state_t* EOR_DP_I_IX   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Exclusive OR Accumulator with Memory (Direct Page Indirect Indexed with X)
     processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_dp_address_indirect_indexed_x(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     uint8_t value = read_byte(memory_bank, effective_address);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low ^= value;
@@ -1239,7 +1240,7 @@ state_t* EOR_SR        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     else sp_address = state->SP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
     uint16_t effective_sr_address = (sp_address + offset) & 0xFFFF;
-    uint8_t value = read_byte(get_memory_bank(machine, state->DBR), effective_sr_address);
+    uint8_t value = read_byte(get_memory_bank(machine, 0), effective_sr_address);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low ^= value;
         set_flags_nz_8(machine, state->A.low);
@@ -1272,7 +1273,7 @@ state_t* MVP           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* EOR_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Exclusive OR Accumulator with Memory (Direct Page Addressing)
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     uint16_t dp_address = get_dp_address(machine, arg_one);
     uint8_t value = read_byte(memory_bank, dp_address);
     if (is_flag_set(machine, M_FLAG)) {
@@ -1288,7 +1289,7 @@ state_t* EOR_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* LSR_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Logical Shift Right, Direct Page Addressing
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     uint16_t dp_address = get_dp_address(machine, arg_one);
     uint8_t value = read_byte(memory_bank, dp_address);
     if (is_flag_set(machine, M_FLAG)) {
@@ -1322,7 +1323,7 @@ state_t* LSR_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* EOR_DP_IL     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Exclusive OR Accumulator with Memory (Direct Page Indirect Long)
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     long_address_t dp_address = get_dp_address_indirect_long(machine, arg_one);
     uint8_t *target_bank = get_memory_bank(machine, dp_address.bank);
     uint8_t value = read_byte(target_bank, dp_address.address);
@@ -1478,8 +1479,8 @@ state_t* EOR_DP_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Exclusive OR Accumulator with Memory (Direct Page Indirect Indexed with Y)
     processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_dp_address_indirect_indexed_y(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
-    uint8_t value = memory_bank[effective_address];
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
+    uint8_t value = read_byte(memory_bank, effective_address);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low ^= value;
         set_flags_nz_8(machine, state->A.low);
@@ -1494,8 +1495,8 @@ state_t* EOR_DP_I      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Exclusive OR Accumulator with Memory (Direct Page Indirect)
     processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_dp_address_indirect(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
-    uint8_t value = memory_bank[effective_address];
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
+    uint8_t value = read_byte(memory_bank, effective_address);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low ^= value;
         set_flags_nz_8(machine, state->A.low);
@@ -1512,7 +1513,7 @@ state_t* EOR_SR_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     uint16_t sp_address;
     if (state->emulation_mode) sp_address = 0x0100 | (state->SP & 0xFF);
     else sp_address = state->SP & 0xFFFF;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     uint8_t offset = (uint8_t)arg_one;
     uint16_t effective_dp_address = (sp_address + offset) & 0xFFFF;
     uint8_t low_byte = memory_bank[effective_dp_address];
@@ -1539,7 +1540,7 @@ state_t* MVN           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     uint16_t source_index = state->X;
     uint16_t dest_index = state->Y;
     for (uint16_t i = 0; i < count; i++) {
-        dest_bank[dest_index & 0xFFFF] = source_bank[source_index & 0xFFFF];
+        write_byte(dest_bank, dest_index & 0xFFFF, read_byte(source_bank, source_index & 0xFFFF));
         source_index = (source_index + 1) & 0xFFFF;
         dest_index = (dest_index + 1) & 0xFFFF;
     }
@@ -1553,9 +1554,8 @@ state_t* EOR_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Exclusive OR Accumulator with Memory (Direct Page Indexed with X)
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
-    uint16_t dp_address = get_dp_address(machine, arg_one);
-    uint16_t effective_address = (dp_address + state->X) & 0xFFFF;
-    uint8_t value = memory_bank[effective_address];
+    uint16_t effective_address = get_dp_address_indexed_x(machine, arg_one);
+    uint8_t value = read_byte(memory_bank, effective_address);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low ^= value;
         set_flags_nz_8(machine, state->A.low);
@@ -1570,26 +1570,24 @@ state_t* LSR_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Logical Shift Right, Direct Page Indexed with X
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
-    uint16_t dp_address = get_dp_address(machine, arg_one);
-    uint16_t effective_address = (dp_address + state->X) & 0xFFFF;
-    uint8_t value = memory_bank[effective_address];
+    uint16_t effective_address = get_dp_address_indexed_x(machine, arg_one);
+    uint8_t value = read_byte(memory_bank, effective_address);
     if (is_flag_set(machine, M_FLAG)) {
         // 8-bit mode
         // Set Carry flag based on bit 0
         check_and_set_carry_8(machine, value);
         value >>= 1;
-        memory_bank[effective_address] = value;
+        write_byte(memory_bank, effective_address, value);
         // Set Zero and Negative flags
         set_flags_nz_8(machine, value);
         clear_flag(machine, NEGATIVE);
     } else {
         // 16-bit mode
-        uint16_t value16 = (memory_bank[effective_address] | (memory_bank[(effective_address + 1) & 0xFFFF] << 8));
+        uint16_t value16 = read_word(memory_bank, effective_address);
         // Set Carry flag based on bit 0
         check_and_set_carry_16(machine, value16);
         value16 >>= 1;
-        memory_bank[effective_address] = value16 & 0xFF;
-        memory_bank[(effective_address + 1) & 0xFFFF] = (value16 >> 8) & 0xFF;
+        write_word(memory_bank, effective_address, value16);
         // Set Zero and Negative flags
         set_flags_nz_16(machine, value16);
     }
@@ -1600,20 +1598,14 @@ state_t* LSR_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* EOR_DP_IL_IY  (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Exclusive OR Accumulator with Memory (Direct Page Indirect Long Indexed with Y)
     processor_state_t *state = &machine->processor;
-    uint16_t dp_address = get_dp_address(machine, arg_one);
-    uint8_t *dp_bank = get_memory_bank(machine, 0);
-    uint8_t low_byte = dp_bank[dp_address];
-    uint8_t mid_byte = dp_bank[(dp_address + 1) & 0xFFFF];
-    uint8_t high_byte = dp_bank[(dp_address + 2) & 0xFFFF];
-    uint16_t base_address = (mid_byte << 8) | low_byte;
-    uint16_t effective_address = (base_address + state->Y) & 0xFFFF;
-    uint8_t *memory_bank = get_memory_bank(machine, high_byte);
-    uint8_t value = memory_bank[effective_address];
+    long_address_t address = get_dp_address_indirect_long_indexed_y(machine, arg_one);
+    uint8_t *memory_bank = get_memory_bank(machine, address.bank);
+    uint8_t value = read_byte(memory_bank, address.address);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low ^= value;
         set_flags_nz_8(machine, state->A.low);
     } else {
-        uint16_t value16 = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
+        uint16_t value16 = read_word(memory_bank, address.address);
         state->A.full ^= value16;
         set_flags_nz_16(machine, state->A.full);
     }
@@ -1744,7 +1736,7 @@ state_t* RTS           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* ADC_DP_I_IX   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry (Direct Page Indirect Indexed with X)
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     uint16_t effective_address = get_dp_address_indirect_indexed_x(machine, arg_one);
     uint8_t value = memory_bank[effective_address];
     uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
@@ -1774,7 +1766,7 @@ state_t* ADC_SR        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry (Stack Relative)
     processor_state_t *state = &machine->processor;
     uint16_t sp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (state->emulation_mode) sp_address = 0x0100 | (state->SP & 0xFF);
     else sp_address = state->SP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
@@ -1810,7 +1802,7 @@ state_t* STZ           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* ADC_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry (Direct Page)
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     uint16_t dp_address = get_dp_address(machine, arg_one);
     uint8_t value = memory_bank[dp_address];
     uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
@@ -1830,7 +1822,7 @@ state_t* ADC_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* ROR_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Rotate Right, Direct Page
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     uint16_t dp_address = get_dp_address(machine, arg_one);
     uint8_t value = machine->memory[0][dp_address];
     if (is_flag_set(machine, M_FLAG)) {
@@ -2052,7 +2044,7 @@ state_t* BVS_PCR       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* ADC_DP_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry (Direct Page Indirect Indexed with Y)
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     uint16_t effective_address = get_dp_address_indirect_indexed_y(machine, arg_one);
     uint8_t value = memory_bank[effective_address];
     uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
@@ -2077,7 +2069,7 @@ state_t* ADC_DP_I      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry (Direct Page Indirect)
     processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_dp_address_indirect(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     uint8_t value = memory_bank[effective_address];
     uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
     if (is_flag_set(machine, M_FLAG)) {
@@ -2110,7 +2102,7 @@ state_t* ADC_SR_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     uint8_t high_byte = memory_bank[(effective_address_ptr + 1) & 0xFFFF];
     uint16_t base_address = ((uint16_t)high_byte << 8) | low_byte;
     uint16_t effective_address = (base_address + state->Y) & 0xFFFF;
-    uint8_t *pbr_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *pbr_bank = get_memory_bank(machine, 0);
     uint8_t value = pbr_bank[effective_address];
     uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
     if (is_flag_set(machine, M_FLAG)) {
@@ -2135,7 +2127,7 @@ state_t* STZ_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t dp_address = get_dp_address(machine, arg_one);
     uint16_t effective_address = (dp_address + state->X) & 0xFFFF;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     memory_bank[effective_address] = 0x00;
     return machine;
 }
@@ -2143,7 +2135,7 @@ state_t* STZ_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* ADC_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry (Direct Page Indexed with X)
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     uint16_t dp_address = get_dp_address(machine, arg_one);
     uint16_t effective_address = (dp_address + state->X) & 0xFFFF;
     uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
@@ -2167,7 +2159,7 @@ state_t* ADC_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 
 state_t* ROR_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     uint16_t dp_address = get_dp_address(machine, arg_one);
     uint16_t effective_address = (dp_address + state->X) & 0xFFFF;
     uint8_t value = memory_bank[effective_address];
@@ -2195,7 +2187,7 @@ state_t* ROR_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* ADC_DP_IL_IY  (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry (Direct Page Indirect Long Indexed by Y)
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
 
     // get address somehow
@@ -2365,7 +2357,7 @@ state_t* BRA_CB        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* STA_DP_I_IX   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (state->emulation_mode) dp_address = 0x0000 | (state->DP & 0xFF);
     else dp_address = state->DP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
@@ -2395,7 +2387,7 @@ state_t* BRL_CB        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 
 state_t* STA_SR        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     uint16_t sp_address;
     if (state->emulation_mode) sp_address = 0x0100 | (state->SP & 0xFF);
     else sp_address = state->SP & 0xFFFF;
@@ -2413,7 +2405,7 @@ state_t* STA_SR        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 
 state_t* STY_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     uint16_t dp_address;
     if (state->emulation_mode) dp_address = 0x0000 | (state->DP & 0xFF);
     else dp_address = state->DP & 0xFFFF;
@@ -2431,7 +2423,7 @@ state_t* STY_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 
 state_t* STA_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     uint16_t dp_address;
     if (state->emulation_mode) dp_address = 0x0000 | (state->DP & 0xFF);
     else dp_address = state->DP & 0xFFFF;
@@ -2449,7 +2441,7 @@ state_t* STA_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 
 state_t* STX_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     uint16_t dp_address;
     if (state->emulation_mode) dp_address = 0x0000 | (state->DP & 0xFF);
     else dp_address = state->DP & 0xFFFF;
@@ -2468,7 +2460,7 @@ state_t* STX_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* STA_DP_IL     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // STore A register, Direct Page Indirect Long
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     uint16_t dp_address;
     if (state->emulation_mode) dp_address = 0x0000;
     else dp_address = state->DP & 0xFFFF;
@@ -2608,7 +2600,7 @@ state_t* BCC_CB        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* STA_DP_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (state->emulation_mode) dp_address = 0x0000 | (state->DP & 0xFF);
     else dp_address = state->DP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
@@ -2629,7 +2621,7 @@ state_t* STA_DP_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* STA_DP_I      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (state->emulation_mode) dp_address = 0x0000 | (state->DP & 0xFF);
     else dp_address = state->DP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
@@ -2654,13 +2646,13 @@ state_t* STA_SR_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (state->emulation_mode) sp_address = 0x0100 | (state->SP & 0xFF);
     else sp_address = state->SP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
-    uint8_t *stack_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *stack_bank = get_memory_bank(machine, 0);
     uint16_t effective_address_ptr = (sp_address + offset) & 0xFFFF;
     uint8_t low_byte = stack_bank[effective_address_ptr];
     uint8_t high_byte = stack_bank[(effective_address_ptr + 1) & 0xFFFF];
     uint16_t base_address = ((uint16_t)high_byte << 8) | low_byte;
     uint16_t effective_address = (base_address + state->Y) & 0xFFFF;
-    uint8_t *target_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *target_bank = get_memory_bank(machine, 0);
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         target_bank[effective_address] = (uint8_t)(state->A.low & 0xFF);
     } else {
@@ -2674,7 +2666,7 @@ state_t* STA_SR_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* STY_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // STore Y register, Direct Page, Indexed by X
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     uint16_t dp_address = get_dp_address(machine, arg_one);
     uint16_t effective_address = (dp_address + state->X) & 0xFFFF;
 
@@ -2690,7 +2682,7 @@ state_t* STY_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* STA_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // STore A register, Direct Page, Indexed by X
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     uint16_t dp_address = get_dp_address(machine, arg_one);
     uint16_t effective_address = (dp_address + state->X) & 0xFFFF;
 
@@ -2705,7 +2697,7 @@ state_t* STA_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* STX_DP_IY     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // STore Y register, Direct Page, Indexed by X
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     uint16_t dp_address = get_dp_address(machine, arg_one);
     uint16_t effective_address = (dp_address + state->Y) & 0xFFFF;
 
@@ -2721,7 +2713,7 @@ state_t* STX_DP_IY     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* STA_DP_IL_IY  (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // STore A register, Direct Page, Indirect Long Indexed by Y
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     uint16_t dp_address = get_dp_address(machine, arg_one);
     uint8_t low_byte = memory_bank[dp_address];
     uint8_t high_byte = memory_bank[(dp_address + 1) & 0xFFFF];
@@ -2871,7 +2863,7 @@ state_t* LDA_DP_I_IX   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD A, Direct Page Indirect Indexed by X
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (state->emulation_mode) dp_address = 0x0000 | (state->DP & 0xFF);
     else dp_address = state->DP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
@@ -2913,7 +2905,7 @@ state_t* LDA_SR        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     else sp_address = state->SP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
     uint16_t effective_address = (sp_address + offset) & 0xFFFF;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         state->A.low = memory_bank[effective_address];
         set_flags_nz_8(machine, state->A.low);
@@ -2929,7 +2921,7 @@ state_t* LDY_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD Y, Direct Page
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (state->emulation_mode) dp_address = 0x0000;
     else dp_address = state->DP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
@@ -2949,7 +2941,7 @@ state_t* LDA_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD A, Direct Page
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (state->emulation_mode) dp_address = 0x0000;
     else dp_address = state->DP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
@@ -2969,7 +2961,7 @@ state_t* LDX_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD X, Direct Page
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (state->emulation_mode) dp_address = 0x0000;
     else dp_address = state->DP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
@@ -2989,7 +2981,7 @@ state_t* LDA_DP_IL     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD A, Direct Page Indirect Long
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (state->emulation_mode) dp_address = 0x0000 | (state->DP & 0xFF);
     else dp_address = state->DP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
@@ -3141,7 +3133,7 @@ state_t* LDA_DP_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD A, Direct Page Indirect Indexed by Y
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (state->emulation_mode) dp_address = 0x0000 | (state->DP & 0xFF);
     else dp_address = state->DP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
@@ -3165,7 +3157,7 @@ state_t* LDA_DP_I      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD A, Direct Page Indirect
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (state->emulation_mode) dp_address = 0x0000 | (state->DP & 0xFF);
     else dp_address = state->DP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
@@ -3188,7 +3180,7 @@ state_t* LDA_SR_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD A, Stack Relative Indirect Indexed by Y
     processor_state_t *state = &machine->processor;
     uint16_t sp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (state->emulation_mode) sp_address = 0x0100 | (state->SP & 0xFF);
     else sp_address = state->SP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
@@ -3212,7 +3204,7 @@ state_t* LDY_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD Y, Direct Page Indexed by X
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (state->emulation_mode) dp_address = 0x0000 | (state->DP & 0xFF);
     else dp_address = state->DP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
@@ -3232,7 +3224,7 @@ state_t* LDA_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD A, Direct Page Indexed by X
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (state->emulation_mode) dp_address = 0x0000 | (state->DP & 0xFF);
     else dp_address = state->DP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
@@ -3252,7 +3244,7 @@ state_t* LDX_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD X, Direct Page Indexed by Y
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (state->emulation_mode) dp_address = 0x0000 | (state->DP & 0xFF);
     else dp_address = state->DP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
@@ -3272,7 +3264,7 @@ state_t* LDA_DP_IL_IY  (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD A, Direct Page Indirect Long Indexed by Y
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (state->emulation_mode) dp_address = 0x0000 | (state->DP & 0xFF);
     else dp_address = state->DP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
@@ -3431,7 +3423,7 @@ state_t* CMP_DP_I_IX   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // CoMPare A, Direct Page Indirect Indexed by X
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (state->emulation_mode) dp_address = 0x0000 | (state->DP & 0xFF);
     else dp_address = state->DP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
@@ -3485,7 +3477,7 @@ state_t* CPY_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // ComPare Y, Direct Page
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (state->emulation_mode) dp_address = 0x0000 | (state->DP & 0xFF);
     else dp_address = state->DP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
@@ -3507,7 +3499,7 @@ state_t* CMP_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // CoMPare A, Direct Page
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (state->emulation_mode) dp_address = 0x0000 | (state->DP & 0xFF);
     else dp_address = state->DP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
@@ -3535,7 +3527,7 @@ state_t* DEC_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // DECrement Direct Page
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (state->emulation_mode) dp_address = 0x0000 | (state->DP & 0xFF);
     else dp_address = state->DP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
@@ -3747,7 +3739,7 @@ state_t* CMP_DP_I      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // CoMPare A, Direct Page Indirect
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (state->emulation_mode) dp_address = 0x0000 | (state->DP & 0xFF);
     else dp_address = state->DP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
@@ -3772,7 +3764,7 @@ state_t* CMP_SR_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // CoMPare A, Stack Relative Indirect Indexed by Y
     processor_state_t *state = &machine->processor;
     uint16_t sp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (state->emulation_mode) sp_address = 0x0100 | (state->SP & 0xFF);
     else sp_address = state->SP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
@@ -3798,7 +3790,7 @@ state_t* PEI_DP_I      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Push Effective Indirect, Direct Page Indirect
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (state->emulation_mode) dp_address = 0x0000 | (state->DP & 0xFF);
     else dp_address = state->DP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
@@ -3817,7 +3809,7 @@ state_t* CMP_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // CoMPare A, Direct Page Indexed by X
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (state->emulation_mode) dp_address = 0x0000 | (state->DP & 0xFF);
     else dp_address = state->DP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
@@ -3839,7 +3831,7 @@ state_t* DEC_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // DECrement Direct Page Indexed by X
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (state->emulation_mode) dp_address = 0x0000 | (state->DP & 0xFF);
     else dp_address = state->DP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
@@ -4035,7 +4027,7 @@ state_t* CPX_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* SBC_DP_I_IX   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Direct Page Indirect Indexed by X
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     uint16_t effective_address = get_dp_address_indirect_indexed_x(machine, arg_one);
     uint16_t value_to_subtract;
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
@@ -4096,7 +4088,7 @@ state_t* CPX_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // ComPare X, Direct Page
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (state->emulation_mode) dp_address = 0x0000 | (state->DP & 0xFF);
     else dp_address = state->DP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
@@ -4118,7 +4110,7 @@ state_t* SBC_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Direct Page
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (state->emulation_mode) dp_address = 0x0000 | (state->DP & 0xFF);
     else dp_address = state->DP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
@@ -4144,7 +4136,7 @@ state_t* INC_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // INCrement Direct Page
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (state->emulation_mode) dp_address = 0x0000 | (state->DP & 0xFF);
     else dp_address = state->DP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
@@ -4359,7 +4351,7 @@ state_t* SBC_DP_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Direct Page Indirect Indexed by Y
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (state->emulation_mode) dp_address = 0x0000 | (state->DP & 0xFF);
     else dp_address = state->DP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
@@ -4389,7 +4381,7 @@ state_t* SBC_DP_I      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Direct Page Indirect
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (state->emulation_mode) dp_address = 0x0000 | (state->DP & 0xFF);
     else dp_address = state->DP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
@@ -4418,7 +4410,7 @@ state_t* SBC_SR_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Stack Relative Indirect Indexed by Y
     processor_state_t *state = &machine->processor;
     uint16_t sp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (state->emulation_mode) sp_address = 0x0100 | (state->SP & 0xFF);
     else sp_address = state->SP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
@@ -4455,7 +4447,7 @@ state_t* SBC_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Direct Page Indexed by X
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (state->emulation_mode) dp_address = 0x0000 | (state->DP & 0xFF);
     else dp_address = state->DP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
@@ -4481,7 +4473,7 @@ state_t* INC_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // INCrement Direct Page Indexed by X
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (state->emulation_mode) dp_address = 0x0000 | (state->DP & 0xFF);
     else dp_address = state->DP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
@@ -4505,7 +4497,7 @@ state_t* SBC_DP_IL_IY  (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Direct Page Indirect Long Indexed by Y
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (state->emulation_mode) dp_address = 0x0000 | (state->DP & 0xFF);
     else dp_address = state->DP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
