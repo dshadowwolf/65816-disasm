@@ -1046,16 +1046,16 @@ TEST(PHD_and_PLD) {
 TEST(PHB_and_PLB) {
     state_t *machine = setup_machine();
     machine->processor.SP = 0x1FF;
-    machine->processor.PBR = 0x55;
+    machine->processor.DBR = 0x55;
     uint8_t *bank = get_memory_bank(machine, 0);
     
     PHB(machine, 0, 0);
     ASSERT_EQ(machine->processor.SP, 0x1FE, "PHB should decrement SP");
-    ASSERT_EQ(bank[0x1FF], 0x55, "PHB should push PBR");
+    ASSERT_EQ(bank[0x1FF], 0x55, "PHB should push DBR");
     
-    machine->processor.PBR = 0x00;
+    machine->processor.DBR = 0x00;
     PLB(machine, 0, 0);
-    ASSERT_EQ(machine->processor.PBR, 0x55, "PLB should restore PBR");
+    ASSERT_EQ(machine->processor.DBR, 0x55, "PLB should restore DBR");
     
     destroy_machine(machine);
 }
