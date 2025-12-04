@@ -3400,14 +3400,14 @@ TEST(LDX_IMM_immediate) {
 TEST(LDX_DP_IX_indexed) {
     state_t *machine = setup_machine();
     machine->processor.DP = 0x00;
-    machine->processor.Y = 0x05;
+    machine->processor.X = 0x05;
     set_flag(machine, X_FLAG);
     
     uint8_t *bank = get_memory_bank(machine, 0);
     bank[0x25] = 0x77;
     
     LDX_DP_IX(machine, 0x20, 0);
-    ASSERT_EQ(machine->processor.X & 0xFF, 0x77, "LDX DP,Y should load indexed");
+    ASSERT_EQ(machine->processor.X & 0xFF, 0x77, "LDX DP,X should load indexed");
     
     destroy_machine(machine);
 }
