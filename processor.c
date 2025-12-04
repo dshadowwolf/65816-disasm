@@ -616,17 +616,16 @@ state_t* ASL_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t address = (arg_one + state->X) & 0xFFFF;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
-    uint8_t value = memory_bank[address];
+    uint8_t value = read_byte(memory_bank, address);
     if (is_flag_set(machine, M_FLAG)) {
         uint16_t result = (uint16_t)(value << 1);
-        memory_bank[address] = (uint8_t)(result & 0xFF);
+        write_byte(memory_bank, address, (uint8_t)(result & 0xFF));
         check_and_set_carry_8(machine, result);
     } else {
         // Handle 16-bit mode
-        uint16_t value16 = (uint16_t)(memory_bank[address] | (memory_bank[(address + 1) & 0xFFFF] << 8));
+        uint16_t value16 = read_word(memory_bank, address);
         uint32_t result = (uint32_t)(value16 << 1);
-        memory_bank[address] = (uint8_t)(result & 0xFF);
-        memory_bank[(address + 1) & 0xFFFF] = (uint8_t)((result >> 8) & 0xFF);
+        write_word(memory_bank, address, (uint16_t)(result & 0xFFFF));
         check_and_set_carry_16(machine, result);
     }
     return machine;
@@ -637,7 +636,7 @@ state_t* ORA_ABL_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t effective_address = (arg_one + state->X) & 0xFFFF;
     uint8_t *memory_bank = get_memory_bank(machine, (uint8_t)(arg_two & 0xFF));
-    uint8_t value = memory_bank[effective_address];
+    uint8_t value = read_byte(memory_bank, effective_address);
     if (is_flag_set(machine, M_FLAG)) {
         uint8_t result = state->A.low | value;
         state->A.low = result;
@@ -663,9 +662,8 @@ state_t* JSR_CB        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* AND_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // AND Direct Page Indexed with X
     processor_state_t *state = &machine->processor;
-    uint16_t dp_address = get_dp_address(machine, arg_one);
-    uint16_t effective_address = (dp_address + state->X) & 0xFFFF;
-    uint8_t value = machine->memory[0][effective_address];
+    uint16_t effective_address = get_dp_address_indexed_x(machine, arg_one);
+    uint8_t value = read_byte(get_memory_bank(machine, state->DBR), effective_address);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low &= value;
         set_flags_nz_8(machine, state->A.low);
