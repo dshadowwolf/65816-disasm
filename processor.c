@@ -1133,7 +1133,7 @@ state_t* AND_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     uint16_t base_address = arg_one;
     uint16_t effective_address = (base_address + state->X) & 0xFFFF;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
-    uint8_t value = memory_bank[effective_address];
+    uint8_t value = read_byte(memory_bank, effective_address);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low &= value;
         set_flags_nz_8(machine, state->A.low);
@@ -1151,39 +1151,35 @@ state_t* ROL_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     uint16_t effective_address = (base_address + state->X) & 0xFFFF;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     if (is_flag_set(machine, M_FLAG)) {
-        uint8_t value = memory_bank[effective_address];
+        uint8_t value = read_byte(memory_bank, effective_address);
         uint16_t result = (uint16_t)(value << 1);
         if (is_flag_set(machine, CARRY)) {
             result |= 0x01;
         }
-        memory_bank[effective_address] = (uint8_t)(result & 0xFF);
+        write_byte(memory_bank, effective_address, (uint8_t)(result & 0xFF));
         check_and_set_carry_8(machine, result);
         set_flags_nz_8(machine, (uint8_t)(result & 0xFF));
     } else {
         // Handle 16-bit mode - read and write 16 bits
-        uint8_t low = memory_bank[effective_address];
-        uint8_t high = memory_bank[(effective_address + 1) & 0xFFFF];
-        uint16_t value = ((uint16_t)high << 8) | low;
+        uint16_t value = read_word(memory_bank, effective_address);
         uint32_t result = (uint32_t)(value << 1);
         if (is_flag_set(machine, CARRY)) {
             result |= 0x0001;
         }
-        memory_bank[effective_address] = (uint8_t)(result & 0xFF);
-        memory_bank[(effective_address + 1) & 0xFFFF] = (uint8_t)((result >> 8) & 0xFF);
+        write_word(memory_bank, effective_address, (uint16_t)(result & 0xFFFF));
         check_and_set_carry_16(machine, result);
         set_flags_nz_16(machine, (uint16_t)(result & 0xFFFF));
     }
     return machine;
 }
 
-// TODO: Fix for long addressing
 state_t* AND_ABL_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // AND Accumulator with Memory (Absolute Long Indexed with X)
     processor_state_t *state = &machine->processor;
     uint16_t base_address = arg_one;
     uint32_t effective_address = (base_address + state->X) & 0xFFFF;
     uint8_t *memory_bank = get_memory_bank(machine, (uint8_t)(arg_two & 0xFF));
-    uint8_t value = memory_bank[effective_address];
+    uint8_t value = read_byte(memory_bank, effective_address);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low &= value;
         set_flags_nz_8(machine, state->A.low);
@@ -1216,12 +1212,12 @@ state_t* EOR_DP_I_IX   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_dp_address_indirect_indexed_x(machine, arg_one);
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
-    uint8_t value = memory_bank[effective_address];
+    uint8_t value = read_byte(memory_bank, effective_address);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low ^= value;
         set_flags_nz_8(machine, state->A.low);
     } else {
-        uint16_t value16 = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
+        uint16_t value16 = read_word(memory_bank, effective_address);
         state->A.full ^= value16;
         set_flags_nz_16(machine, state->A.full);
     }
@@ -1242,8 +1238,8 @@ state_t* EOR_SR        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (state->emulation_mode) sp_address = 0x0100 | (state->SP & 0xFF);
     else sp_address = state->SP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
-    uint16_t effective_dp_address = (sp_address + offset) & 0xFFFF;
-    uint8_t value = machine->memory[0][effective_dp_address];
+    uint16_t effective_sr_address = (sp_address + offset) & 0xFFFF;
+    uint8_t value = read_byte(get_memory_bank(machine, state->DBR), effective_sr_address);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low ^= value;
         set_flags_nz_8(machine, state->A.low);
@@ -1263,7 +1259,7 @@ state_t* MVP           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     uint16_t source_index = state->X;
     uint16_t dest_index = state->Y;
     for (uint16_t i = 0; i < count; i++) {
-        dest_bank[dest_index & 0xFFFF] = source_bank[source_index & 0xFFFF];
+        write_byte(dest_bank, dest_index & 0xFFFF, read_byte(source_bank, source_index & 0xFFFF));
         source_index = (source_index - 1) & 0xFFFF;
         dest_index = (dest_index - 1) & 0xFFFF;
     }
@@ -1276,9 +1272,9 @@ state_t* MVP           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* EOR_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Exclusive OR Accumulator with Memory (Direct Page Addressing)
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, 0);
+    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     uint16_t dp_address = get_dp_address(machine, arg_one);
-    uint8_t value = memory_bank[dp_address];
+    uint8_t value = read_byte(memory_bank, dp_address);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low ^= value;
         set_flags_nz_8(machine, state->A.low);
@@ -1292,9 +1288,9 @@ state_t* EOR_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* LSR_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Logical Shift Right, Direct Page Addressing
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, 0);
+    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     uint16_t dp_address = get_dp_address(machine, arg_one);
-    uint8_t value = memory_bank[dp_address];
+    uint8_t value = read_byte(memory_bank, dp_address);
     if (is_flag_set(machine, M_FLAG)) {
         // 8-bit mode
         // Set Carry flag based on bit 0
@@ -1304,11 +1300,11 @@ state_t* LSR_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
             clear_flag(machine, CARRY);
         }
         value >>= 1;
-        memory_bank[dp_address] = value;
+        write_byte(memory_bank, dp_address, value);
         set_flags_nz_8(machine, value);
     } else {
         // 16-bit mode
-        uint16_t value16 = memory_bank[dp_address] | (memory_bank[(dp_address + 1) & 0xFFFF] << 8);
+        uint16_t value16 = read_word(memory_bank, dp_address);
         // Set Carry flag based on bit 0
         if (value16 & 0x0001) {
             set_flag(machine, CARRY);
@@ -1316,8 +1312,7 @@ state_t* LSR_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
             clear_flag(machine, CARRY);
         }
         value16 >>= 1;
-        memory_bank[dp_address] = (uint8_t)(value16 & 0xFF);
-        memory_bank[(dp_address + 1) & 0xFFFF] = (uint8_t)((value16 >> 8) & 0xFF);
+        write_word(memory_bank, dp_address, value16);
         set_flags_nz_16(machine, value16);
     }
     return machine;
@@ -1328,13 +1323,9 @@ state_t* EOR_DP_IL     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Exclusive OR Accumulator with Memory (Direct Page Indirect Long)
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
-    uint16_t dp_address = get_dp_address(machine, arg_one);
-    uint8_t low_byte = memory_bank[dp_address];
-    uint8_t mid_byte = memory_bank[(dp_address + 1) & 0xFFFF];
-    uint8_t bank_byte = memory_bank[(dp_address + 2) & 0xFFFF];
-    uint32_t effective_address = (mid_byte << 8) | low_byte;
-    uint8_t *target_bank = get_memory_bank(machine, bank_byte);
-    uint8_t value = target_bank[effective_address];
+    long_address_t dp_address = get_dp_address_indirect_long(machine, arg_one);
+    uint8_t *target_bank = get_memory_bank(machine, dp_address.bank);
+    uint8_t value = read_byte(target_bank, dp_address.address);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low ^= value;
         set_flags_nz_8(machine, state->A.low);
