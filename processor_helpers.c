@@ -144,6 +144,15 @@ uint8_t read_byte(uint8_t *memory, uint16_t address) {
     return memory[address];
 }
 
+void write_byte(uint8_t *memory, uint16_t address, uint8_t value) {
+    memory[address] = value;
+}
+
+void write_word(uint8_t *memory, uint16_t address, uint16_t value) {
+    memory[address] = value & 0xFF;               // Low byte
+    memory[(address + 1) & 0xFFFF] = (value >> 8) & 0xFF; // High byte
+}
+
 long_address_t get_long_address(state_t *machine, uint16_t offset, uint16_t bank) {
     long_address_t long_addr;
     long_addr.bank = bank & 0xFF;

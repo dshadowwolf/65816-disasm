@@ -177,8 +177,8 @@ state_t* ORA_SR        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     else sp_address = state->SP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
     uint16_t effective_address = (sp_address + offset) & 0xFFFF;
-    uint8_t *memory_bank = get_memory_bank(machine, 0);
-    uint8_t value = memory_bank[effective_address];
+    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t value = read_byte(memory_bank, effective_address);
 
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low |= value;
@@ -196,19 +196,18 @@ state_t* TSB_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     uint16_t dp_address = get_dp_address(machine, arg_one);
     uint8_t *memory_bank = get_memory_bank(machine, state->PBR);
     if (is_flag_set(machine, M_FLAG)) {
-        uint8_t value = memory_bank[dp_address];
+        uint8_t value = read_byte(memory_bank, dp_address);
         uint8_t test_result = state->A.low & value;
         if (test_result == 0) set_flag(machine, ZERO);
         else clear_flag(machine, ZERO);
-        memory_bank[dp_address] = value | state->A.low;  // Set bits
+        write_byte(memory_bank, dp_address, value | state->A.low);
     } else {
-        uint16_t value = memory_bank[dp_address] | ((uint16_t)memory_bank[dp_address + 1] << 8);
+        uint16_t value = read_word(memory_bank, dp_address);
         uint16_t test_result = state->A.full & value;
         if (test_result == 0) set_flag(machine, ZERO);
         else clear_flag(machine, ZERO);
         uint16_t new_value = value | state->A.full;
-        memory_bank[dp_address] = new_value & 0xFF;
-        memory_bank[dp_address + 1] = (new_value >> 8) & 0xFF;
+        write_word(memory_bank, dp_address, new_value);
     }
     return machine;
 }
