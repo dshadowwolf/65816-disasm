@@ -1338,11 +1338,10 @@ state_t* EOR_DP_IL     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 
 state_t* PHA           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Push Accumulator onto Stack
-    processor_state_t *state = &machine->processor;
-    if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        push_byte(machine, state->A.low);
+    if (machine->processor.emulation_mode || is_flag_set(machine, M_FLAG)) {
+        push_byte(machine, machine->processor.A.low);
     } else {
-        push_word(machine, state->A.full);
+        push_word(machine, machine->processor.A.full);
     }
     return machine;
 }
@@ -1394,15 +1393,8 @@ state_t* PHK           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, 0);  // Stack is always in bank 0
     uint16_t sp_address;
-    if (state->emulation_mode) {
-        sp_address = 0x0100 | (state->SP & 0xFF);
-        memory_bank[sp_address] = state->PBR;
-        state->SP = (state->SP - 1) & 0x1FF;
-    } else {
-        sp_address = state->SP & 0xFFFF;
-        memory_bank[sp_address] = state->PBR;
-        state->SP = (state->SP - 1) & 0xFFFF;
-    }
+
+    push_byte(machine, state->PBR);
     return machine;
 }
 
@@ -1418,7 +1410,7 @@ state_t* EOR_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t address = arg_one;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
-    uint8_t value = memory_bank[address];
+    uint8_t value = read_byte(memory_bank, address);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low ^= value;
         set_flags_nz_8(machine, state->A.low);
@@ -1434,23 +1426,22 @@ state_t* LSR_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t address = arg_one;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
-    uint8_t value = memory_bank[address];
+    uint8_t value = read_byte(memory_bank, address);
     if (is_flag_set(machine, M_FLAG)) {
         // 8-bit mode
         // Set Carry flag based on bit 0
         check_and_set_carry_8(machine, value);
         value >>= 1;
-        memory_bank[address] = value;
+        write_byte(memory_bank, address, value);
         // Set Zero and Negative flags
         set_flags_nz_8(machine, value);
     } else {
         // 16-bit mode
-        uint16_t value16 = memory_bank[address] | (memory_bank[(address + 1) & 0xFFFF] << 8);
+        uint16_t value16 = read_word(memory_bank, address);
         // Set Carry flag based on bit 0
         check_and_set_carry_16(machine, value16);
         value16 >>= 1;
-        memory_bank[address] = (uint8_t)(value16 & 0xFF);  
-        memory_bank[(address + 1) & 0xFFFF] = (uint8_t)((value16 >> 8) & 0xFF);
+        write_word(memory_bank, address, value16);
         // Set Zero and Negative flags
         set_flags_nz_16(machine, value16);
     }
@@ -1463,7 +1454,7 @@ state_t* EOR_ABL       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     uint32_t address = arg_one;
     uint8_t bank = (uint8_t)(arg_two & 0xFF);
     uint8_t *memory_bank = get_memory_bank(machine, bank);
-    uint8_t value = memory_bank[address];
+    uint8_t value = read_byte(memory_bank, address);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low ^= value;
         set_flags_nz_8(machine, state->A.low);
