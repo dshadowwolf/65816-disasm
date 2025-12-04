@@ -17,9 +17,10 @@ typedef struct processor_state_s {
     uint16_t Y;               // Index Register Y
     uint16_t PC;              // Program Counter
     uint16_t SP;              // Stack Pointer
-    uint8_t DP;               // Direct Page Register
+    uint16_t DP;              // Direct Page Register
     uint8_t P;                // Processor Status Register
     uint8_t PBR;              // Program Bank Register
+    uint8_t DBR;              // Data Bank Register
     bool emulation_mode;      // Emulation Mode Flag
     bool interrupts_disabled; // Interrupt Disable Flag
 } processor_state_t;

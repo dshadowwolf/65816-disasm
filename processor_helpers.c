@@ -96,15 +96,31 @@ void set_flags_nzc_16(state_t *machine, uint32_t result) {
 void push_byte(state_t *machine, uint8_t value) {
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, 0);
-    memory_bank[0x0100 | (state->SP & 0xFF)] = value;
-    state->SP--;
+    
+    if (state->emulation_mode) {
+        // Emulation mode: stack is in page 1 (0x0100-0x01FF)
+        memory_bank[0x0100 | (state->SP & 0xFF)] = value;
+        state->SP = (state->SP - 1) & 0x1FF;
+    } else {
+        // Native mode: stack can be anywhere in bank 0
+        memory_bank[state->SP & 0xFFFF] = value;
+        state->SP = (state->SP - 1) & 0xFFFF;
+    }
 }
 
 uint8_t pop_byte(state_t *machine) {
     processor_state_t *state = &machine->processor;
-    state->SP++;
     uint8_t *memory_bank = get_memory_bank(machine, 0);
-    return memory_bank[0x0100 | (state->SP & 0xFF)];
+    
+    if (state->emulation_mode) {
+        // Emulation mode: stack is in page 1 (0x0100-0x01FF)
+        state->SP = (state->SP + 1) & 0x1FF;
+        return memory_bank[0x0100 | (state->SP & 0xFF)];
+    } else {
+        // Native mode: stack can be anywhere in bank 0
+        state->SP = (state->SP + 1) & 0xFFFF;
+        return memory_bank[state->SP & 0xFFFF];
+    }
 }
 
 void push_word(state_t *machine, uint16_t value) {
@@ -124,6 +140,10 @@ uint16_t read_word(uint8_t *memory, uint16_t address) {
     return (high_byte << 8) | low_byte;
 }
 
+uint8_t read_byte(uint8_t *memory, uint16_t address) {
+    return memory[address];
+}
+
 long_address_t get_long_address(state_t *machine, uint16_t offset, uint16_t bank) {
     long_address_t long_addr;
     long_addr.bank = bank & 0xFF;
@@ -138,18 +158,14 @@ uint16_t get_dp_address(state_t *machine, uint16_t dp_offset) {
 uint16_t get_dp_address_indirect(state_t *machine, uint16_t dp_offset) {
     uint16_t dp_address = get_dp_address(machine, dp_offset);
     uint8_t *memory_bank = get_memory_bank(machine, 0);
-    uint8_t low_byte = memory_bank[dp_address];
-    uint8_t high_byte = memory_bank[(dp_address + 1) & 0xFFFF];
-    return (high_byte << 8) | low_byte;
+    return read_word(memory_bank, dp_address);
 }
 
 uint16_t get_dp_address_indirect_indexed_x(state_t *machine, uint16_t dp_offset) {
     // (DP,X) - Indexed Indirect: add X to DP offset, then read pointer
     uint16_t dp_address = get_dp_address(machine, (dp_offset + machine->processor.X) & 0xFF);
     uint8_t *memory_bank = get_memory_bank(machine, 0);
-    uint8_t low_byte = memory_bank[dp_address];
-    uint8_t high_byte = memory_bank[(dp_address + 1) & 0xFFFF];
-    return (high_byte << 8) | low_byte;
+    return read_word(memory_bank, dp_address);
 }
 
 uint16_t get_dp_address_indirect_indexed_y(state_t *machine, uint16_t dp_offset) {
@@ -157,13 +173,14 @@ uint16_t get_dp_address_indirect_indexed_y(state_t *machine, uint16_t dp_offset)
     return (effective_address + machine->processor.Y) & 0xFFFF;
 }
 
-uint16_t get_dp_address_indirect_long(state_t *machine, uint16_t dp_offset) {
+// this is wrong and needs to be fixed
+long_address_t get_dp_address_indirect_long(state_t *machine, uint16_t dp_offset) {
     uint16_t dp_address = get_dp_address(machine, dp_offset);
     uint8_t *memory_bank = get_memory_bank(machine, 0);
     uint8_t low_byte = memory_bank[dp_address];
-    uint8_t mid_byte = memory_bank[(dp_address + 1) & 0xFFFF];
-    uint8_t high_byte = memory_bank[(dp_address + 2) & 0xFFFF];
-    return (high_byte << 16) | (mid_byte << 8) | low_byte;
+    uint8_t high_byte = memory_bank[(dp_address + 1) & 0xFFFF];
+    uint8_t bank_byte = memory_bank[(dp_address + 2) & 0xFFFF];
+    return get_long_address(machine, (high_byte << 8) | low_byte, bank_byte);
 }
 
 uint16_t get_absolute_address(state_t *machine, uint16_t address) {

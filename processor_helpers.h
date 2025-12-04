@@ -36,6 +36,7 @@ uint16_t pop_word(state_t *machine);
 
 // Memory read helpers
 uint16_t read_word(uint8_t *memory, uint16_t address);
+uint8_t read_byte(uint8_t *memory, uint16_t address);
 
 // Long address structure and helper
 typedef struct long_address_s {
@@ -50,7 +51,7 @@ uint16_t get_dp_address(state_t *machine, uint16_t dp_offset);
 uint16_t get_dp_address_indirect(state_t *machine, uint16_t dp_offset);
 uint16_t get_dp_address_indirect_indexed_x(state_t *machine, uint16_t dp_offset);
 uint16_t get_dp_address_indirect_indexed_y(state_t *machine, uint16_t dp_offset);
-uint16_t get_dp_address_indirect_long(state_t *machine, uint16_t dp_offset);
+long_address_t get_dp_address_indirect_long(state_t *machine, uint16_t dp_offset);
 
 // Absolute addressing helper
 uint16_t get_absolute_address(state_t *machine, uint16_t address);

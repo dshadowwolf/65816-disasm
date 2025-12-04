@@ -64,15 +64,27 @@ void destroy_machine(state_t *machine) {
 }
 
 // TODO: refactor more to use the get_dp_address_XXX helpers
+
 state_t* XCE_CB(state_t *machine, uint16_t unused1, uint16_t unused2) {
     bool carry = is_flag_set(machine, CARRY); // Check Carry flag (bit 0)
+    bool emulation = machine->processor.emulation_mode;
+    
+    // Swap carry flag with emulation mode
+    if (emulation) {
+        set_flag(machine, CARRY);
+    } else {
+        clear_flag(machine, CARRY);
+    }
+    
     if (carry) {
-        machine->processor.emulation_mode = !machine->processor.emulation_mode;
-        if (machine->processor.emulation_mode) {
-            machine->processor.SP |= 0x0100; // Set high byte of SP in emulation mode
-        } else {
-            machine->processor.SP &= 0x01FF; // Clear high byte of SP in native mode
-        }
+        // Switch to emulation mode
+        set_flag(machine, M_FLAG); // Set M flag (bit 5)
+        set_flag(machine, X_FLAG); // Set X flag (bit 4)
+        machine->processor.emulation_mode = true;
+        machine->processor.SP |= 0x0100; // Set high byte of SP in emulation mode
+    } else {
+        // Switch to native mode
+        machine->processor.emulation_mode = false;
     }
     return machine;
 }
@@ -98,29 +110,25 @@ state_t* BRK           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // In native mode push the PBR onto the stack,
     // followed by the PC then the P register
     uint16_t pc = state->PC + 2; // BRK is a 2-byte instruction
-    uint8_t *memory_bank = get_memory_bank(machine, state->PBR);
+    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     if (!state->emulation_mode) {
-        push_byte(machine, state->PBR); // Push PBR
+        push_byte(machine, state->DBR); // Push PBR
     }
     push_word(machine, pc); // Push PC
     push_byte(machine, state->P); // Push status register
     // Set Interrupt Disable flag
     set_flag(machine, INTERRUPT_DISABLE);
     // Load new PC from IRQ vector at $FFFE/$FFFF
-    uint8_t low_byte = memory_bank[0xFFFE];
-    uint8_t high_byte = memory_bank[0xFFFF];
+    uint8_t low_byte = read_byte(memory_bank, 0xFFFE);
+    uint8_t high_byte = read_byte(memory_bank, 0xFFFF);
     state->PC = (high_byte << 8) | low_byte;
     return machine;
 }
 
 state_t* ORA_DP_I_IX   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
-    uint16_t dp_address = get_dp_address(machine, arg_one);
-    dp_address = (dp_address + state->X) & 0xFFFF;
+    uint16_t effective_address = get_dp_address_indirect_indexed_x(machine, arg_one);
     uint8_t *memory_bank = get_memory_bank(machine, state->PBR);
-    uint8_t low_byte = memory_bank[dp_address];
-    uint8_t high_byte = memory_bank[(dp_address + 1) & 0xFFFF];
-    uint16_t effective_address = (high_byte << 8) | low_byte;
     uint8_t value = memory_bank[effective_address];
     
     if (is_flag_set(machine, M_FLAG)) {
@@ -235,14 +243,9 @@ state_t* ASL_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 
 state_t* ORA_DP_IL     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
-    uint16_t dp_address = get_dp_address(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->PBR);
-    uint8_t low_byte = memory_bank[dp_address];
-    uint8_t mid_byte = memory_bank[(dp_address + 1) & 0xFFFF];
-    uint8_t high_byte = memory_bank[(dp_address + 2) & 0xFFFF];
-    uint8_t *effective_memory_bank = get_memory_bank(machine, high_byte);
-    uint16_t effective_address = (mid_byte << 8) | low_byte;
-    uint8_t value = effective_memory_bank[effective_address & 0xFFFF];
+    long_address_t effective_address = get_dp_address_indirect_long(machine, arg_one);
+    uint8_t *memory_bank = get_memory_bank(machine, effective_address.bank);
+    uint8_t value = memory_bank[effective_address.address];
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low |= value;
         set_flags_nz_8(machine, state->A.low);
@@ -1252,39 +1255,16 @@ state_t* AND_ABL_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* RTI           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Return from Interrupt
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, 0);
-    uint16_t sp_address;
-    if (state->emulation_mode) {
-        state->SP = (state->SP + 1) & 0x1FF;
-        sp_address = 0x0100 | (state->SP & 0xFF);
-    } else {
-        state->SP = (state->SP + 1) & 0xFFFF;
-        sp_address = state->SP & 0xFFFF;
-    }
-    uint8_t status = memory_bank[sp_address];
-    state->P = status;
-    if (state->emulation_mode) {
-        state->SP = (state->SP + 1) & 0x1FF;
-        sp_address = 0x0100 | (state->SP & 0xFF);
-    } else {
-        state->SP = (state->SP + 1) & 0xFFFF;
-        sp_address = state->SP & 0xFFFF;
-    }
-    uint8_t pcl = memory_bank[sp_address];
-    if (state->emulation_mode) {
-        state->SP = (state->SP + 1) & 0x1FF;
-        sp_address = 0x0100 | (state->SP & 0xFF);
-    } else {
-        state->SP = (state->SP + 1) & 0xFFFF;
-        sp_address = state->SP & 0xFFFF;
-    }
-    uint8_t pch = memory_bank[sp_address];
-    state->PC = ((uint16_t)pch << 8) | pcl;
+    
+    // Pop status register
+    state->P = pop_byte(machine);
+    
+    // Pop program counter (16-bit)
+    state->PC = pop_word(machine);
+    
     // In native mode, also restore PBR
     if (!state->emulation_mode) {
-        state->SP = (state->SP + 1) & 0xFFFF;
-        sp_address = state->SP & 0xFFFF;
-        state->PBR = memory_bank[sp_address];
+        state->PBR = pop_byte(machine);
     }
     return machine;
 }
@@ -1896,7 +1876,7 @@ state_t* STZ           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     uint16_t address = arg_one;
     uint8_t *bank = get_memory_bank(machine, state->PBR);
     bank[address] = 0x00;
-    if (!state->emulation_mode && !is_flag_set(machine, M_FLAG)) {
+    if (!is_flag_set(machine, M_FLAG)) {
         // 16-bit mode - store zero in both bytes
         bank[(address + 1) & 0xFFFF] = 0x00;
     }
