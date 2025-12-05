@@ -119,13 +119,8 @@ state_t* BRK           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     push_byte(machine, state->P); // Push status register
     // Set Interrupt Disable flag
     set_flag(machine, INTERRUPT_DISABLE);
-    if (state->emulation_mode) {
-        // Load new PC from IRQ vector at $FFFE/$FFFF
-        state->PC = read_word(memory_bank, 0xFFFE);
-    } else {
-        // Load new PC from IRQ vector at $FFE6/$FFE7
-        state->PC = read_word(memory_bank, 0xFFE6);
-    }
+    uint16_t vector_address = state->emulation_mode ? 0xFFFE : 0xFFE6;
+    state->PC = read_word(memory_bank, vector_address);
     return machine;
 }
 
