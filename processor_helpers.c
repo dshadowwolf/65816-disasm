@@ -236,6 +236,13 @@ uint16_t get_absolute_address_indirect_indexed_x(state_t *machine, uint16_t addr
     return (effective_address + machine->processor.X) & 0xFFFF;
 }
 
+long_address_t get_absolute_address_long_indirect(state_t *machine, uint16_t address, uint8_t bank) {
+    uint8_t *memory_bank = get_memory_bank(machine, bank);
+    uint8_t low_byte = memory_bank[address];
+    uint8_t high_byte = memory_bank[(address + 1) & 0xFFFF];
+    uint8_t bank_byte = memory_bank[(address + 2) & 0xFFFF];
+    return get_long_address(machine, (high_byte << 8) | low_byte, bank_byte);
+}
 uint16_t get_dp_address_indexed_x(state_t *machine, uint16_t dp_offset) {
     uint16_t dp_address = get_dp_address(machine, dp_offset);
     return (dp_address + machine->processor.X) & 0xFFFF;

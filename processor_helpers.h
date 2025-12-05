@@ -71,6 +71,7 @@ uint16_t get_absolute_address_indexed_y(state_t *machine, uint16_t address);
 long_address_t get_absolute_address_long(state_t *machine, uint16_t address, uint8_t bank);
 long_address_t get_absolute_address_long_indexed_x(state_t *machine, uint16_t address, uint8_t bank);
 long_address_t get_absolute_address_long_indexed_y(state_t *machine, uint16_t address, uint8_t bank);
+long_address_t get_absolute_address_long_indirect(state_t *machine, uint16_t address, uint8_t bank);
 uint16_t get_absolute_address_indirect(state_t *machine, uint16_t address);
 uint16_t get_absolute_address_indirect_indexed_y(state_t *machine, uint16_t address);
 uint16_t get_absolute_address_indirect_indexed_x(state_t *machine, uint16_t address);
