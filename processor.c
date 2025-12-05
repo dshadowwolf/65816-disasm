@@ -2448,23 +2448,23 @@ state_t* STA_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* STX_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint16_t address = get_absolute_address(machine, arg_one);
     if (is_flag_set(machine, X_FLAG) || state->emulation_mode) {
-        memory_bank[arg_one] = (uint8_t)(state->X & 0xFF);
+        write_byte(memory_bank, address, (uint8_t)(state->X & 0xFF));
     } else {
-        memory_bank[arg_one] = (uint8_t)(state->X & 0xFF);
-        memory_bank[arg_one+1] = (uint8_t)((state->X >> 8) & 0xFF);
+        write_word(memory_bank, address, (uint16_t)(state->X & 0xFFFF));
     }
     return machine;
 }
 
 state_t* STA_ABL       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, (uint8_t)arg_two);
+    long_address_t addr = get_absolute_address_long(machine, arg_one, arg_two);
+    uint8_t *memory_bank = get_memory_bank(machine, addr.bank);
     if (is_flag_set(machine, M_FLAG) || state->emulation_mode) {
-        memory_bank[arg_one] = (uint8_t)(state->A.low & 0xFF);
+        write_byte(memory_bank, addr.address, (uint8_t)(state->A.low & 0xFF));
     } else {
-        memory_bank[arg_one] = (uint8_t)(state->A.low & 0xFF);
-        memory_bank[arg_one+1] = (uint8_t)(state->A.high & 0xFF);
+        write_word(memory_bank, addr.address, state->A.full);
     }
     return machine;
 }
@@ -2620,13 +2620,11 @@ state_t* STA_ABS_IY    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // STore A register, Absolute Indexed by Y
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
-    uint16_t base_address = arg_one;
-    uint16_t effective_address = (base_address + state->Y) & 0xFFFF;
+    uint16_t effective_address = get_absolute_address_indexed_y(machine, arg_one);
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        memory_bank[effective_address] = (uint8_t)(state->A.low & 0xFF);
+        write_byte(memory_bank, effective_address, (uint8_t)(state->A.low & 0xFF));
     } else {
-        memory_bank[effective_address] = (uint8_t)(state->A.low & 0xFF);
-        memory_bank[effective_address+1] = (uint8_t)(state->A.high & 0xFF);
+        write_word(memory_bank, effective_address, state->A.full);
     }
     return machine;
 }
@@ -2662,11 +2660,11 @@ state_t* STZ_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // STore Zero, Absolute
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint16_t address = get_absolute_address(machine, arg_one);
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        memory_bank[arg_one] = 0x00;
+        write_byte(memory_bank, address, 0x00);
     } else {
-        memory_bank[arg_one] = 0x00;
-        memory_bank[arg_one+1] = 0x00;
+        write_word(memory_bank, address, 0x0000);
     }
     return machine;
 }
@@ -2675,13 +2673,11 @@ state_t* STA_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // STore A register, Absolute Indexed X
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
-    uint16_t base_address = arg_one;
-    uint16_t effective_address = (base_address + state->X) & 0xFFFF;
+    uint16_t address = get_absolute_address_indexed_x(machine, arg_one);
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        memory_bank[effective_address] = (uint8_t)(state->A.low & 0xFF);
+        write_byte(memory_bank, address, (uint8_t)(state->A.low & 0xFF));
     } else {
-        memory_bank[effective_address] = (uint8_t)(state->A.low & 0xFF);
-        memory_bank[effective_address+1] = (uint8_t)(state->A.high & 0xFF);
+        write_word(memory_bank, address, state->A.full);
     }
     return machine;
 }
@@ -2690,13 +2686,11 @@ state_t* STZ_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // STore Zero, Absolute Indexed X
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
-    uint16_t base_address = arg_one;
-    uint16_t effective_address = (base_address + state->X) & 0xFFFF;
+    uint16_t address = get_absolute_address_indexed_x(machine, arg_one);
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        memory_bank[effective_address] = 0x00;
+        write_byte(memory_bank, address, 0x00);
     } else {
-        memory_bank[effective_address] = 0x00;
-        memory_bank[effective_address+1] = 0x00;
+        write_word(memory_bank, address, 0x0000);
     }
     return machine;
 }
@@ -2704,14 +2698,12 @@ state_t* STZ_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* STA_ABL_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // STore A register, Absolute Long Indexed X
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, (uint8_t)arg_two);
-    uint16_t base_address = arg_one;
-    uint16_t effective_address = (base_address + state->X) & 0xFFFF;
+    long_address_t addr = get_absolute_address_long_indexed_x(machine, arg_one, (uint8_t)arg_two);
+    uint8_t *memory_bank = get_memory_bank(machine, addr.bank);
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        memory_bank[effective_address] = (uint8_t)(state->A.low & 0xFF);
+        write_byte(memory_bank, addr.address, (uint8_t)(state->A.low & 0xFF));
     } else {
-        memory_bank[effective_address] = (uint8_t)(state->A.low & 0xFF);
-        memory_bank[effective_address+1] = (uint8_t)(state->A.high & 0xFF);
+        write_word(memory_bank, addr.address, state->A.full);
     }
     return machine;
 }
@@ -2922,11 +2914,12 @@ state_t* LDY_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD Y, Absolute
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint16_t address = get_absolute_address(machine, arg_one);
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
-        state->Y = read_byte(memory_bank, arg_one);
+        state->Y = read_byte(memory_bank, address);
         set_flags_nz_8(machine, state->Y);
     } else {
-        state->Y = read_word(memory_bank, arg_one);
+        state->Y = read_word(memory_bank, address);
         set_flags_nz_16(machine, state->Y);
     }
     return machine;
@@ -2935,12 +2928,13 @@ state_t* LDY_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* LDA_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD A, Absolute
     processor_state_t *state = &machine->processor;
+    uint16_t address = get_absolute_address(machine, arg_one);
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        state->A.low = read_byte(memory_bank, arg_one);
+        state->A.low = read_byte(memory_bank, address);
         set_flags_nz_8(machine, state->A.low);
     } else {
-        state->A.full = read_word(memory_bank, arg_one);
+        state->A.full = read_word(memory_bank, address);
         set_flags_nz_16(machine, state->A.full);
     }
     return machine;
@@ -2949,12 +2943,13 @@ state_t* LDA_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* LDX_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD X, Absolute
     processor_state_t *state = &machine->processor;
+    uint16_t address = get_absolute_address(machine, arg_one);
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
-        state->X = read_byte(memory_bank, arg_one);
+        state->X = read_byte(memory_bank, address);
         set_flags_nz_8(machine, state->X);
     } else {
-        state->X = read_word(memory_bank, arg_one);
+        state->X = read_word(memory_bank, address);
         set_flags_nz_16(machine, state->X);
     }
     return machine;
@@ -2963,12 +2958,13 @@ state_t* LDX_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* LDA_ABL       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD A, Absolute Long
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, (uint8_t)arg_two);
+    long_address_t addr = get_absolute_address_long(machine, arg_one, arg_two);
+    uint8_t *memory_bank = get_memory_bank(machine, addr.bank);
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        state->A.low = read_byte(memory_bank, arg_one);
+        state->A.low = read_byte(memory_bank, addr.address);
         set_flags_nz_8(machine, state->A.low);
     } else {
-        state->A.full = read_word(memory_bank, arg_one);
+        state->A.full = read_word(memory_bank, addr.address);
         set_flags_nz_16(machine, state->A.full);
     }
     return machine;
@@ -3098,7 +3094,7 @@ state_t* LDA_ABS_IY    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD A, Absolute Indexed by Y
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
-    uint16_t effective_address = (arg_one + state->Y) & 0xFFFF;
+    uint16_t effective_address = get_absolute_address_indexed_y(machine, arg_one);
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         state->A.low = read_byte(memory_bank, effective_address);
         set_flags_nz_8(machine, state->A.low);
@@ -3139,7 +3135,7 @@ state_t* LDY_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD Y, Absolute Indexed by X
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
-    uint16_t effective_address = (arg_one + state->X) & 0xFFFF;
+    uint16_t effective_address = get_absolute_address_indexed_x(machine, arg_one);
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
         state->Y = read_byte(memory_bank, effective_address);
         set_flags_nz_8(machine, state->Y);
@@ -3154,7 +3150,7 @@ state_t* LDA_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD A, Absolute Indexed by X
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
-    uint16_t effective_address = (arg_one + state->X) & 0xFFFF;
+    uint16_t effective_address = get_absolute_address_indexed_x(machine, arg_one);
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         state->A.low = read_byte(memory_bank, effective_address);
         set_flags_nz_8(machine, state->A.low);
