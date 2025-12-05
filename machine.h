@@ -2,7 +2,7 @@
 #define __MACHINE_H__
 #include <stdint.h>
 #include <stdbool.h>
-
+#include <stdlib.h>
 typedef union shared_register_u {
     struct {
         uint8_t low;
@@ -25,12 +25,44 @@ typedef struct processor_state_s {
     bool interrupts_disabled; // Interrupt Disable Flag
 } processor_state_t;
 
-typedef struct state_s {
-    processor_state_t processor;
-    uint8_t* memory[64];
-} state_t;
+// from here to the next comment is experimental design work
+#define READ_BYTE(region, addr) (region->read_byte(region, addr))
+#define WRITE_BYTE(region, addr, val) (region->write_byte(region, addr, val))
+#define READ_WORD(region, addr) (region->read_word(region, addr))
+#define WRITE_WORD(region, addr, val) (region->write_word(region, addr, val))
 
-typedef state_t* (operation)(state_t*, uint16_t, uint16_t);
+typedef enum mem_flags_e {
+    MEM_READONLY = 0x01,
+    MEM_READWRITE = 0x02,
+    MEM_DEVICE = 0x04,
+    MEM_SPECIAL = 0x08
+} mem_flags_t;
+
+typedef struct memory_region_s {
+    uint32_t flags;
+    uint16_t start_offset;
+    uint16_t end_offset;
+    uint8_t *data;
+    uint8_t (*read_byte)(struct memory_region_s*, uint16_t);
+    void (*write_byte)(struct memory_region_s*, uint16_t, uint8_t);
+    uint16_t (*read_word)(struct memory_region_s*, uint16_t);
+    void (*write_word)(struct memory_region_s*, uint16_t, uint16_t);
+    struct memory_region_s *next;
+} memory_region_t;
+
+typedef struct memory_bank_s {
+    struct memory_bank_s *next;
+    memory_region_t *regions;
+} memory_bank_t;
+// end experimental design work
+
+typedef struct machine_state_s {
+    processor_state_t processor;
+    memory_bank_t *memory_banks[256]; // Array of memory banks
+    uint8_t *memory[64]; // Array of pointers to memory banks
+} machine_state_t;
+
+typedef machine_state_t* (operation)(machine_state_t*, uint16_t, uint16_t);
 
 typedef enum processor_flags_e {
     CARRY = 0x01,

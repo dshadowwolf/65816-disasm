@@ -5,69 +5,9 @@
 #include <stdio.h>
 #include "processor_helpers.h"
 
-void initialize_processor(processor_state_t *state) {
-    state->A.full = 0;
-    state->X = 0;
-    state->Y = 0;
-    state->PC = 0;
-    state->SP = 0x1FF;            // Stack Pointer starts at 0x1FF in emulation mode
-    state->DP = 0;
-    state->P = 0x34;              // Default status register value -- this is kinda arbitrary
-    state->PBR = 0;               // Start in bank 0
-    state->DBR = 0;               // Start in bank 0
-    state->emulation_mode = true; // Start in emulation mode
-}
-
-void reset_processor(processor_state_t *state) {
-    state->A.full = 0;
-    state->X = 0;
-    state->Y = 0;
-    state->PC = 0x0000;           // Reset Program Counter to 0
-    state->SP = 0x1FF;             // Stack Pointer reset value
-    state->DP = 0;
-    state->P = 0x34;              // Reset status register value
-    state->emulation_mode = true; // Reset to emulation mode
-}
-
-void initialize_machine(state_t *machine) {
-    initialize_processor(&machine->processor);
-    for (int i = 0; i < 64; i++) {
-        machine->memory[i] = NULL; // Initialize memory pointers to NULL
-    }
-
-    machine->memory[0] = (uint8_t*)malloc(65536 * sizeof(uint8_t)); // Allocate 64KB for bank 0
-}
-
-void reset_machine(state_t *machine) {
-    reset_processor(&machine->processor);
-    
-    for (int i = 0; i < 64; i++) {
-        if (machine->memory[i] != NULL) {
-            free(machine->memory[i]);
-            machine->memory[i] = NULL;
-        }
-    }
-    machine->memory[0] = (uint8_t*)malloc(65536 * sizeof(uint8_t)); // Reallocate 64KB for bank 0
-}
-
-state_t* create_machine() {
-    state_t *machine = (state_t*)malloc(sizeof(state_t));
-    initialize_machine(machine);
-    return machine;
-}
-
-void destroy_machine(state_t *machine) {
-    for (int i = 0; i < 64; i++) {
-        if (machine->memory[i] != NULL) {
-            free(machine->memory[i]);
-        }
-    }
-    free(machine);
-}
-
 // TODO: refactor more to use the get_dp_address_XXX helpers
 
-state_t* XCE_CB(state_t *machine, uint16_t unused1, uint16_t unused2) {
+machine_state_t* XCE_CB(machine_state_t *machine, uint16_t unused1, uint16_t unused2) {
     bool carry = is_flag_set(machine, CARRY); // Check Carry flag (bit 0)
     bool emulation = machine->processor.emulation_mode;
     
@@ -89,24 +29,24 @@ state_t* XCE_CB(state_t *machine, uint16_t unused1, uint16_t unused2) {
     return machine;
 }
 
-state_t* SEP_CB(state_t *machine, uint16_t flag, uint16_t unused2) {
+machine_state_t* SEP_CB(machine_state_t *machine, uint16_t flag, uint16_t unused2) {
     return set_flag(machine, flag);
 }
 
-state_t* REP_CB(state_t *machine, uint16_t flag, uint16_t unused2) {
+machine_state_t* REP_CB(machine_state_t *machine, uint16_t flag, uint16_t unused2) {
     return clear_flag(machine, flag);
 }
 
-state_t* CLC_CB(state_t *machine, uint16_t unused1, uint16_t unused2) {
+machine_state_t* CLC_CB(machine_state_t *machine, uint16_t unused1, uint16_t unused2) {
     return clear_flag(machine, CARRY);
 }
 
-state_t* SEC_CB(state_t *machine, uint16_t unused1, uint16_t unused2) {
+machine_state_t* SEC_CB(machine_state_t *machine, uint16_t unused1, uint16_t unused2) {
     return set_flag(machine, CARRY);
 }
 
 // Causes a software interrupt. The PC is loaded from the interrupt vector table from $00FFE6 in native mode, or $00FFF6 in emulation mode.
-state_t* BRK           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* BRK           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     // In native mode push the PBR onto the stack,
     // followed by the PC then the P register
@@ -124,7 +64,7 @@ state_t* BRK           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ORA_DP_I_IX   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ORA_DP_I_IX   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_dp_address_indirect_indexed_x(machine, arg_one);
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -143,7 +83,7 @@ state_t* ORA_DP_I_IX   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* COP           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* COP           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     // In native mode push the PBR onto the stack,
     // followed by the PC then the P register
@@ -166,7 +106,7 @@ state_t* COP           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ORA_SR        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ORA_SR        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t address = get_stack_relative_address(machine, arg_one);
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -182,7 +122,7 @@ state_t* ORA_SR        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* TSB_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* TSB_DP        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Test and Set Bits - Direct Page
     processor_state_t *state = &machine->processor;
     uint16_t dp_address = get_dp_address(machine, arg_one);
@@ -204,7 +144,7 @@ state_t* TSB_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ORA_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ORA_DP        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t dp_address = get_dp_address(machine, arg_one);
     uint8_t value = read_byte(get_memory_bank(machine, state->DBR), dp_address);
@@ -221,7 +161,7 @@ state_t* ORA_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ASL_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ASL_DP        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t dp_address = get_dp_address(machine, arg_one);
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -238,7 +178,7 @@ state_t* ASL_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ORA_DP_IL     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ORA_DP_IL     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     long_address_t effective_address = get_dp_address_indirect_long(machine, arg_one);
     uint8_t *memory_bank = get_memory_bank(machine, effective_address.bank);
@@ -253,7 +193,7 @@ state_t* ORA_DP_IL     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;    
 }
 
-state_t* PHP           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* PHP           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t sp_address;
     if(state->emulation_mode) sp_address = 0x0100 | (state->SP & 0xFF);
@@ -262,7 +202,7 @@ state_t* PHP           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ORA_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ORA_IMM       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint8_t value = (uint8_t)(arg_one & 0xFF);
     if (is_flag_set(machine, M_FLAG)) {
@@ -277,7 +217,7 @@ state_t* ORA_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ASL           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ASL           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     if (is_flag_set(machine, M_FLAG)) {
         uint16_t result = (uint16_t)(state->A.low << 1);
@@ -291,7 +231,7 @@ state_t* ASL           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* PHD           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* PHD           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t sp_address = 0x0100 | (state->SP & 0xFF);
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -303,7 +243,7 @@ state_t* PHD           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* TSB_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* TSB_ABS       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Test and Set Bits - Absolute
     processor_state_t *state = &machine->processor;
     uint16_t address = get_absolute_address(machine, arg_one);
@@ -325,7 +265,7 @@ state_t* TSB_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ORA_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ORA_ABS       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t address = get_absolute_address(machine, arg_one);
     uint8_t value = read_byte(get_memory_bank(machine, state->DBR), address);
@@ -341,7 +281,7 @@ state_t* ORA_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ASL_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ASL_ABS       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t address = get_absolute_address(machine, arg_one);
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -364,7 +304,7 @@ state_t* ASL_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 // OR Accumulator with Memory, Absolute Long Addressing
 // Highest 8 bits of address come from arg_two
 // arg_one is the low 16 bits of the address
-state_t* ORA_ABL       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ORA_ABL       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     long_address_t address = get_absolute_address_long(machine, arg_one, (uint8_t)(arg_two & 0xFF));
     uint8_t *memory_bank = get_memory_bank(machine, address.bank);
@@ -381,7 +321,7 @@ state_t* ORA_ABL       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* BPL_CB        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* BPL_CB        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     if (!is_flag_set(machine, NEGATIVE)) {
         state->PC = (state->PC + (int8_t)(arg_one & 0xFF)) & 0xFFFF;
@@ -389,7 +329,7 @@ state_t* BPL_CB        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ORA_I_IY      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ORA_I_IY      (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint8_t *memory = get_memory_bank(machine,state->DP);
     uint16_t effective_address = read_word(memory, arg_one);
@@ -407,7 +347,7 @@ state_t* ORA_I_IY      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ORA_DP_I      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ORA_DP_I      (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_dp_address_indirect(machine, arg_one);
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -424,7 +364,7 @@ state_t* ORA_DP_I      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ORA_SR_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ORA_SR_I_IY   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t address = get_stack_relative_address_indirect_indexed_y(machine, arg_one);
     uint8_t *pbr_bank = get_memory_bank(machine, state->DBR);
@@ -442,7 +382,7 @@ state_t* ORA_SR_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* TRB_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* TRB_DP        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Test and Reset Bits - Direct Page
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -465,7 +405,7 @@ state_t* TRB_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ORA_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ORA_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_dp_address_indexed_x(machine, arg_one);
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -482,7 +422,7 @@ state_t* ORA_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ASL_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ASL_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // ASL Direct Page Indexed with X
     processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_dp_address_indexed_x(machine, arg_one);
@@ -500,7 +440,7 @@ state_t* ASL_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ORA_DP_IL_IY  (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ORA_DP_IL_IY  (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // OR Accumulator with Memory (Direct Page Indirect Long Indexed with Y)
     processor_state_t *state = &machine->processor;
     long_address_t effective_address_long = get_dp_address_indirect_long_indexed_y(machine, arg_one);
@@ -519,7 +459,7 @@ state_t* ORA_DP_IL_IY  (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ORA_ABS_IY    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ORA_ABS_IY    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // OR Accumulator with Memory (Absolute Indexed with Y)
     processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_absolute_address_indexed_y(machine, arg_one);
@@ -536,7 +476,7 @@ state_t* ORA_ABS_IY    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* INC           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* INC           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Increment Accumulator
     processor_state_t *state = &machine->processor;
     if (is_flag_set(machine, M_FLAG)) {
@@ -549,14 +489,14 @@ state_t* INC           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* TCS           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* TCS           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // transfer 16-bit A to S
     processor_state_t *state = &machine->processor;
     state->SP = state->A.full;
     return machine;
 }
 
-state_t* TRB_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* TRB_ABS       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Test and Reset Bits - Absolute
     processor_state_t *state = &machine->processor;
     uint16_t address = get_absolute_address(machine, arg_one);
@@ -578,7 +518,7 @@ state_t* TRB_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ORA_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ORA_ABS_IX    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // OR Accumulator with Memory (Absolute Indexed with X)
     processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_absolute_address_indexed_x(machine, arg_one);
@@ -595,7 +535,7 @@ state_t* ORA_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ASL_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ASL_ABS_IX    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // ASL Absolute Indexed with X
     processor_state_t *state = &machine->processor;
     uint16_t address = get_absolute_address_indexed_x(machine, arg_one);
@@ -615,7 +555,7 @@ state_t* ASL_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ORA_ABL_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ORA_ABL_IX    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // OR Accumulator with Memory (Absolute Long Indexed with X)
     processor_state_t *state = &machine->processor;
     long_address_t effective_address = get_absolute_address_long_indexed_x(machine, arg_one, (uint8_t)(arg_two & 0xFF));
@@ -633,7 +573,7 @@ state_t* ORA_ABL_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* JSR_CB        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* JSR_CB        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Jump to Subroutine
     processor_state_t *state = &machine->processor;
     uint16_t return_address = (state->PC - 1) & 0xFFFF;
@@ -643,7 +583,7 @@ state_t* JSR_CB        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* AND_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* AND_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // AND Direct Page Indexed with X
     processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_dp_address_indexed_x(machine, arg_one);
@@ -658,7 +598,7 @@ state_t* AND_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* JSL_CB        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* JSL_CB        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Jump to Subroutine Long
     processor_state_t *state = &machine->processor;
     uint16_t return_address = (state->PC - 1) & 0xFFFF;
@@ -669,7 +609,7 @@ state_t* JSL_CB        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* AND_SR        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* AND_SR        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // AND Accumulator with Memory (Stack Relative)
     processor_state_t *state = &machine->processor;
     uint16_t address = get_stack_relative_address(machine, arg_one);
@@ -684,7 +624,7 @@ state_t* AND_SR        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* BIT_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* BIT_DP        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // test bits in memory with accumulator, Direct Page
     processor_state_t *state = &machine->processor;
     uint16_t dp_address = get_dp_address(machine, arg_one);
@@ -699,7 +639,7 @@ state_t* BIT_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* AND_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* AND_DP        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // AND Accumulator with Memory (Direct Page)
     processor_state_t *state = &machine->processor;
     uint16_t dp_address = get_dp_address(machine, arg_one);
@@ -714,7 +654,7 @@ state_t* AND_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ROL_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ROL_DP        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Roll Left, Direct Page
     processor_state_t *state = &machine->processor;
     uint16_t dp_address = get_dp_address(machine, arg_one);
@@ -744,7 +684,7 @@ state_t* ROL_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* AND_DP_IL     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* AND_DP_IL     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // AND Direct Page Indirect Long
     processor_state_t *state = &machine->processor;
     uint8_t *dp_bank = get_memory_bank(machine, state->DBR);
@@ -762,7 +702,7 @@ state_t* AND_DP_IL     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* PLP           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* PLP           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Pull Processor Status from Stack
     processor_state_t *state = &machine->processor;
     uint16_t sp_address;
@@ -775,7 +715,7 @@ state_t* PLP           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* AND_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* AND_IMM       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // AND Accumulator with Immediate
     processor_state_t *state = &machine->processor;
     uint8_t value = (uint8_t)(arg_one & 0xFF);
@@ -789,7 +729,7 @@ state_t* AND_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ROL           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ROL           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Rotate Accumulator Left
     processor_state_t *state = &machine->processor;
     if (is_flag_set(machine, M_FLAG)) {
@@ -815,7 +755,7 @@ state_t* ROL           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* PLD           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* PLD           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Pull Direct Page Register from Stack
     processor_state_t *state = &machine->processor;
     uint16_t sp_address;
@@ -823,7 +763,7 @@ state_t* PLD           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* BIT_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* BIT_ABS       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Test bits against accumulator, Absolute addressing
     // Sets Z based on A & M, N from bit 7 of M, V from bit 6 of M
     processor_state_t *state = &machine->processor;
@@ -845,7 +785,7 @@ state_t* BIT_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* AND_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* AND_ABS       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // AND Accumulator with Memory (Absolute Addressing)
     processor_state_t *state = &machine->processor;
     uint8_t value = read_byte(get_memory_bank(machine, state->DBR), get_absolute_address(machine, arg_one));
@@ -859,7 +799,7 @@ state_t* AND_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ROL_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ROL_ABS       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Rotate Left, Absolute Addressing
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -887,7 +827,7 @@ state_t* ROL_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* AND_ABL       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* AND_ABL       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // AND Accumulator with Memory (Absolute Long Addressing)
     processor_state_t *state = &machine->processor;
     long_address_t addr = get_absolute_address_long(machine, arg_one, (uint8_t)(arg_two & 0xFF));
@@ -903,7 +843,7 @@ state_t* AND_ABL       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* BMI_CB        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* BMI_CB        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Callback for "Branch if Minus"
     processor_state_t *state = &machine->processor;
     int8_t offset = (int8_t)(arg_one & 0xFF);
@@ -913,7 +853,7 @@ state_t* BMI_CB        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* AND_DP_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* AND_DP_I_IY   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // AND Accumulator with Memory (Direct Page Indirect Indexed with Y)
     processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_dp_address_indirect_indexed_y(machine, arg_one);
@@ -929,7 +869,7 @@ state_t* AND_DP_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* AND_DP_I      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* AND_DP_I      (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // AND Accumulator with Memory (Direct Page Indirect)
     processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_dp_address_indirect(machine, arg_one);
@@ -945,7 +885,7 @@ state_t* AND_DP_I      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* AND_SR_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* AND_SR_I_IY   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // AND Accumulator with Memory (Stack Relative Indirect Indexed with Y)
     processor_state_t *state = &machine->processor;
     uint16_t address = get_stack_relative_address_indirect_indexed_y(machine, arg_one);
@@ -961,7 +901,7 @@ state_t* AND_SR_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* BIT_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* BIT_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Test bits in memory with accumulator, Direct Page Indexed with X
     processor_state_t *state = &machine->processor;
     uint16_t address = get_dp_address_indexed_x(machine, arg_one);
@@ -985,7 +925,7 @@ state_t* BIT_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ROL_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ROL_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Rotate Left, Direct Page Indexed with X
     processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_dp_address_indexed_x(machine, arg_one);
@@ -1017,7 +957,7 @@ state_t* ROL_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 }
 
 // TODO: Fix for long addressing
-state_t* AND_DP_IL_IY  (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* AND_DP_IL_IY  (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // AND Accumulator with Memory (Direct Page Indirect Long Indexed with Y)
     processor_state_t *state = &machine->processor;
     long_address_t effective_address = get_dp_address_indirect_long_indexed_y(machine, arg_one);
@@ -1034,7 +974,7 @@ state_t* AND_DP_IL_IY  (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* AND_ABS_IY    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* AND_ABS_IY    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // AND Accumulator with Memory (Absolute Indexed with Y)
     processor_state_t *state = &machine->processor;
     uint16_t address = get_absolute_address_indexed_y(machine, arg_one);
@@ -1050,7 +990,7 @@ state_t* AND_ABS_IY    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* DEC           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* DEC           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Decrement Accumulator
     processor_state_t *state = &machine->processor;
     if (is_flag_set(machine, M_FLAG)) {
@@ -1063,7 +1003,7 @@ state_t* DEC           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* TSC           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* TSC           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Transfer Stack Pointer to Accumulator
     processor_state_t *state = &machine->processor;
     if (is_flag_set(machine, M_FLAG)) {
@@ -1077,7 +1017,7 @@ state_t* TSC           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* BIT_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* BIT_ABS_IX    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Test bits against accumulator, Absolute Indexed addressing
     processor_state_t *state = &machine->processor;
     uint16_t address = get_absolute_address_indexed_x(machine, arg_one);
@@ -1093,7 +1033,7 @@ state_t* BIT_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* AND_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* AND_ABS_IX    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // AND accumulator with Memory (Absolute Indexed Addressing)
     processor_state_t *state = &machine->processor;
     uint16_t address = get_absolute_address_indexed_x(machine, arg_one);
@@ -1109,7 +1049,7 @@ state_t* AND_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ROL_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ROL_ABS_IX    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Rotate Left, Absolute Indexed Addressing
     processor_state_t *state = &machine->processor;
     uint16_t address = get_absolute_address_indexed_x(machine, arg_one);
@@ -1137,7 +1077,7 @@ state_t* ROL_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* AND_ABL_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* AND_ABL_IX    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // AND Accumulator with Memory (Absolute Long Indexed with X)
     processor_state_t *state = &machine->processor;
     long_address_t address = get_absolute_address_long_indexed_x(machine, arg_one, (uint8_t)(arg_two & 0xFF));
@@ -1153,7 +1093,7 @@ state_t* AND_ABL_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* RTI           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* RTI           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Return from Interrupt
     processor_state_t *state = &machine->processor;
     
@@ -1170,7 +1110,7 @@ state_t* RTI           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* EOR_DP_I_IX   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* EOR_DP_I_IX   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Exclusive OR Accumulator with Memory (Direct Page Indirect Indexed with X)
     processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_dp_address_indirect_indexed_x(machine, arg_one);
@@ -1187,13 +1127,13 @@ state_t* EOR_DP_I_IX   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* WDM           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* WDM           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // WDM - Reserved for future use
     // TODO: trap on this, its technically an illegal instruction
     return machine;
 }
 
-state_t* EOR_SR        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* EOR_SR        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Exclusive OR Accumulator with Memory (Stack Relative)
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -1209,7 +1149,7 @@ state_t* EOR_SR        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* MVP           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* MVP           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // MVP - Block Move Positive (MVP srcbank, dstbank) - actually decrements addresses!
     processor_state_t *state = &machine->processor;
     uint8_t *source_bank = get_memory_bank(machine, arg_two & 0xFF);
@@ -1228,7 +1168,7 @@ state_t* MVP           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* EOR_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* EOR_DP        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Exclusive OR Accumulator with Memory (Direct Page Addressing)
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -1244,7 +1184,7 @@ state_t* EOR_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* LSR_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* LSR_DP        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Logical Shift Right, Direct Page Addressing
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -1278,7 +1218,7 @@ state_t* LSR_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 }
 
 // TODO: Fix for long addressing
-state_t* EOR_DP_IL     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* EOR_DP_IL     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Exclusive OR Accumulator with Memory (Direct Page Indirect Long)
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -1295,7 +1235,7 @@ state_t* EOR_DP_IL     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* PHA           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* PHA           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Push Accumulator onto Stack
     if (machine->processor.emulation_mode || is_flag_set(machine, M_FLAG)) {
         push_byte(machine, machine->processor.A.low);
@@ -1305,7 +1245,7 @@ state_t* PHA           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* EOR_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* EOR_IMM       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Exclusive OR Accumulator with Immediate Value
     processor_state_t *state = &machine->processor;
     uint8_t value = (uint8_t)arg_one;
@@ -1319,7 +1259,7 @@ state_t* EOR_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* LSR           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* LSR           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Logical Shift Right
     processor_state_t *state = &machine->processor;
     if (is_flag_set(machine, M_FLAG)) {
@@ -1347,7 +1287,7 @@ state_t* LSR           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* PHK           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* PHK           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Push Program Bank onto Stack
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);  // Stack is always in bank 0
@@ -1357,14 +1297,14 @@ state_t* PHK           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* JMP_CB        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* JMP_CB        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Direct Jump (Callback)
     processor_state_t *state = &machine->processor;
     state->PC = arg_one;
     return machine;
 }
 
-state_t* EOR_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* EOR_ABS       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Exclusive OR Accumulator with Memory (Absolute Addressing)
     processor_state_t *state = &machine->processor;
     uint16_t address = get_absolute_address(machine, arg_one);
@@ -1380,7 +1320,7 @@ state_t* EOR_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* LSR_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* LSR_ABS       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Logical Shift Right, Absolute Addressing
     processor_state_t *state = &machine->processor;
     uint16_t address = get_absolute_address(machine, arg_one);
@@ -1407,7 +1347,7 @@ state_t* LSR_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* EOR_ABL       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* EOR_ABL       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Exclusive OR Accumulator with Memory (Absolute Long Addressing)
     processor_state_t *state = &machine->processor;
     long_address_t addr = get_absolute_address_long(machine, arg_one, (uint8_t)(arg_two & 0xFF));
@@ -1423,7 +1363,7 @@ state_t* EOR_ABL       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* BVC_CB        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* BVC_CB        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Branch if Overflow Clear (Callback)
     processor_state_t *state = &machine->processor;
     if (!is_flag_set(machine, OVERFLOW)) {
@@ -1432,7 +1372,7 @@ state_t* BVC_CB        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* EOR_DP_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* EOR_DP_I_IY   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Exclusive OR Accumulator with Memory (Direct Page Indirect Indexed with Y)
     processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_dp_address_indirect_indexed_y(machine, arg_one);
@@ -1448,7 +1388,7 @@ state_t* EOR_DP_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* EOR_DP_I      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* EOR_DP_I      (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Exclusive OR Accumulator with Memory (Direct Page Indirect)
     processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_dp_address_indirect(machine, arg_one);
@@ -1464,7 +1404,7 @@ state_t* EOR_DP_I      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* EOR_SR_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* EOR_SR_I_IY   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Exclusive OR Accumulator with Memory (Stack Relative Indirect Indexed with Y)
     processor_state_t *state = &machine->processor;
     uint16_t address = get_stack_relative_address_indirect_indexed_y(machine, arg_one);
@@ -1480,7 +1420,7 @@ state_t* EOR_SR_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* MVN           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* MVN           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Move Block Negative (MVN srcbank, dstbank) - actually increments addresses!
     processor_state_t *state = &machine->processor;
     uint8_t *source_bank = get_memory_bank(machine, arg_two & 0xFF);
@@ -1499,7 +1439,7 @@ state_t* MVN           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* EOR_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* EOR_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Exclusive OR Accumulator with Memory (Direct Page Indexed with X)
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -1515,7 +1455,7 @@ state_t* EOR_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* LSR_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* LSR_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Logical Shift Right, Direct Page Indexed with X
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -1544,7 +1484,7 @@ state_t* LSR_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 }
 
 // TODO: Fix for Long Addressing
-state_t* EOR_DP_IL_IY  (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* EOR_DP_IL_IY  (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Exclusive OR Accumulator with Memory (Direct Page Indirect Long Indexed with Y)
     processor_state_t *state = &machine->processor;
     long_address_t address = get_dp_address_indirect_long_indexed_y(machine, arg_one);
@@ -1561,14 +1501,14 @@ state_t* EOR_DP_IL_IY  (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* CLI           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* CLI           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Clear Interrupt Disable Flag
     clear_flag(machine, INTERRUPT_DISABLE);
     machine->processor.interrupts_disabled = false;
     return machine;
 }
 
-state_t* EOR_ABS_IY    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* EOR_ABS_IY    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Exclusive OR Accumulator with Memory (Absolute Indexed with Y)
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -1584,7 +1524,7 @@ state_t* EOR_ABS_IY    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* PHY           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* PHY           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Push Y Register onto Stack
     processor_state_t *state = &machine->processor;
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
@@ -1595,7 +1535,7 @@ state_t* PHY           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* TCD           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* TCD           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Transfer Accumulator to Direct Page Register
     processor_state_t *state = &machine->processor;
     if (is_flag_set(machine, M_FLAG)) {
@@ -1606,7 +1546,7 @@ state_t* TCD           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* JMP_AL        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* JMP_AL        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Jump to Absolute Long Address
     // arg_one = address (16-bit), arg_two = bank (8-bit)
     processor_state_t *state = &machine->processor;
@@ -1615,7 +1555,7 @@ state_t* JMP_AL        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* EOR_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* EOR_ABS_IX    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Exclusive OR Accumulator with Memory (Absolute Indexed with X)
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -1631,7 +1571,7 @@ state_t* EOR_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* LSR_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* LSR_ABS_IX    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Logical Shift Right, Absolute Indexed with X
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -1652,7 +1592,7 @@ state_t* LSR_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* EOR_AL_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* EOR_AL_IX     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Exclusive OR Accumulator with Memory (Absolute Long Indexed with X)
     processor_state_t *state = &machine->processor;
     long_address_t addr = get_absolute_address_long_indexed_x(machine, arg_one, (uint8_t)(arg_two & 0xFF));
@@ -1669,14 +1609,14 @@ state_t* EOR_AL_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* RTS           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* RTS           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Return from Subroutine
     processor_state_t *state = &machine->processor;
     state->PC = pop_word(machine);
     return machine;
 }
 
-state_t* ADC_DP_I_IX   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ADC_DP_I_IX   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry (Direct Page Indirect Indexed with X)
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -1697,7 +1637,7 @@ state_t* ADC_DP_I_IX   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* PER           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* PER           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Push Program Counter Relative
     processor_state_t *state = &machine->processor;
     uint16_t pc_relative = (state->PC + (int8_t)arg_one) & 0xFFFF;
@@ -1705,7 +1645,7 @@ state_t* PER           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ADC_SR        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ADC_SR        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry (Stack Relative)
     processor_state_t *state = &machine->processor;
     uint16_t address = get_stack_relative_address(machine, arg_one);
@@ -1725,7 +1665,7 @@ state_t* ADC_SR        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* STZ           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* STZ           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Store Zero
     processor_state_t *state = &machine->processor;
     uint16_t address = arg_one;
@@ -1738,7 +1678,7 @@ state_t* STZ           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ADC_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ADC_DP        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry (Direct Page)
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -1758,7 +1698,7 @@ state_t* ADC_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ROR_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ROR_DP        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Rotate Right, Direct Page
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -1782,7 +1722,7 @@ state_t* ROR_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ADC_DP_IL     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ADC_DP_IL     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry (Direct Page Indirect Long)
     processor_state_t *state = &machine->processor;
     uint8_t *dp_bank = get_memory_bank(machine, state->DBR);
@@ -1804,7 +1744,7 @@ state_t* ADC_DP_IL     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* PLA           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* PLA           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Pull Accumulator from Stack
     processor_state_t *state = &machine->processor;
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
@@ -1817,7 +1757,7 @@ state_t* PLA           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ADC_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ADC_IMM       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry (Immediate)
     processor_state_t *state = &machine->processor;
     uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
@@ -1837,7 +1777,7 @@ state_t* ADC_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ROR           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ROR           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Rotate Right, Accumulator
     processor_state_t *state = &machine->processor;
     if (is_flag_set(machine, M_FLAG)) {
@@ -1864,7 +1804,7 @@ state_t* ROR           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* RTL           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* RTL           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Return from Subroutine Long
     processor_state_t *state = &machine->processor;
     // Pop 24-bit return address: 16-bit address first, then bank byte
@@ -1875,7 +1815,7 @@ state_t* RTL           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* JMP_ABS_I     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* JMP_ABS_I     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Jump, Absolute Indirect
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -1884,7 +1824,7 @@ state_t* JMP_ABS_I     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ADC_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ADC_ABS       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry (Absolute)
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -1908,7 +1848,7 @@ state_t* ADC_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ROR_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ROR_ABS       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Rotate Right, Absolute
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -1934,7 +1874,7 @@ state_t* ROR_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 }
 
 // TODO: Fix for Long Addressing
-state_t* ADC_ABL       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ADC_ABL       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry (Absolute Long)
     processor_state_t *state = &machine->processor;
     long_address_t addr = get_absolute_address_long(machine, arg_one, arg_two);
@@ -1957,7 +1897,7 @@ state_t* ADC_ABL       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* BVS_PCR       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* BVS_PCR       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Branch if Overflow Set, Program Counter Relative Long
     processor_state_t *state = &machine->processor;
     if (is_flag_set(machine, OVERFLOW)) {
@@ -1967,7 +1907,7 @@ state_t* BVS_PCR       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ADC_DP_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ADC_DP_I_IY   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry (Direct Page Indirect Indexed with Y)
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -1991,7 +1931,7 @@ state_t* ADC_DP_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ADC_DP_I      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ADC_DP_I      (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry (Direct Page Indirect)
     processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_dp_address_indirect(machine, arg_one);
@@ -2015,7 +1955,7 @@ state_t* ADC_DP_I      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ADC_SR_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ADC_SR_I_IY   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry (Stack Relative Indirect Indexed with Y)
     processor_state_t *state = &machine->processor;
     uint16_t address = get_stack_relative_address_indirect_indexed_y(machine, arg_one);
@@ -2039,7 +1979,7 @@ state_t* ADC_SR_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* STZ_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* STZ_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Store Zero, Direct Page Indexed with X
     processor_state_t *state = &machine->processor;
     uint16_t address = get_dp_address_indexed_x(machine, arg_one);
@@ -2048,7 +1988,7 @@ state_t* STZ_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ADC_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ADC_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry (Direct Page Indexed with X)
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -2072,7 +2012,7 @@ state_t* ADC_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ROR_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ROR_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     uint16_t address = get_dp_address_indexed_x(machine, arg_one);
@@ -2097,7 +2037,7 @@ state_t* ROR_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ADC_DP_IL_IY  (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ADC_DP_IL_IY  (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry (Direct Page Indirect Long Indexed by Y)
     processor_state_t *state = &machine->processor;
     uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
@@ -2123,7 +2063,7 @@ state_t* ADC_DP_IL_IY  (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* SEI           (state_t* machine, uint16_t arg_one, uint16_t arg_two) { // 0x78
+machine_state_t* SEI           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) { // 0x78
     // Set Enable Interrupts
     processor_state_t *state = &machine->processor;
     state->interrupts_disabled = true;
@@ -2131,7 +2071,7 @@ state_t* SEI           (state_t* machine, uint16_t arg_one, uint16_t arg_two) { 
     return machine;
 }
 
-state_t* ADC_ABS_IY    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ADC_ABS_IY    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry, Absolute Indexed by Y
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -2151,7 +2091,7 @@ state_t* ADC_ABS_IY    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* PLY           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* PLY           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Pull Y register from the stack
     processor_state_t *state = &machine->processor;
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
@@ -2164,7 +2104,7 @@ state_t* PLY           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* TDC           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* TDC           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Transfer D Register to C
     processor_state_t *state = &machine->processor;
     state->A.full = state->DP;
@@ -2173,7 +2113,7 @@ state_t* TDC           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 
 // TODO: This passes testing, but the test is possibly broken as its not
 //       passing if we use get_absolute_address_indirect_indexed_x()
-state_t* JMP_ABS_I_IX  (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* JMP_ABS_I_IX  (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Jump (Absolute Indirect Indexed by X)
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->PBR);
@@ -2183,7 +2123,7 @@ state_t* JMP_ABS_I_IX  (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ADC_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ADC_ABS_IX    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry, Absolute Indexed by X
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -2206,7 +2146,7 @@ state_t* ADC_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ROR_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ROR_ABS_IX    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Rotate Right, Absolute Indexed X
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -2232,7 +2172,7 @@ state_t* ROR_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* ADC_AL_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ADC_AL_IX     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry, Absolute Long Indexed X
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, (uint8_t)(arg_two & 0xFF));
@@ -2253,14 +2193,14 @@ state_t* ADC_AL_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* BRA_CB        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* BRA_CB        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Branch Immediate
     processor_state_t *state = &machine->processor;
     state->PC = arg_one & 0xFFFF;
     return machine;
 }
 
-state_t* STA_DP_I_IX   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* STA_DP_I_IX   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -2278,7 +2218,7 @@ state_t* STA_DP_I_IX   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* BRL_CB        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* BRL_CB        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Branch always Long
     // offset is arg_one, program bank is arg_two
     processor_state_t *state = &machine->processor;
@@ -2287,7 +2227,7 @@ state_t* BRL_CB        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* STA_SR        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* STA_SR        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     uint16_t address = get_stack_relative_address(machine, arg_one);
@@ -2300,7 +2240,7 @@ state_t* STA_SR        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* STY_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* STY_DP        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     uint16_t dp_address;
@@ -2317,7 +2257,7 @@ state_t* STY_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* STA_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* STA_DP        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     uint16_t address = get_dp_address(machine, arg_one);
@@ -2330,7 +2270,7 @@ state_t* STA_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* STX_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* STX_DP        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     uint16_t address = get_dp_address(machine, arg_one);
@@ -2343,7 +2283,7 @@ state_t* STX_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* STA_DP_IL     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* STA_DP_IL     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // STore A register, Direct Page Indirect Long
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -2358,7 +2298,7 @@ state_t* STA_DP_IL     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* DEY           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* DEY           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
 
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
@@ -2378,7 +2318,7 @@ state_t* DEY           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* BIT_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* BIT_IMM       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // BIT Immediate - only sets Z flag based on A & value
     processor_state_t *state = &machine->processor;
     if (is_flag_set(machine, M_FLAG)) {
@@ -2395,7 +2335,7 @@ state_t* BIT_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* TXA           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* TXA           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
 
     if (state->emulation_mode || (is_flag_set(machine, X_FLAG) && is_flag_set(machine, M_FLAG))) {
@@ -2409,14 +2349,14 @@ state_t* TXA           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* PHB           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* PHB           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Push Data Bank register onto stack
     processor_state_t *state = &machine->processor;
     push_byte(machine, state->DBR);
     return machine;
 }
 
-state_t* STY_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* STY_ABS       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     uint16_t address = get_absolute_address(machine, arg_one);
@@ -2428,7 +2368,7 @@ state_t* STY_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* STA_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* STA_ABS       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     uint16_t address = get_absolute_address(machine, arg_one);
@@ -2440,7 +2380,7 @@ state_t* STA_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* STX_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* STX_ABS       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     uint16_t address = get_absolute_address(machine, arg_one);
@@ -2452,7 +2392,7 @@ state_t* STX_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* STA_ABL       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* STA_ABL       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     long_address_t addr = get_absolute_address_long(machine, arg_one, arg_two);
     uint8_t *memory_bank = get_memory_bank(machine, addr.bank);
@@ -2464,7 +2404,7 @@ state_t* STA_ABL       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* BCC_CB        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* BCC_CB        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     if (!is_flag_set(machine, CARRY)) {
         state->PC = arg_one & 0xFFFF;
@@ -2472,7 +2412,7 @@ state_t* BCC_CB        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* STA_DP_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* STA_DP_I_IY   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -2493,7 +2433,7 @@ state_t* STA_DP_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* STA_DP_I      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* STA_DP_I      (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -2514,7 +2454,7 @@ state_t* STA_DP_I      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* STA_SR_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* STA_SR_I_IY   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // STore A, Stack-relative, Indirect, Indexed by Y
     processor_state_t *state = &machine->processor;
     uint16_t address = get_stack_relative_address_indirect_indexed_y(machine, arg_one);
@@ -2528,7 +2468,7 @@ state_t* STA_SR_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* STY_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* STY_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // STore Y register, Direct Page, Indexed by X
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -2544,7 +2484,7 @@ state_t* STY_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* STA_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* STA_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // STore A register, Direct Page, Indexed by X
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -2559,7 +2499,7 @@ state_t* STA_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     }
     return machine;}
 
-state_t* STX_DP_IY     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* STX_DP_IY     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // STore Y register, Direct Page, Indexed by X
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -2575,7 +2515,7 @@ state_t* STX_DP_IY     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* STA_DP_IL_IY  (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* STA_DP_IL_IY  (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // STore A register, Direct Page, Indirect Long Indexed by Y
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -2595,7 +2535,7 @@ state_t* STA_DP_IL_IY  (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* TYA           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* TYA           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Transfer Y to A
     processor_state_t *state = &machine->processor;
     if (state->emulation_mode || (is_flag_set(machine, X_FLAG) && is_flag_set(machine, M_FLAG))) {
@@ -2611,7 +2551,7 @@ state_t* TYA           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* STA_ABS_IY    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* STA_ABS_IY    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // STore A register, Absolute Indexed by Y
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -2624,7 +2564,7 @@ state_t* STA_ABS_IY    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* TXS           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* TXS           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Transfer X to Stack Pointer
     processor_state_t *state = &machine->processor;
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
@@ -2635,7 +2575,7 @@ state_t* TXS           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* TXY           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* TXY           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Transfer X to Y
     processor_state_t *state = &machine->processor;
     if (state->emulation_mode || (is_flag_set(machine, X_FLAG) && is_flag_set(machine, X_FLAG))) {
@@ -2651,7 +2591,7 @@ state_t* TXY           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* STZ_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* STZ_ABS       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // STore Zero, Absolute
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -2664,7 +2604,7 @@ state_t* STZ_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* STA_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* STA_ABS_IX    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // STore A register, Absolute Indexed X
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -2677,7 +2617,7 @@ state_t* STA_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* STZ_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* STZ_ABS_IX    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // STore Zero, Absolute Indexed X
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -2690,7 +2630,7 @@ state_t* STZ_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* STA_ABL_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* STA_ABL_IX    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // STore A register, Absolute Long Indexed X
     processor_state_t *state = &machine->processor;
     long_address_t addr = get_absolute_address_long_indexed_x(machine, arg_one, (uint8_t)arg_two);
@@ -2703,7 +2643,7 @@ state_t* STA_ABL_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* LDY_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* LDY_IMM       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD Y Immediate
     processor_state_t *state = &machine->processor;
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
@@ -2716,7 +2656,7 @@ state_t* LDY_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* LDA_DP_I_IX   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* LDA_DP_I_IX   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD A, Direct Page Indirect Indexed by X
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
@@ -2741,7 +2681,7 @@ state_t* LDA_DP_I_IX   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* LDX_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* LDX_IMM       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD X Immediate
     processor_state_t *state = &machine->processor;
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
@@ -2754,7 +2694,7 @@ state_t* LDX_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* LDA_SR        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* LDA_SR        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD A, Stack Relative
     processor_state_t *state = &machine->processor;
     uint16_t address = get_stack_relative_address(machine, arg_one);
@@ -2769,7 +2709,7 @@ state_t* LDA_SR        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* LDY_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* LDY_DP        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD Y, Direct Page
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
@@ -2789,7 +2729,7 @@ state_t* LDY_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* LDA_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* LDA_DP        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD A, Direct Page
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
@@ -2809,7 +2749,7 @@ state_t* LDA_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* LDX_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* LDX_DP        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD X, Direct Page
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
@@ -2829,7 +2769,7 @@ state_t* LDX_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* LDA_DP_IL     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* LDA_DP_IL     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD A, Direct Page Indirect Long
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
@@ -2854,7 +2794,7 @@ state_t* LDA_DP_IL     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* TAY           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* TAY           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Transfer A to Y
     processor_state_t *state = &machine->processor;
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
@@ -2869,7 +2809,7 @@ state_t* TAY           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* LDA_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* LDA_IMM       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD A Immediate
     processor_state_t *state = &machine->processor;
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
@@ -2882,7 +2822,7 @@ state_t* LDA_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* TAX           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* TAX           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Transfer A to X
     processor_state_t *state = &machine->processor;
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
@@ -2897,7 +2837,7 @@ state_t* TAX           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* PLB           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* PLB           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // PuLl Data Bank register from stack
     processor_state_t *state = &machine->processor;
     state->DBR = pop_byte(machine);
@@ -2905,7 +2845,7 @@ state_t* PLB           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* LDY_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* LDY_ABS       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD Y, Absolute
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -2920,7 +2860,7 @@ state_t* LDY_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* LDA_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* LDA_ABS       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD A, Absolute
     processor_state_t *state = &machine->processor;
     uint16_t address = get_absolute_address(machine, arg_one);
@@ -2935,7 +2875,7 @@ state_t* LDA_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* LDX_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* LDX_ABS       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD X, Absolute
     processor_state_t *state = &machine->processor;
     uint16_t address = get_absolute_address(machine, arg_one);
@@ -2950,7 +2890,7 @@ state_t* LDX_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* LDA_ABL       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* LDA_ABL       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD A, Absolute Long
     processor_state_t *state = &machine->processor;
     long_address_t addr = get_absolute_address_long(machine, arg_one, arg_two);
@@ -2965,7 +2905,7 @@ state_t* LDA_ABL       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* BCS_CB        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* BCS_CB        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Branch if Carry Set, Callback
     processor_state_t *state = &machine->processor;
     if (is_flag_set(machine, CARRY)) {
@@ -2974,7 +2914,7 @@ state_t* BCS_CB        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* LDA_DP_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* LDA_DP_I_IY   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD A, Direct Page Indirect Indexed by Y
     processor_state_t *state = &machine->processor;
     uint16_t address = get_dp_address_indirect_indexed_y(machine, arg_one);
@@ -2989,7 +2929,7 @@ state_t* LDA_DP_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* LDA_DP_I      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* LDA_DP_I      (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD A, Direct Page Indirect
     processor_state_t *state = &machine->processor;
     uint16_t address = get_dp_address_indirect(machine, arg_one);
@@ -3004,7 +2944,7 @@ state_t* LDA_DP_I      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* LDA_SR_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* LDA_SR_I_IY   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD A, Stack Relative Indirect Indexed by Y
     processor_state_t *state = &machine->processor;
     uint16_t address = get_stack_relative_address_indirect_indexed_y(machine, arg_one);
@@ -3019,7 +2959,7 @@ state_t* LDA_SR_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* LDY_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* LDY_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD Y, Direct Page Indexed by X
     processor_state_t *state = &machine->processor;
     uint16_t address = get_dp_address_indexed_x(machine, arg_one);
@@ -3034,7 +2974,7 @@ state_t* LDY_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* LDA_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* LDA_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD A, Direct Page Indexed by X
     processor_state_t *state = &machine->processor;
     uint16_t dp_address = get_dp_address_indexed_x(machine, arg_one);
@@ -3049,7 +2989,7 @@ state_t* LDA_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* LDX_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* LDX_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD X, Direct Page Indexed by Y
     processor_state_t *state = &machine->processor;
     uint16_t address = get_dp_address_indexed_x(machine, arg_one);
@@ -3064,7 +3004,7 @@ state_t* LDX_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* LDA_DP_IL_IY  (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* LDA_DP_IL_IY  (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD A, Direct Page Indirect Long Indexed by Y
     processor_state_t *state = &machine->processor;
     long_address_t address = get_dp_address_indirect_long_indexed_y(machine, arg_one);
@@ -3079,13 +3019,13 @@ state_t* LDA_DP_IL_IY  (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* CLV           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* CLV           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // CLear oVerflow flag
     clear_flag(machine, OVERFLOW);
     return machine;
 }
 
-state_t* LDA_ABS_IY    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* LDA_ABS_IY    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD A, Absolute Indexed by Y
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -3100,7 +3040,7 @@ state_t* LDA_ABS_IY    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* TSX           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* TSX           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Transfer Stack Pointer to X
     processor_state_t *state = &machine->processor;
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
@@ -3113,7 +3053,7 @@ state_t* TSX           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* TYX           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* TYX           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Transfer Y to X
     processor_state_t *state = &machine->processor;
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
@@ -3126,7 +3066,7 @@ state_t* TYX           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* LDY_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* LDY_ABS_IX    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD Y, Absolute Indexed by X
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -3141,7 +3081,7 @@ state_t* LDY_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* LDA_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* LDA_ABS_IX    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD A, Absolute Indexed by X
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -3156,7 +3096,7 @@ state_t* LDA_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* LDX_ABS_IY    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* LDX_ABS_IY    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD X, Absolute Indexed by Y
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -3171,7 +3111,7 @@ state_t* LDX_ABS_IY    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* LDA_AL_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* LDA_AL_IX     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD A, Absolute Long Indexed by X
     processor_state_t *state = &machine->processor;
     long_address_t addr = get_absolute_address_long_indexed_x(machine, arg_one, (uint8_t)arg_two);
@@ -3187,7 +3127,7 @@ state_t* LDA_AL_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* CPY_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* CPY_IMM       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // ComPare Y, Immediate
     processor_state_t *state = &machine->processor;
     uint16_t value_to_compare;
@@ -3208,7 +3148,7 @@ state_t* CPY_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* CMP_DP_I_IX   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* CMP_DP_I_IX   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // CoMPare A, Direct Page Indirect Indexed by X
     processor_state_t *state = &machine->processor;
     uint16_t addr = get_dp_address_indirect_indexed_x(machine, arg_one);
@@ -3226,7 +3166,7 @@ state_t* CMP_DP_I_IX   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* CMP_SR        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* CMP_SR        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // CoMPare A, Stack Relative
     processor_state_t *state = &machine->processor;
     uint16_t address = get_stack_relative_address(machine, arg_one);
@@ -3250,7 +3190,7 @@ state_t* CMP_SR        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* CPY_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* CPY_DP        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // ComPare Y, Direct Page
     processor_state_t *state = &machine->processor;
     uint16_t address = get_dp_address(machine, arg_one);
@@ -3268,7 +3208,7 @@ state_t* CPY_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* CMP_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* CMP_DP        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // CoMPare A, Direct Page
     processor_state_t *state = &machine->processor;
     uint16_t address = get_dp_address(machine, arg_one);
@@ -3292,7 +3232,7 @@ state_t* CMP_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* DEC_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* DEC_DP        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // DECrement Direct Page
     processor_state_t *state = &machine->processor;
     uint16_t address = get_dp_address(machine, arg_one);
@@ -3311,7 +3251,7 @@ state_t* DEC_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* CMP_DP_IL     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* CMP_DP_IL     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // CoMPare A, Direct Page Indirect Long
     processor_state_t *state = &machine->processor;
     long_address_t address = get_dp_address_indirect_long(machine, arg_one);
@@ -3335,7 +3275,7 @@ state_t* CMP_DP_IL     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* INY           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* INY           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // INcrement Y
     processor_state_t *state = &machine->processor;
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
@@ -3348,7 +3288,7 @@ state_t* INY           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* CMP_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* CMP_IMM       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // CoMPare A, Immediate
     processor_state_t *state = &machine->processor;
     uint16_t value_to_compare;
@@ -3370,7 +3310,7 @@ state_t* CMP_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* DEX           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* DEX           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // DECrememt X
     processor_state_t *state = &machine->processor;
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
@@ -3384,14 +3324,14 @@ state_t* DEX           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 }
 
 // TODO: Implement when full hardware emulation begins
-state_t* WAI           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* WAI           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // WAit for Interrupt
     processor_state_t *state = &machine->processor;
     // ??? what here ?
     return machine;
 }
 
-state_t* CPY_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* CPY_ABS       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // ComPare Y, Absolute
     processor_state_t *state = &machine->processor;
     uint16_t address = get_absolute_address(machine, arg_one);
@@ -3414,7 +3354,7 @@ state_t* CPY_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* CMP_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* CMP_ABS       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // CoMPare A, Absolute
     processor_state_t *state = &machine->processor;
     uint16_t address = get_absolute_address(machine, arg_one);
@@ -3438,7 +3378,7 @@ state_t* CMP_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* DEC_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* DEC_ABS       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // DECrement Absolute
     processor_state_t *state = &machine->processor;
     uint16_t address = get_absolute_address(machine, arg_one);
@@ -3457,7 +3397,7 @@ state_t* DEC_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* CMP_ABL       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* CMP_ABL       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // CoMPare A, Absolute Long
     processor_state_t *state = &machine->processor;
     long_address_t addr = get_absolute_address_long(machine, arg_one, arg_two);
@@ -3481,7 +3421,7 @@ state_t* CMP_ABL       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* BNE_CB        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* BNE_CB        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Branch if Not Equal (Zero flag clear)
     processor_state_t *state = &machine->processor;
     if (!is_flag_set(machine, ZERO)) {
@@ -3491,7 +3431,7 @@ state_t* BNE_CB        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* CMP_DP_I      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* CMP_DP_I      (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // CoMPare A, Direct Page Indirect
     processor_state_t *state = &machine->processor;
     uint16_t address = get_dp_address_indirect(machine, arg_one);
@@ -3509,7 +3449,7 @@ state_t* CMP_DP_I      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* CMP_SR_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* CMP_SR_I_IY   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // CoMPare A, Stack Relative Indirect Indexed by Y
     processor_state_t *state = &machine->processor;
     uint16_t address = get_stack_relative_address_indirect_indexed_y(machine, arg_one);
@@ -3527,7 +3467,7 @@ state_t* CMP_SR_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* PEI_DP_I      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* PEI_DP_I      (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Push Effective Indirect, Direct Page Indirect
     processor_state_t *state = &machine->processor;
     uint16_t address = get_dp_address_indirect(machine, arg_one);
@@ -3535,7 +3475,7 @@ state_t* PEI_DP_I      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* CMP_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* CMP_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // CoMPare A, Direct Page Indexed by X
     processor_state_t *state = &machine->processor;
     uint16_t address = get_dp_address_indexed_x(machine, arg_one);
@@ -3553,7 +3493,7 @@ state_t* CMP_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* DEC_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* DEC_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // DECrement Direct Page Indexed by X
     processor_state_t *state = &machine->processor;
     uint16_t address = get_dp_address_indexed_x(machine, arg_one);
@@ -3572,7 +3512,7 @@ state_t* DEC_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* CMP_DP_IL_IY  (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* CMP_DP_IL_IY  (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // CoMPare A, Direct Page Indirect Indexed by Y
     processor_state_t *state = &machine->processor;
     long_address_t addr = get_dp_address_indirect_long_indexed_y(machine, arg_one);
@@ -3596,13 +3536,13 @@ state_t* CMP_DP_IL_IY  (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* CLD_CB        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* CLD_CB        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // CLear Decimal Flag
     clear_flag(machine, DECIMAL_MODE);
     return machine;
 }
 
-state_t* CMP_ABS_IY    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* CMP_ABS_IY    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // CoMPare A, Absolute Indexed by Y
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -3626,7 +3566,7 @@ state_t* CMP_ABS_IY    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* PHX           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* PHX           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // PusH X
     processor_state_t *state = &machine->processor;
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
@@ -3638,13 +3578,13 @@ state_t* PHX           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 }
 
 // TODO: Implement when full hardware emulation begins
-state_t* STP           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* STP           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SToP the processor
     // ??? what here ?
     return machine;
 }
 
-state_t* JMP_ABS_IL    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* JMP_ABS_IL    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // JuMP to Absolute Indirect Long address
     processor_state_t *state = &machine->processor;
     long_address_t addr = get_absolute_address_long_indirect(machine, arg_one, arg_two);
@@ -3654,7 +3594,7 @@ state_t* JMP_ABS_IL    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* CMP_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* CMP_ABS_IX    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // CoMPare A, Absolute Indexed by X
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -3672,7 +3612,7 @@ state_t* CMP_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* DEC_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* DEC_ABS_IX    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // DECrement, Absolute Indexed by X
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -3691,7 +3631,7 @@ state_t* DEC_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* CMP_ABL_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* CMP_ABL_IX    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // CoMPare A, Absolute Long Indexed by X
     processor_state_t *state = &machine->processor;
     long_address_t addr = get_absolute_address_long_indexed_x(machine, arg_one, arg_two);
@@ -3710,7 +3650,7 @@ state_t* CMP_ABL_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* CPX_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* CPX_IMM       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // ComPare X, Immediate
     processor_state_t *state = &machine->processor;
     uint16_t value_to_compare;
@@ -3732,7 +3672,7 @@ state_t* CPX_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* SBC_DP_I_IX   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* SBC_DP_I_IX   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Direct Page Indirect Indexed by X
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -3760,7 +3700,7 @@ state_t* SBC_DP_I_IX   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* SBC_SR        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* SBC_SR        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Stack Relative
     processor_state_t *state = &machine->processor;
     uint16_t address = get_stack_relative_address(machine, arg_one);
@@ -3788,7 +3728,7 @@ state_t* SBC_SR        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* CPX_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* CPX_DP        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // ComPare X, Direct Page
     processor_state_t *state = &machine->processor;
     uint16_t address = get_dp_address(machine, arg_one);
@@ -3806,7 +3746,7 @@ state_t* CPX_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* SBC_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* SBC_DP        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Direct Page
     processor_state_t *state = &machine->processor;
     uint16_t address = get_dp_address(machine, arg_one);
@@ -3828,7 +3768,7 @@ state_t* SBC_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* INC_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* INC_DP        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // INCrement Direct Page
     processor_state_t *state = &machine->processor;
     uint16_t address = get_dp_address(machine, arg_one);
@@ -3847,7 +3787,7 @@ state_t* INC_DP        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* SBC_DP_IL     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* SBC_DP_IL     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Direct Page Indirect Long
     processor_state_t *state = &machine->processor;
     long_address_t address = get_dp_address_indirect_long(machine, arg_one);
@@ -3875,7 +3815,7 @@ state_t* SBC_DP_IL     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* INX           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* INX           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // INcrement X
     processor_state_t *state = &machine->processor;
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
@@ -3888,7 +3828,7 @@ state_t* INX           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* SBC_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* SBC_IMM       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Immediate
     processor_state_t *state = &machine->processor;
     uint16_t value_to_subtract;
@@ -3914,13 +3854,13 @@ state_t* SBC_IMM       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* NOP           (state_t* machine, uint16_t arg_one, uint16_t arg_two) { // opcode 0xEA
+machine_state_t* NOP           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) { // opcode 0xEA
     // No OPeration
     // New simplest ever instruction
     return machine;
 }
 
-state_t* XBA           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* XBA           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // eXchange B and A
     processor_state_t *state = &machine->processor;
     uint8_t temp = state->A.low;
@@ -3931,7 +3871,7 @@ state_t* XBA           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* CPX_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* CPX_ABS       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // ComPare X, Absolute
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -3955,7 +3895,7 @@ state_t* CPX_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* SBC_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* SBC_ABS       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Absolute
     processor_state_t *state = &machine->processor;
     uint16_t address = get_absolute_address(machine, arg_one);
@@ -3977,7 +3917,7 @@ state_t* SBC_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* INC_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* INC_ABS       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // INCrement value, Absolute
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -3996,7 +3936,7 @@ state_t* INC_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* SBC_ABL       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* SBC_ABL       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Absolute Long
     processor_state_t *state = &machine->processor;
     long_address_t addr = get_absolute_address_long(machine, arg_one, arg_two);
@@ -4018,7 +3958,7 @@ state_t* SBC_ABL       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* BEQ_CB        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* BEQ_CB        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Branch if Equal (Zero flag set)
     processor_state_t *state = &machine->processor;
     if (is_flag_set(machine, ZERO)) {
@@ -4028,7 +3968,7 @@ state_t* BEQ_CB        (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* SBC_DP_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* SBC_DP_I_IY   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Direct Page Indirect Indexed by Y
     processor_state_t *state = &machine->processor;
     uint16_t address = get_dp_address_indirect_indexed_y(machine, arg_one);
@@ -4050,7 +3990,7 @@ state_t* SBC_DP_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* SBC_DP_I      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* SBC_DP_I      (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Direct Page Indirect
     processor_state_t *state = &machine->processor;
     uint16_t address = get_dp_address_indirect(machine, arg_one);
@@ -4072,7 +4012,7 @@ state_t* SBC_DP_I      (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* SBC_SR_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* SBC_SR_I_IY   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Stack Relative Indirect Indexed by Y
     processor_state_t *state = &machine->processor;
     uint16_t address = get_stack_relative_address_indirect_indexed_y(machine, arg_one);
@@ -4094,14 +4034,14 @@ state_t* SBC_SR_I_IY   (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* PEA_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* PEA_ABS       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Push Effective Absolute Address
     uint16_t effective_address = get_absolute_address(machine, arg_one);
     push_word(machine, effective_address);
     return machine;
 }
 
-state_t* SBC_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* SBC_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Direct Page Indexed by X
     processor_state_t *state = &machine->processor;
     uint16_t address = get_dp_address_indexed_x(machine, arg_one);
@@ -4123,7 +4063,7 @@ state_t* SBC_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* INC_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* INC_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // INCrement Direct Page Indexed by X
     processor_state_t *state = &machine->processor;
     uint16_t address = get_dp_address_indexed_x(machine, arg_one);
@@ -4142,7 +4082,7 @@ state_t* INC_DP_IX     (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* SBC_DP_IL_IY  (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* SBC_DP_IL_IY  (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Direct Page Indirect Long Indexed by Y
     processor_state_t *state = &machine->processor;
     long_address_t addr = get_dp_address_indirect_long_indexed_y(machine, arg_one);
@@ -4164,13 +4104,13 @@ state_t* SBC_DP_IL_IY  (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* SED           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* SED           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SEt Decimal flag
     set_flag(machine, DECIMAL_MODE);
     return machine;
 }
 
-state_t* SBC_ABS_IY    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* SBC_ABS_IY    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Absolute Indexed by Y
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -4192,7 +4132,7 @@ state_t* SBC_ABS_IY    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* PLX           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* PLX           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // PuLl X from stack
     processor_state_t *state = &machine->processor;
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
@@ -4207,7 +4147,7 @@ state_t* PLX           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 
 // TODO: Verify correct behavior of JSR_ABS_I_IX
 //       Test is possibly incorrect
-state_t* JSR_ABS_I_IX  (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* JSR_ABS_I_IX  (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Jump to SubRoutine, Absolute Indexed Indirect (Indexed by X)
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->PBR);
@@ -4222,7 +4162,7 @@ state_t* JSR_ABS_I_IX  (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* SBC_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* SBC_ABS_IX    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Absolute Indexed by X
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -4244,7 +4184,7 @@ state_t* SBC_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* INC_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* INC_ABS_IX    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // INCrement, Absolute Indexed by X
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
@@ -4264,7 +4204,7 @@ state_t* INC_ABS_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     return machine;
 }
 
-state_t* SBC_ABL_IX    (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* SBC_ABL_IX    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Absolute Long Indexed by X
     processor_state_t *state = &machine->processor;
     long_address_t addr = get_absolute_address_long_indexed_x(machine, arg_one, arg_two);

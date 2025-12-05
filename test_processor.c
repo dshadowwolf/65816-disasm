@@ -4,6 +4,7 @@
 #include <assert.h>
 #include "processor.h"
 #include "processor_helpers.h"
+#include "machine_setup.h"
 
 // Test counters
 static int tests_run = 0;
@@ -53,14 +54,14 @@ static int tests_failed = 0;
     } while(0)
 
 // Helper function to setup a clean machine state
-state_t* setup_machine() {
-    state_t *machine = create_machine();
+machine_state_t* setup_machine() {
+    machine_state_t *machine = create_machine();
     reset_machine(machine);
     return machine;
 }
 
 // Helper to check if a flag is set
-bool check_flag(state_t *machine, processor_flags_t flag) {
+bool check_flag(machine_state_t *machine, processor_flags_t flag) {
     return (machine->processor.P & flag) != 0;
 }
 
@@ -69,7 +70,7 @@ bool check_flag(state_t *machine, processor_flags_t flag) {
 // ============================================================================
 
 TEST(push_byte_basic) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.SP = 0x1FF;  // Top of stack in emulation mode
     machine->processor.emulation_mode = true;
     
@@ -82,7 +83,7 @@ TEST(push_byte_basic) {
 }
 
 TEST(pop_byte_basic) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.SP = 0x1FE;
     machine->processor.emulation_mode = true;
     machine->memory[0][0x01FF] = 0x42;
@@ -96,7 +97,7 @@ TEST(pop_byte_basic) {
 }
 
 TEST(push_word_native_mode) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.SP = 0x1FF;
     machine->processor.emulation_mode = false;
     
@@ -110,7 +111,7 @@ TEST(push_word_native_mode) {
 }
 
 TEST(pop_word_native_mode) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.SP = 0x1FD;
     machine->processor.emulation_mode = false;
     machine->memory[0][0x01FE] = 0x34;  // Low byte
@@ -125,7 +126,7 @@ TEST(pop_word_native_mode) {
 }
 
 TEST(stack_wrap_emulation_mode) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.SP = 0x100;  // Bottom of page 1
     machine->processor.emulation_mode = true;
     
@@ -143,7 +144,7 @@ TEST(stack_wrap_emulation_mode) {
 // ============================================================================
 
 TEST(set_flags_nz_8_negative) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.P = 0;
     
     set_flags_nz_8(machine, 0x80);
@@ -155,7 +156,7 @@ TEST(set_flags_nz_8_negative) {
 }
 
 TEST(set_flags_nz_8_zero) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.P = 0;
     
     set_flags_nz_8(machine, 0x00);
@@ -167,7 +168,7 @@ TEST(set_flags_nz_8_zero) {
 }
 
 TEST(set_flags_nz_16_negative) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.P = 0;
     
     set_flags_nz_16(machine, 0x8000);
@@ -179,7 +180,7 @@ TEST(set_flags_nz_16_negative) {
 }
 
 TEST(set_flags_nzc_8_with_carry) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.P = 0;
     
     set_flags_nzc_8(machine, 0x100);  // Result with carry
@@ -195,7 +196,7 @@ TEST(set_flags_nzc_8_with_carry) {
 // ============================================================================
 
 TEST(PHA_8bit_mode) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.SP = 0x1FF;
     machine->processor.emulation_mode = true;
     machine->processor.P |= M_FLAG;  // 8-bit accumulator
@@ -210,7 +211,7 @@ TEST(PHA_8bit_mode) {
 }
 
 TEST(PHA_16bit_mode) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.SP = 0x1FF;
     machine->processor.emulation_mode = false;
     machine->processor.P &= ~M_FLAG;  // 16-bit accumulator
@@ -226,7 +227,7 @@ TEST(PHA_16bit_mode) {
 }
 
 TEST(PLA_8bit_mode) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.SP = 0x1FE;
     machine->processor.emulation_mode = true;
     machine->processor.P |= M_FLAG;
@@ -241,7 +242,7 @@ TEST(PLA_8bit_mode) {
 }
 
 TEST(PLA_16bit_mode) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.SP = 0x1FD;
     machine->processor.emulation_mode = false;
     machine->processor.P &= ~M_FLAG;
@@ -257,7 +258,7 @@ TEST(PLA_16bit_mode) {
 }
 
 TEST(PHX_16bit_mode) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.SP = 0x1FF;
     machine->processor.emulation_mode = false;
     machine->processor.P &= ~X_FLAG;  // 16-bit index
@@ -273,7 +274,7 @@ TEST(PHX_16bit_mode) {
 }
 
 TEST(PLX_16bit_mode) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.SP = 0x1FD;
     machine->processor.emulation_mode = false;
     machine->processor.P &= ~X_FLAG;
@@ -289,7 +290,7 @@ TEST(PLX_16bit_mode) {
 }
 
 TEST(PHY_and_PLY_roundtrip) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.SP = 0x1FF;
     machine->processor.emulation_mode = false;
     machine->processor.P &= ~X_FLAG;
@@ -310,7 +311,7 @@ TEST(PHY_and_PLY_roundtrip) {
 // ============================================================================
 
 TEST(JSR_and_RTS) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.PC = 0x1000;
     machine->processor.SP = 0x1FF;
     machine->processor.emulation_mode = false;
@@ -331,7 +332,7 @@ TEST(JSR_and_RTS) {
 }
 
 TEST(JSL_and_RTL) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.PC = 0x1000;
     machine->processor.PBR = 0x01;
     machine->processor.SP = 0x1FF;
@@ -355,7 +356,7 @@ TEST(JSL_and_RTL) {
 }
 
 TEST(PER_pushes_pc_relative) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.PC = 0x1000;
     machine->processor.SP = 0x1FF;
     machine->processor.emulation_mode = false;
@@ -372,7 +373,7 @@ TEST(PER_pushes_pc_relative) {
 }
 
 TEST(PEA_pushes_effective_address) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.SP = 0x1FF;
     machine->processor.emulation_mode = false;
     
@@ -390,7 +391,7 @@ TEST(PEA_pushes_effective_address) {
 // ============================================================================
 
 TEST(CLC_clears_carry) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.P = 0xFF;  // All flags set
     
     CLC_CB(machine, 0, 0);
@@ -401,7 +402,7 @@ TEST(CLC_clears_carry) {
 }
 
 TEST(SEC_sets_carry) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.P = 0x00;
     
     SEC_CB(machine, 0, 0);
@@ -412,7 +413,7 @@ TEST(SEC_sets_carry) {
 }
 
 TEST(SEP_sets_processor_flags) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.P = 0x00;
     machine->processor.emulation_mode = false;
     
@@ -425,7 +426,7 @@ TEST(SEP_sets_processor_flags) {
 }
 
 TEST(REP_clears_processor_flags) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.P = 0xFF;
     machine->processor.emulation_mode = false;
     
@@ -442,7 +443,7 @@ TEST(REP_clears_processor_flags) {
 // ============================================================================
 
 TEST(LDA_IMM_8bit) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.P |= M_FLAG;  // 8-bit mode
     machine->processor.A.low = 0;
     
@@ -456,7 +457,7 @@ TEST(LDA_IMM_8bit) {
 }
 
 TEST(LDA_IMM_16bit) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.P &= ~M_FLAG;  // 16-bit mode
     machine->processor.A.full = 0;
@@ -469,7 +470,7 @@ TEST(LDA_IMM_16bit) {
 }
 
 TEST(STA_and_LDA_ABS) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.P |= M_FLAG;
     machine->processor.A.low = 0x99;
     
@@ -486,7 +487,7 @@ TEST(STA_and_LDA_ABS) {
 }
 
 TEST(LDX_and_STX) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.P &= ~X_FLAG;  // 16-bit index
     machine->processor.X = 0x5678;
@@ -508,7 +509,7 @@ TEST(LDX_and_STX) {
 // ============================================================================
 
 TEST(ADC_8bit_no_carry) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.P |= M_FLAG;
     machine->processor.P &= ~CARRY;
     machine->processor.A.low = 0x10;
@@ -522,7 +523,7 @@ TEST(ADC_8bit_no_carry) {
 }
 
 TEST(ADC_8bit_with_overflow) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.P |= M_FLAG;
     machine->processor.P &= ~CARRY;
     machine->processor.A.low = 0xFF;
@@ -537,7 +538,7 @@ TEST(ADC_8bit_with_overflow) {
 }
 
 TEST(SBC_8bit_no_borrow) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.P |= M_FLAG;
     machine->processor.P |= CARRY;  // No borrow
     machine->processor.A.low = 0x50;
@@ -550,7 +551,7 @@ TEST(SBC_8bit_no_borrow) {
 }
 
 TEST(INC_accumulator) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.P |= M_FLAG;
     machine->processor.A.low = 0x41;
     
@@ -562,7 +563,7 @@ TEST(INC_accumulator) {
 }
 
 TEST(DEC_accumulator) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.P |= M_FLAG;
     machine->processor.A.low = 0x42;
     
@@ -574,7 +575,7 @@ TEST(DEC_accumulator) {
 }
 
 TEST(INX_and_DEX) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.P &= ~X_FLAG;
     machine->processor.X = 0x1000;
@@ -589,7 +590,7 @@ TEST(INX_and_DEX) {
 }
 
 TEST(INY_and_DEY) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.P &= ~X_FLAG;
     machine->processor.Y = 0x2000;
@@ -608,7 +609,7 @@ TEST(INY_and_DEY) {
 // ============================================================================
 
 TEST(AND_IMM) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.P |= M_FLAG;
     machine->processor.A.low = 0xFF;
     
@@ -620,7 +621,7 @@ TEST(AND_IMM) {
 }
 
 TEST(ORA_IMM) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.P |= M_FLAG;
     machine->processor.A.low = 0xF0;
     
@@ -632,7 +633,7 @@ TEST(ORA_IMM) {
 }
 
 TEST(EOR_IMM) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.P |= M_FLAG;
     machine->processor.A.low = 0xFF;
     
@@ -649,7 +650,7 @@ TEST(EOR_IMM) {
 // ============================================================================
 
 TEST(ASL_accumulator) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.P |= M_FLAG;
     machine->processor.A.low = 0x41;
     
@@ -662,7 +663,7 @@ TEST(ASL_accumulator) {
 }
 
 TEST(LSR_accumulator) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.P |= M_FLAG;
     machine->processor.A.low = 0x82;
     
@@ -675,7 +676,7 @@ TEST(LSR_accumulator) {
 }
 
 TEST(ROL_with_carry) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.P |= M_FLAG;
     machine->processor.P |= CARRY;
     machine->processor.A.low = 0x80;
@@ -689,7 +690,7 @@ TEST(ROL_with_carry) {
 }
 
 TEST(ROR_with_carry) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.P |= M_FLAG;
     machine->processor.P |= CARRY;
     machine->processor.A.low = 0x01;
@@ -707,7 +708,7 @@ TEST(ROR_with_carry) {
 // ============================================================================
 
 TEST(CMP_equal) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.P |= M_FLAG;
     machine->processor.A.low = 0x42;
     
@@ -721,7 +722,7 @@ TEST(CMP_equal) {
 }
 
 TEST(CMP_greater) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.P |= M_FLAG;
     machine->processor.A.low = 0x50;
     
@@ -734,7 +735,7 @@ TEST(CMP_greater) {
 }
 
 TEST(CMP_less) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.P |= M_FLAG;
     machine->processor.A.low = 0x20;
     
@@ -748,7 +749,7 @@ TEST(CMP_less) {
 }
 
 TEST(CPX_and_CPY) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.P &= ~X_FLAG;
     machine->processor.X = 0x1000;
     machine->processor.Y = 0x2000;
@@ -767,7 +768,7 @@ TEST(CPX_and_CPY) {
 // ============================================================================
 
 TEST(TAX_and_TXA) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.P &= ~M_FLAG;  // 16-bit accumulator
     machine->processor.P &= ~X_FLAG;  // 16-bit index registers
@@ -785,7 +786,7 @@ TEST(TAX_and_TXA) {
 }
 
 TEST(TAY_and_TYA) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.P &= ~M_FLAG;  // 16-bit accumulator
     machine->processor.P &= ~X_FLAG;  // 16-bit index registers
@@ -803,7 +804,7 @@ TEST(TAY_and_TYA) {
 }
 
 TEST(TSX_and_TXS) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.P &= ~X_FLAG;  // 16-bit index mode
     machine->processor.SP = 0x1ABC;
@@ -820,7 +821,7 @@ TEST(TSX_and_TXS) {
 }
 
 TEST(TXY_and_TYX) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.P &= ~X_FLAG;  // 16-bit index mode
     machine->processor.X = 0xAAAA;
@@ -840,7 +841,7 @@ TEST(TXY_and_TYX) {
 // ============================================================================
 
 TEST(BCC_branch_when_carry_clear) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.PC = 0x1000;
     machine->processor.P &= ~CARRY;  // Clear carry
     
@@ -851,7 +852,7 @@ TEST(BCC_branch_when_carry_clear) {
 }
 
 TEST(BCC_no_branch_when_carry_set) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.PC = 0x1000;
     machine->processor.P |= CARRY;  // Set carry
     
@@ -862,7 +863,7 @@ TEST(BCC_no_branch_when_carry_set) {
 }
 
 TEST(BCS_branch_when_carry_set) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.PC = 0x1000;
     machine->processor.P |= CARRY;
     
@@ -873,7 +874,7 @@ TEST(BCS_branch_when_carry_set) {
 }
 
 TEST(BEQ_branch_when_zero_set) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.PC = 0x2000;
     machine->processor.P |= ZERO;
     
@@ -884,7 +885,7 @@ TEST(BEQ_branch_when_zero_set) {
 }
 
 TEST(BNE_branch_when_zero_clear) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.PC = 0x2000;
     machine->processor.P &= ~ZERO;
     
@@ -895,7 +896,7 @@ TEST(BNE_branch_when_zero_clear) {
 }
 
 TEST(BMI_branch_when_negative) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.PC = 0x3000;
     machine->processor.P |= NEGATIVE;
     
@@ -906,7 +907,7 @@ TEST(BMI_branch_when_negative) {
 }
 
 TEST(BPL_CB_branch_when_positive) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.PC = 0x3000;
     machine->processor.P &= ~NEGATIVE;
     
@@ -917,7 +918,7 @@ TEST(BPL_CB_branch_when_positive) {
 }
 
 TEST(BVC_CB_branch_when_overflow_clear) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.PC = 0x4000;
     machine->processor.P &= ~OVERFLOW;
     
@@ -928,7 +929,7 @@ TEST(BVC_CB_branch_when_overflow_clear) {
 }
 
 TEST(BVS_PCR_branch_when_overflow_set) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.PC = 0x4000;
     machine->processor.P |= OVERFLOW;
     
@@ -939,7 +940,7 @@ TEST(BVS_PCR_branch_when_overflow_set) {
 }
 
 TEST(BRA_CB_always_branches) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.PC = 0x5000;
     
     BRA_CB(machine, 0x5020, 0);
@@ -949,7 +950,7 @@ TEST(BRA_CB_always_branches) {
 }
 
 TEST(BRL_CB_long_branch) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.PC = 0x6000;
     
     BRL_CB(machine, 0x6100, 0);
@@ -963,7 +964,7 @@ TEST(BRL_CB_long_branch) {
 // ============================================================================
 
 TEST(JMP_CB_absolute) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     
     JMP_CB(machine, 0x8000, 0);
     ASSERT_EQ(machine->processor.PC, 0x8000, "JMP should set PC to target");
@@ -972,7 +973,7 @@ TEST(JMP_CB_absolute) {
 }
 
 TEST(JMP_AL_long_jump) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     
     JMP_AL(machine, 0x9000, 0x02);  // Address 0x9000, Bank 02
     ASSERT_EQ(machine->processor.PC, 0x9000, "JMP long should set PC");
@@ -982,7 +983,7 @@ TEST(JMP_AL_long_jump) {
 }
 
 TEST(JMP_ABS_I_indirect) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     uint8_t *bank = get_memory_bank(machine, 0);
     
     // Set up indirect address at 0x1000
@@ -996,7 +997,7 @@ TEST(JMP_ABS_I_indirect) {
 }
 
 TEST(JMP_ABS_I_IX_indexed_indirect) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     uint8_t *bank = get_memory_bank(machine, 0);
     machine->processor.X = 0x04;
     
@@ -1015,7 +1016,7 @@ TEST(JMP_ABS_I_IX_indexed_indirect) {
 // ============================================================================
 
 TEST(PHP_and_PLP) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.SP = 0x1FF;
     machine->processor.P = 0xA5;
     
@@ -1031,7 +1032,7 @@ TEST(PHP_and_PLP) {
 }
 
 TEST(PHD_and_PLD) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.SP = 0x1FF;
     machine->processor.DP = 0x42;
@@ -1044,7 +1045,7 @@ TEST(PHD_and_PLD) {
 }
 
 TEST(PHB_and_PLB) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.SP = 0x1FF;
     machine->processor.DBR = 0x55;
     uint8_t *bank = get_memory_bank(machine, 0);
@@ -1061,7 +1062,7 @@ TEST(PHB_and_PLB) {
 }
 
 TEST(PHK_pushes_program_bank) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.SP = 0x1FF;
     machine->processor.PBR = 0x33;
     uint8_t *bank = get_memory_bank(machine, 0);
@@ -1078,7 +1079,7 @@ TEST(PHK_pushes_program_bank) {
 // ============================================================================
 
 TEST(CLI_clears_interrupt_disable) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.P |= INTERRUPT_DISABLE;
     
     CLI(machine, 0, 0);
@@ -1088,7 +1089,7 @@ TEST(CLI_clears_interrupt_disable) {
 }
 
 TEST(SEI_sets_interrupt_disable) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.P &= ~INTERRUPT_DISABLE;
     
     SEI(machine, 0, 0);
@@ -1098,7 +1099,7 @@ TEST(SEI_sets_interrupt_disable) {
 }
 
 TEST(CLV_clears_overflow) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.P |= OVERFLOW;
     
     CLV(machine, 0, 0);
@@ -1108,7 +1109,7 @@ TEST(CLV_clears_overflow) {
 }
 
 TEST(SED_sets_decimal_mode) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.P &= ~DECIMAL_MODE;
     
     SED(machine, 0, 0);
@@ -1118,7 +1119,7 @@ TEST(SED_sets_decimal_mode) {
 }
 
 TEST(CLD_CB_clears_decimal_mode) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.P |= DECIMAL_MODE;
     
     CLD_CB(machine, 0, 0);
@@ -1132,7 +1133,7 @@ TEST(CLD_CB_clears_decimal_mode) {
 // ============================================================================
 
 TEST(STZ_stores_zero_8bit) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     uint8_t *bank = get_memory_bank(machine, 0);
     bank[0x1000] = 0xFF;
     
@@ -1143,7 +1144,7 @@ TEST(STZ_stores_zero_8bit) {
 }
 
 TEST(STZ_stores_zero_16bit) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.P &= ~M_FLAG;
     uint8_t *bank = get_memory_bank(machine, 0);
@@ -1158,7 +1159,7 @@ TEST(STZ_stores_zero_16bit) {
 }
 
 TEST(STZ_ABS_absolute) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     uint8_t *bank = get_memory_bank(machine, 0);
     bank[0x3000] = 0xFF;
     
@@ -1169,7 +1170,7 @@ TEST(STZ_ABS_absolute) {
 }
 
 TEST(STZ_ABS_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     uint8_t *bank = get_memory_bank(machine, 0);
     bank[0x1005] = 0xAA;
     
@@ -1186,7 +1187,7 @@ TEST(STZ_ABS_indexed) {
 // ============================================================================
 
 TEST(BIT_IMM_immediate) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x0F;
     
     BIT_IMM(machine, 0xF0, 0);
@@ -1199,7 +1200,7 @@ TEST(BIT_IMM_immediate) {
 }
 
 TEST(BIT_DP_direct_page) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     uint8_t *bank = get_memory_bank(machine, 0);
     machine->processor.DP = 0x10;
     machine->processor.A.low = 0x0F;
@@ -1212,7 +1213,7 @@ TEST(BIT_DP_direct_page) {
 }
 
 TEST(BIT_ABS_sets_flags_from_memory) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     uint8_t *bank = get_memory_bank(machine, 0);
     machine->processor.A.low = 0xFF;
     bank[0x3000] = 0xC0;  // Bits 7 and 6 set
@@ -1229,7 +1230,7 @@ TEST(BIT_ABS_sets_flags_from_memory) {
 // ============================================================================
 
 TEST(TSB_DP_test_and_set_bits) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     uint8_t *bank = get_memory_bank(machine, 0);
     machine->processor.A.low = 0x0F;
     bank[0x20] = 0xF0;
@@ -1242,7 +1243,7 @@ TEST(TSB_DP_test_and_set_bits) {
 }
 
 TEST(TRB_DP_test_and_reset_bits) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     uint8_t *bank = get_memory_bank(machine, 0);
     machine->processor.A.low = 0x0F;
     bank[0x30] = 0xFF;
@@ -1254,7 +1255,7 @@ TEST(TRB_DP_test_and_reset_bits) {
 }
 
 TEST(TSB_ABS_absolute) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     uint8_t *bank = get_memory_bank(machine, 0);
     machine->processor.A.low = 0x55;
     bank[0x4000] = 0xAA;
@@ -1266,7 +1267,7 @@ TEST(TSB_ABS_absolute) {
 }
 
 TEST(TRB_ABS_absolute) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     uint8_t *bank = get_memory_bank(machine, 0);
     machine->processor.A.low = 0x55;
     bank[0x5000] = 0xFF;
@@ -1282,7 +1283,7 @@ TEST(TRB_ABS_absolute) {
 // ============================================================================
 
 TEST(XBA_exchanges_bytes) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x12;
     machine->processor.A.high = 0x34;
     
@@ -1294,7 +1295,7 @@ TEST(XBA_exchanges_bytes) {
 }
 
 TEST(XBA_sets_flags) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x00;
     machine->processor.A.high = 0x80;
     
@@ -1314,7 +1315,7 @@ TEST(XBA_sets_flags) {
 // ============================================================================
 
 TEST(TCS_transfer_a_to_sp) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.full = 0x1ABC;
     
@@ -1325,7 +1326,7 @@ TEST(TCS_transfer_a_to_sp) {
 }
 
 TEST(TSC_transfer_sp_to_a) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.SP = 0x1DEF;
     machine->processor.P &= ~M_FLAG;
@@ -1337,7 +1338,7 @@ TEST(TSC_transfer_sp_to_a) {
 }
 
 TEST(TCD_transfer_a_to_dp) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.full = 0x2000;
     
     TCD(machine, 0, 0);
@@ -1347,7 +1348,7 @@ TEST(TCD_transfer_a_to_dp) {
 }
 
 TEST(TDC_transfer_dp_to_a) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.P &= ~M_FLAG;
     machine->processor.DP = 0x50;
@@ -1363,7 +1364,7 @@ TEST(TDC_transfer_dp_to_a) {
 // ============================================================================
 
 TEST(NOP_does_nothing) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     uint16_t pc = machine->processor.PC;
     uint16_t sp = machine->processor.SP;
     uint8_t p = machine->processor.P;
@@ -1377,7 +1378,7 @@ TEST(NOP_does_nothing) {
 }
 
 TEST(XCE_CB_exchange_carry_emulation) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.P &= ~CARRY;
     
@@ -1396,7 +1397,7 @@ TEST(XCE_CB_exchange_carry_emulation) {
 // ============================================================================
 
 TEST(LDA_DP_direct_page) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     uint8_t *bank = get_memory_bank(machine, 0);
     machine->processor.DP = 0x00;  // DP at zero page
     bank[0x05] = 0x42;
@@ -1408,7 +1409,7 @@ TEST(LDA_DP_direct_page) {
 }
 
 TEST(LDA_ABL_long_addressing) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     uint8_t *bank = get_memory_bank(machine, 0x02);
     bank[0x3000] = 0x88;
     
@@ -1419,7 +1420,7 @@ TEST(LDA_ABL_long_addressing) {
 }
 
 TEST(STA_ABL_long_addressing) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     uint8_t *bank = get_memory_bank(machine, 0x03);
     machine->processor.A.low = 0x99;
     
@@ -1430,7 +1431,7 @@ TEST(STA_ABL_long_addressing) {
 }
 
 TEST(LDX_DP_direct_page) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     uint8_t *bank = get_memory_bank(machine, 0);
     machine->processor.DP = 0x00;
     bank[0x08] = 0x55;
@@ -1442,7 +1443,7 @@ TEST(LDX_DP_direct_page) {
 }
 
 TEST(LDY_DP_direct_page) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     uint8_t *bank = get_memory_bank(machine, 0);
     machine->processor.DP = 0x00;
     bank[0x05] = 0x66;
@@ -1454,7 +1455,7 @@ TEST(LDY_DP_direct_page) {
 }
 
 TEST(STY_ABS_absolute) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     uint8_t *bank = get_memory_bank(machine, 0);
     machine->processor.Y = 0x77;
     
@@ -1469,7 +1470,7 @@ TEST(STY_ABS_absolute) {
 // ============================================================================
 
 TEST(INC_DP_direct_page) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     uint8_t *bank = get_memory_bank(machine, 0);
     bank[0x40] = 0x10;
     
@@ -1480,7 +1481,7 @@ TEST(INC_DP_direct_page) {
 }
 
 TEST(DEC_DP_direct_page) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     uint8_t *bank = get_memory_bank(machine, 0);
     bank[0x50] = 0x20;
     
@@ -1491,7 +1492,7 @@ TEST(DEC_DP_direct_page) {
 }
 
 TEST(INC_ABS_absolute) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     uint8_t *bank = get_memory_bank(machine, 0);
     bank[0x7000] = 0x99;
     
@@ -1502,7 +1503,7 @@ TEST(INC_ABS_absolute) {
 }
 
 TEST(DEC_ABS_absolute) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     uint8_t *bank = get_memory_bank(machine, 0);
     bank[0x8000] = 0x80;
     
@@ -1517,7 +1518,7 @@ TEST(DEC_ABS_absolute) {
 // ============================================================================
 
 TEST(SBC_8bit_no_borrow_extended) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.P |= CARRY;  // No borrow
     machine->processor.A.low = 0x50;
     
@@ -1529,7 +1530,7 @@ TEST(SBC_8bit_no_borrow_extended) {
 }
 
 TEST(SBC_with_borrow) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.P &= ~CARRY;  // Borrow
     machine->processor.A.low = 0x50;
     
@@ -1544,7 +1545,7 @@ TEST(SBC_with_borrow) {
 // ============================================================================
 
 TEST(ORA_DP_direct_page) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x0F;
     machine->processor.DP = 0x00;
     uint8_t *bank = get_memory_bank(machine, 0);
@@ -1557,7 +1558,7 @@ TEST(ORA_DP_direct_page) {
 }
 
 TEST(ORA_ABS_absolute) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x0F;
     uint8_t *bank = get_memory_bank(machine, 0);
     bank[0x8000] = 0xF0;
@@ -1569,7 +1570,7 @@ TEST(ORA_ABS_absolute) {
 }
 
 TEST(ORA_DP_IX_direct_page_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x0F;
     machine->processor.X = 0x05;
     machine->processor.DP = 0x00;
@@ -1583,7 +1584,7 @@ TEST(ORA_DP_IX_direct_page_indexed) {
 }
 
 TEST(ORA_DP_I_IY_dp_indirect_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x0F;
     machine->processor.Y = 0x10;
     machine->processor.DP = 0x00;
@@ -1603,7 +1604,7 @@ TEST(ORA_DP_I_IY_dp_indirect_indexed) {
 // ============================================================================
 
 TEST(AND_DP_direct_page) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0xFF;
     machine->processor.DP = 0x00;
     uint8_t *bank = get_memory_bank(machine, 0);
@@ -1616,7 +1617,7 @@ TEST(AND_DP_direct_page) {
 }
 
 TEST(AND_ABS_absolute) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0xFF;
     uint8_t *bank = get_memory_bank(machine, 0);
     bank[0x8000] = 0x0F;
@@ -1628,7 +1629,7 @@ TEST(AND_ABS_absolute) {
 }
 
 TEST(AND_DP_IX_direct_page_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0xFF;
     machine->processor.X = 0x05;
     machine->processor.DP = 0x00;
@@ -1646,7 +1647,7 @@ TEST(AND_DP_IX_direct_page_indexed) {
 // ============================================================================
 
 TEST(EOR_DP_direct_page) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0xFF;
     machine->processor.DP = 0x00;
     uint8_t *bank = get_memory_bank(machine, 0);
@@ -1659,7 +1660,7 @@ TEST(EOR_DP_direct_page) {
 }
 
 TEST(EOR_ABS_absolute) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0xFF;
     uint8_t *bank = get_memory_bank(machine, 0);
     bank[0x8000] = 0x0F;
@@ -1671,7 +1672,7 @@ TEST(EOR_ABS_absolute) {
 }
 
 TEST(EOR_DP_IX_direct_page_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0xFF;
     machine->processor.X = 0x05;
     machine->processor.DP = 0x00;
@@ -1689,7 +1690,7 @@ TEST(EOR_DP_IX_direct_page_indexed) {
 // ============================================================================
 
 TEST(ADC_DP_direct_page) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x10;
     machine->processor.P |= CARRY;
     machine->processor.DP = 0x00;
@@ -1703,7 +1704,7 @@ TEST(ADC_DP_direct_page) {
 }
 
 TEST(ADC_ABS_absolute) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x10;
     machine->processor.P &= ~CARRY;
     uint8_t *bank = get_memory_bank(machine, 0);
@@ -1716,7 +1717,7 @@ TEST(ADC_ABS_absolute) {
 }
 
 TEST(ADC_DP_IX_direct_page_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x10;
     machine->processor.X = 0x05;
     machine->processor.P &= ~CARRY;
@@ -1735,7 +1736,7 @@ TEST(ADC_DP_IX_direct_page_indexed) {
 // ============================================================================
 
 TEST(SBC_DP_direct_page) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x50;
     machine->processor.P |= CARRY;
     machine->processor.DP = 0x00;
@@ -1749,7 +1750,7 @@ TEST(SBC_DP_direct_page) {
 }
 
 TEST(SBC_ABS_absolute) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x50;
     machine->processor.P |= CARRY;
     uint8_t *bank = get_memory_bank(machine, 0);
@@ -1762,7 +1763,7 @@ TEST(SBC_ABS_absolute) {
 }
 
 TEST(SBC_DP_IX_direct_page_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x50;
     machine->processor.X = 0x05;
     machine->processor.P |= CARRY;
@@ -1781,7 +1782,7 @@ TEST(SBC_DP_IX_direct_page_indexed) {
 // ============================================================================
 
 TEST(CMP_DP_direct_page) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x50;
     machine->processor.DP = 0x00;
     uint8_t *bank = get_memory_bank(machine, 0);
@@ -1795,7 +1796,7 @@ TEST(CMP_DP_direct_page) {
 }
 
 TEST(CMP_ABS_absolute) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x50;
     uint8_t *bank = get_memory_bank(machine, 0);
     bank[0x8000] = 0x30;
@@ -1808,7 +1809,7 @@ TEST(CMP_ABS_absolute) {
 }
 
 TEST(CMP_DP_IX_direct_page_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x50;
     machine->processor.X = 0x05;
     machine->processor.DP = 0x00;
@@ -1827,7 +1828,7 @@ TEST(CMP_DP_IX_direct_page_indexed) {
 // ============================================================================
 
 TEST(CPX_DP_direct_page) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.X = 0x50;
     machine->processor.DP = 0x00;
     uint8_t *bank = get_memory_bank(machine, 0);
@@ -1840,7 +1841,7 @@ TEST(CPX_DP_direct_page) {
 }
 
 TEST(CPX_ABS_absolute) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.X = 0x50;
     uint8_t *bank = get_memory_bank(machine, 0);
     bank[0x8000] = 0x30;
@@ -1852,7 +1853,7 @@ TEST(CPX_ABS_absolute) {
 }
 
 TEST(CPY_DP_direct_page) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.Y = 0x50;
     machine->processor.DP = 0x00;
     uint8_t *bank = get_memory_bank(machine, 0);
@@ -1865,7 +1866,7 @@ TEST(CPY_DP_direct_page) {
 }
 
 TEST(CPY_ABS_absolute) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.Y = 0x50;
     uint8_t *bank = get_memory_bank(machine, 0);
     bank[0x8000] = 0x30;
@@ -1881,7 +1882,7 @@ TEST(CPY_ABS_absolute) {
 // ============================================================================
 
 TEST(ASL_DP_direct_page) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.DP = 0x00;
     uint8_t *bank = get_memory_bank(machine, 0);
     bank[0x10] = 0x40;
@@ -1893,7 +1894,7 @@ TEST(ASL_DP_direct_page) {
 }
 
 TEST(ASL_ABS_absolute) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     uint8_t *bank = get_memory_bank(machine, 0);
     bank[0x8000] = 0x40;
     
@@ -1904,7 +1905,7 @@ TEST(ASL_ABS_absolute) {
 }
 
 TEST(LSR_DP_direct_page) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.DP = 0x00;
     uint8_t *bank = get_memory_bank(machine, 0);
     bank[0x10] = 0x80;
@@ -1916,7 +1917,7 @@ TEST(LSR_DP_direct_page) {
 }
 
 TEST(LSR_ABS_absolute) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     uint8_t *bank = get_memory_bank(machine, 0);
     bank[0x8000] = 0x80;
     
@@ -1927,7 +1928,7 @@ TEST(LSR_ABS_absolute) {
 }
 
 TEST(ROL_DP_direct_page) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.P |= CARRY;
     machine->processor.DP = 0x00;
     uint8_t *bank = get_memory_bank(machine, 0);
@@ -1940,7 +1941,7 @@ TEST(ROL_DP_direct_page) {
 }
 
 TEST(ROL_ABS_absolute) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.P |= CARRY;
     uint8_t *bank = get_memory_bank(machine, 0);
     bank[0x8000] = 0x40;
@@ -1952,7 +1953,7 @@ TEST(ROL_ABS_absolute) {
 }
 
 TEST(ROR_DP_direct_page) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.P |= CARRY;
     machine->processor.DP = 0x00;
     uint8_t *bank = get_memory_bank(machine, 0);
@@ -1965,7 +1966,7 @@ TEST(ROR_DP_direct_page) {
 }
 
 TEST(ROR_ABS_absolute) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.P |= CARRY;
     uint8_t *bank = get_memory_bank(machine, 0);
     bank[0x8000] = 0x02;
@@ -1981,7 +1982,7 @@ TEST(ROR_ABS_absolute) {
 // ============================================================================
 
 TEST(LDA_DP_IX_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.X = 0x05;
     machine->processor.DP = 0x00;
     uint8_t *bank = get_memory_bank(machine, 0);
@@ -1994,7 +1995,7 @@ TEST(LDA_DP_IX_indexed) {
 }
 
 TEST(LDA_ABS_IX_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.X = 0x10;
     uint8_t *bank = get_memory_bank(machine, 0);
     bank[0x8010] = 0x42;
@@ -2006,7 +2007,7 @@ TEST(LDA_ABS_IX_indexed) {
 }
 
 TEST(STA_DP_direct_page) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x42;
     machine->processor.DP = 0x20;
     uint8_t *bank = get_memory_bank(machine, 0);
@@ -2018,7 +2019,7 @@ TEST(STA_DP_direct_page) {
 }
 
 TEST(STA_DP_IX_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x42;
     machine->processor.X = 0x05;
     machine->processor.DP = 0x20;
@@ -2031,7 +2032,7 @@ TEST(STA_DP_IX_indexed) {
 }
 
 TEST(STA_ABS_IX_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x42;
     machine->processor.X = 0x10;
     uint8_t *bank = get_memory_bank(machine, 0);
@@ -2047,7 +2048,7 @@ TEST(STA_ABS_IX_indexed) {
 // ============================================================================
 
 TEST(LDX_ABS_absolute) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     uint8_t *bank = get_memory_bank(machine, 0);
     bank[0x8000] = 0x42;
     
@@ -2058,7 +2059,7 @@ TEST(LDX_ABS_absolute) {
 }
 
 TEST(LDY_ABS_absolute) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     uint8_t *bank = get_memory_bank(machine, 0);
     bank[0x8000] = 0x42;
     
@@ -2069,7 +2070,7 @@ TEST(LDY_ABS_absolute) {
 }
 
 TEST(STX_DP_direct_page) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.X = 0x42;
     machine->processor.DP = 0x20;
     uint8_t *bank = get_memory_bank(machine, 0);
@@ -2081,7 +2082,7 @@ TEST(STX_DP_direct_page) {
 }
 
 TEST(STX_ABS_absolute) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.X = 0x42;
     uint8_t *bank = get_memory_bank(machine, 0);
     
@@ -2092,7 +2093,7 @@ TEST(STX_ABS_absolute) {
 }
 
 TEST(STY_DP_direct_page) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.Y = 0x42;
     machine->processor.DP = 0x20;
     uint8_t *bank = get_memory_bank(machine, 0);
@@ -2108,7 +2109,7 @@ TEST(STY_DP_direct_page) {
 // ============================================================================
 
 TEST(RTI_return_from_interrupt) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.SP = 0x1F0;
     uint8_t *stack = get_memory_bank(machine, 0);
@@ -2128,7 +2129,7 @@ TEST(RTI_return_from_interrupt) {
 }
 
 TEST(BRK_software_interrupt) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.PC = 0x8000;
     machine->processor.PBR = 0x01;
@@ -2151,7 +2152,7 @@ TEST(BRK_software_interrupt) {
 // ============================================================================
 
 TEST(ADC_ABL_long_addressing) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0x10;
     clear_flag(machine, CARRY);
@@ -2167,7 +2168,7 @@ TEST(ADC_ABL_long_addressing) {
 }
 
 TEST(ADC_ABS_IX_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x10;
     machine->processor.X = 0x05;
     clear_flag(machine, CARRY);
@@ -2182,7 +2183,7 @@ TEST(ADC_ABS_IX_indexed) {
 }
 
 TEST(ADC_ABS_IY_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x10;
     machine->processor.Y = 0x03;
     clear_flag(machine, CARRY);
@@ -2197,7 +2198,7 @@ TEST(ADC_ABS_IY_indexed) {
 }
 
 TEST(ADC_AL_IX_long_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0x05;
     machine->processor.X = 0x10;
@@ -2214,7 +2215,7 @@ TEST(ADC_AL_IX_long_indexed) {
 }
 
 TEST(ADC_DP_I_indirect) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x08;
     machine->processor.DP = 0x00;
     clear_flag(machine, CARRY);
@@ -2231,7 +2232,7 @@ TEST(ADC_DP_I_indirect) {
 }
 
 TEST(ADC_DP_I_IX_indexed_indirect) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x0A;
     machine->processor.X = 0x02;
     machine->processor.DP = 0x00;
@@ -2249,7 +2250,7 @@ TEST(ADC_DP_I_IX_indexed_indirect) {
 }
 
 TEST(ADC_DP_I_IY_indirect_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x0C;
     machine->processor.Y = 0x04;
     machine->processor.DP = 0x00;
@@ -2267,7 +2268,7 @@ TEST(ADC_DP_I_IY_indirect_indexed) {
 }
 
 TEST(ADC_DP_IL_indirect_long) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0x05;
     machine->processor.DP = 0x00;
@@ -2289,7 +2290,7 @@ TEST(ADC_DP_IL_indirect_long) {
 }
 
 TEST(ADC_DP_IL_IY_indirect_long_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0x07;
     machine->processor.Y = 0x05;
@@ -2312,7 +2313,7 @@ TEST(ADC_DP_IL_IY_indirect_long_indexed) {
 }
 
 TEST(ADC_SR_stack_relative) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0x09;
     machine->processor.SP = 0x1F0;
@@ -2329,7 +2330,7 @@ TEST(ADC_SR_stack_relative) {
 }
 
 TEST(ADC_SR_I_IY_sr_indirect_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0x0B;
     machine->processor.Y = 0x03;
@@ -2353,7 +2354,7 @@ TEST(ADC_SR_I_IY_sr_indirect_indexed) {
 // ============================================================================
 
 TEST(SBC_ABL_long_addressing) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0x30;
     set_flag(machine, CARRY);
@@ -2369,7 +2370,7 @@ TEST(SBC_ABL_long_addressing) {
 }
 
 TEST(SBC_ABL_IX_long_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0x50;
     machine->processor.X = 0x10;
@@ -2386,7 +2387,7 @@ TEST(SBC_ABL_IX_long_indexed) {
 }
 
 TEST(SBC_ABS_IX_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x40;
     machine->processor.X = 0x08;
     set_flag(machine, CARRY);
@@ -2401,7 +2402,7 @@ TEST(SBC_ABS_IX_indexed) {
 }
 
 TEST(SBC_ABS_IY_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x35;
     machine->processor.Y = 0x06;
     set_flag(machine, CARRY);
@@ -2416,7 +2417,7 @@ TEST(SBC_ABS_IY_indexed) {
 }
 
 TEST(SBC_DP_I_indirect) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x28;
     machine->processor.DP = 0x00;
     set_flag(machine, CARRY);
@@ -2433,7 +2434,7 @@ TEST(SBC_DP_I_indirect) {
 }
 
 TEST(SBC_DP_I_IX_indexed_indirect) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x33;
     machine->processor.X = 0x04;
     machine->processor.DP = 0x00;
@@ -2451,7 +2452,7 @@ TEST(SBC_DP_I_IX_indexed_indirect) {
 }
 
 TEST(SBC_DP_I_IY_indirect_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x38;
     machine->processor.Y = 0x07;
     machine->processor.DP = 0x00;
@@ -2469,7 +2470,7 @@ TEST(SBC_DP_I_IY_indirect_indexed) {
 }
 
 TEST(SBC_DP_IL_indirect_long) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0x2D;
     machine->processor.DP = 0x00;
@@ -2491,7 +2492,7 @@ TEST(SBC_DP_IL_indirect_long) {
 }
 
 TEST(SBC_DP_IL_IY_indirect_long_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0x2A;
     machine->processor.Y = 0x08;
@@ -2514,7 +2515,7 @@ TEST(SBC_DP_IL_IY_indirect_long_indexed) {
 }
 
 TEST(SBC_SR_stack_relative) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0x32;
     machine->processor.SP = 0x1D0;
@@ -2531,7 +2532,7 @@ TEST(SBC_SR_stack_relative) {
 }
 
 TEST(SBC_SR_I_IY_sr_indirect_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0x35;
     machine->processor.Y = 0x05;
@@ -2555,7 +2556,7 @@ TEST(SBC_SR_I_IY_sr_indirect_indexed) {
 // ============================================================================
 
 TEST(AND_ABL_long_addressing) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0xFF;
     set_flag(machine, M_FLAG);
@@ -2570,7 +2571,7 @@ TEST(AND_ABL_long_addressing) {
 }
 
 TEST(AND_ABL_IX_long_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0xF0;
     machine->processor.X = 0x12;
@@ -2586,7 +2587,7 @@ TEST(AND_ABL_IX_long_indexed) {
 }
 
 TEST(AND_ABS_IX_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0xAA;
     machine->processor.X = 0x0A;
     
@@ -2601,7 +2602,7 @@ TEST(AND_ABS_IX_indexed) {
 }
 
 TEST(AND_ABS_IY_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0xF3;
     machine->processor.Y = 0x0C;
     
@@ -2615,7 +2616,7 @@ TEST(AND_ABS_IY_indexed) {
 }
 
 TEST(AND_DP_I_indirect) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0xCC;
     machine->processor.DP = 0x00;
     
@@ -2631,7 +2632,7 @@ TEST(AND_DP_I_indirect) {
 }
 
 TEST(AND_DP_I_IY_indirect_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x7F;
     machine->processor.Y = 0x09;
     machine->processor.DP = 0x00;
@@ -2648,7 +2649,7 @@ TEST(AND_DP_I_IY_indirect_indexed) {
 }
 
 TEST(AND_DP_IL_indirect_long) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0xFE;
     machine->processor.DP = 0x00;
@@ -2669,7 +2670,7 @@ TEST(AND_DP_IL_indirect_long) {
 }
 
 TEST(AND_DP_IL_IY_indirect_long_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0xFF;
     machine->processor.Y = 0x0B;
@@ -2691,7 +2692,7 @@ TEST(AND_DP_IL_IY_indirect_long_indexed) {
 }
 
 TEST(AND_SR_stack_relative) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0xF1;
     machine->processor.SP = 0x1B0;
@@ -2707,7 +2708,7 @@ TEST(AND_SR_stack_relative) {
 }
 
 TEST(AND_SR_I_IY_sr_indirect_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0xEE;
     machine->processor.Y = 0x0D;
@@ -2730,7 +2731,7 @@ TEST(AND_SR_I_IY_sr_indirect_indexed) {
 // ============================================================================
 
 TEST(ORA_ABL_long_addressing) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0x0F;
     set_flag(machine, M_FLAG);
@@ -2745,7 +2746,7 @@ TEST(ORA_ABL_long_addressing) {
 }
 
 TEST(ORA_ABL_IX_long_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0x11;
     machine->processor.X = 0x14;
@@ -2761,7 +2762,7 @@ TEST(ORA_ABL_IX_long_indexed) {
 }
 
 TEST(ORA_ABS_IX_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x44;
     machine->processor.X = 0x0E;
     
@@ -2775,7 +2776,7 @@ TEST(ORA_ABS_IX_indexed) {
 }
 
 TEST(ORA_ABS_IY_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x10;
     machine->processor.Y = 0x0F;
     
@@ -2789,7 +2790,7 @@ TEST(ORA_ABS_IY_indexed) {
 }
 
 TEST(ORA_DP_I_indirect) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x20;
     machine->processor.DP = 0x00;
     
@@ -2805,7 +2806,7 @@ TEST(ORA_DP_I_indirect) {
 }
 
 TEST(ORA_DP_IL_indirect_long) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0x0A;
     machine->processor.DP = 0x00;
@@ -2826,7 +2827,7 @@ TEST(ORA_DP_IL_indirect_long) {
 }
 
 TEST(ORA_DP_IL_IY_indirect_long_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0x05;
     machine->processor.Y = 0x10;
@@ -2848,7 +2849,7 @@ TEST(ORA_DP_IL_IY_indirect_long_indexed) {
 }
 
 TEST(ORA_SR_stack_relative) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0x12;
     machine->processor.SP = 0x190;
@@ -2864,7 +2865,7 @@ TEST(ORA_SR_stack_relative) {
 }
 
 TEST(ORA_SR_I_IY_sr_indirect_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0x40;
     machine->processor.Y = 0x11;
@@ -2887,7 +2888,7 @@ TEST(ORA_SR_I_IY_sr_indirect_indexed) {
 // ============================================================================
 
 TEST(EOR_ABL_long_addressing) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0xFF;
     set_flag(machine, M_FLAG);
@@ -2902,7 +2903,7 @@ TEST(EOR_ABL_long_addressing) {
 }
 
 TEST(EOR_ABS_IX_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x3C;
     machine->processor.X = 0x12;
     
@@ -2916,7 +2917,7 @@ TEST(EOR_ABS_IX_indexed) {
 }
 
 TEST(EOR_ABS_IY_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x55;
     machine->processor.Y = 0x13;
     
@@ -2930,7 +2931,7 @@ TEST(EOR_ABS_IY_indexed) {
 }
 
 TEST(EOR_AL_IX_long_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0x0F;
     machine->processor.X = 0x15;
@@ -2946,7 +2947,7 @@ TEST(EOR_AL_IX_long_indexed) {
 }
 
 TEST(EOR_DP_I_indirect) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x99;
     machine->processor.DP = 0x00;
     
@@ -2962,7 +2963,7 @@ TEST(EOR_DP_I_indirect) {
 }
 
 TEST(EOR_DP_I_IX_indexed_indirect) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x77;
     machine->processor.X = 0x16;
     machine->processor.DP = 0x00;
@@ -2979,7 +2980,7 @@ TEST(EOR_DP_I_IX_indexed_indirect) {
 }
 
 TEST(EOR_DP_I_IY_indirect_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0xCC;
     machine->processor.Y = 0x17;
     machine->processor.DP = 0x00;
@@ -2996,7 +2997,7 @@ TEST(EOR_DP_I_IY_indirect_indexed) {
 }
 
 TEST(EOR_DP_IL_indirect_long) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0xA5;
     machine->processor.DP = 0x00;
@@ -3017,7 +3018,7 @@ TEST(EOR_DP_IL_indirect_long) {
 }
 
 TEST(EOR_DP_IL_IY_indirect_long_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0xF0;
     machine->processor.Y = 0x18;
@@ -3039,7 +3040,7 @@ TEST(EOR_DP_IL_IY_indirect_long_indexed) {
 }
 
 TEST(EOR_SR_stack_relative) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0x3C;
     machine->processor.SP = 0x170;
@@ -3055,7 +3056,7 @@ TEST(EOR_SR_stack_relative) {
 }
 
 TEST(EOR_SR_I_IY_sr_indirect_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0xAA;
     machine->processor.Y = 0x19;
@@ -3078,7 +3079,7 @@ TEST(EOR_SR_I_IY_sr_indirect_indexed) {
 // ============================================================================
 
 TEST(CMP_ABL_long_addressing) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0x50;
     set_flag(machine, M_FLAG);
@@ -3093,7 +3094,7 @@ TEST(CMP_ABL_long_addressing) {
 }
 
 TEST(CMP_ABL_IX_long_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0x40;
     machine->processor.X = 0x1A;
@@ -3109,7 +3110,7 @@ TEST(CMP_ABL_IX_long_indexed) {
 }
 
 TEST(CMP_ABS_IX_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x60;
     machine->processor.X = 0x1B;
     
@@ -3124,7 +3125,7 @@ TEST(CMP_ABS_IX_indexed) {
 }
 
 TEST(CMP_ABS_IY_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x80;
     machine->processor.Y = 0x1C;
     
@@ -3138,7 +3139,7 @@ TEST(CMP_ABS_IY_indexed) {
 }
 
 TEST(CMP_DP_I_indirect) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x45;
     machine->processor.DP = 0x00;
     
@@ -3154,7 +3155,7 @@ TEST(CMP_DP_I_indirect) {
 }
 
 TEST(CMP_DP_I_IX_indexed_indirect) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x55;
     machine->processor.X = 0x1D;
     machine->processor.DP = 0x00;
@@ -3171,7 +3172,7 @@ TEST(CMP_DP_I_IX_indexed_indirect) {
 }
 
 TEST(CMP_DP_IL_indirect_long) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0x70;
     machine->processor.DP = 0x00;
@@ -3192,7 +3193,7 @@ TEST(CMP_DP_IL_indirect_long) {
 }
 
 TEST(CMP_DP_IL_IY_indirect_long_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0x38;
     machine->processor.Y = 0x1E;
@@ -3214,7 +3215,7 @@ TEST(CMP_DP_IL_IY_indirect_long_indexed) {
 }
 
 TEST(CMP_SR_stack_relative) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0x90;
     machine->processor.SP = 0x150;
@@ -3230,7 +3231,7 @@ TEST(CMP_SR_stack_relative) {
 }
 
 TEST(CMP_SR_I_IY_sr_indirect_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0x25;
     machine->processor.Y = 0x1F;
@@ -3253,7 +3254,7 @@ TEST(CMP_SR_I_IY_sr_indirect_indexed) {
 // ============================================================================
 
 TEST(LDA_IMM_8bit_mode) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     set_flag(machine, M_FLAG);
     
     LDA_IMM(machine, 0x42, 0);
@@ -3263,7 +3264,7 @@ TEST(LDA_IMM_8bit_mode) {
 }
 
 TEST(LDA_SR_stack_relative) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.SP = 0x100;
     set_flag(machine, M_FLAG);
@@ -3278,7 +3279,7 @@ TEST(LDA_SR_stack_relative) {
 }
 
 TEST(LDA_DP_I_direct_page_indirect) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.DP = 0x00;
     set_flag(machine, M_FLAG);
     
@@ -3294,7 +3295,7 @@ TEST(LDA_DP_I_direct_page_indirect) {
 }
 
 TEST(LDA_DP_I_IX_indexed_indirect) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.DP = 0x00;
     machine->processor.X = 0x05;
     set_flag(machine, M_FLAG);
@@ -3311,7 +3312,7 @@ TEST(LDA_DP_I_IX_indexed_indirect) {
 }
 
 TEST(LDA_DP_I_IY_indirect_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.DP = 0x00;
     machine->processor.Y = 0x10;
     set_flag(machine, M_FLAG);
@@ -3328,7 +3329,7 @@ TEST(LDA_DP_I_IY_indirect_indexed) {
 }
 
 TEST(LDA_DP_IL_indirect_long) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.DP = 0x00;
     set_flag(machine, M_FLAG);
@@ -3348,7 +3349,7 @@ TEST(LDA_DP_IL_indirect_long) {
 }
 
 TEST(LDA_DP_IL_IY_indirect_long_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.DP = 0x00;
     machine->processor.Y = 0x20;
@@ -3369,7 +3370,7 @@ TEST(LDA_DP_IL_IY_indirect_long_indexed) {
 }
 
 TEST(LDA_SR_I_IY_sr_indirect_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.SP = 0x150;
     machine->processor.Y = 0x08;
@@ -3387,7 +3388,7 @@ TEST(LDA_SR_I_IY_sr_indirect_indexed) {
 }
 
 TEST(LDX_IMM_immediate) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     clear_flag(machine, X_FLAG);
     
@@ -3398,7 +3399,7 @@ TEST(LDX_IMM_immediate) {
 }
 
 TEST(LDX_DP_IX_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.DP = 0x00;
     machine->processor.X = 0x05;
     set_flag(machine, X_FLAG);
@@ -3413,7 +3414,7 @@ TEST(LDX_DP_IX_indexed) {
 }
 
 TEST(LDX_ABS_IY_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.Y = 0x10;
     set_flag(machine, X_FLAG);
     
@@ -3427,7 +3428,7 @@ TEST(LDX_ABS_IY_indexed) {
 }
 
 TEST(LDY_IMM_immediate) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     clear_flag(machine, X_FLAG);
     
@@ -3438,7 +3439,7 @@ TEST(LDY_IMM_immediate) {
 }
 
 TEST(LDY_DP_IX_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.DP = 0x00;
     machine->processor.X = 0x08;
     set_flag(machine, X_FLAG);
@@ -3453,7 +3454,7 @@ TEST(LDY_DP_IX_indexed) {
 }
 
 TEST(LDY_ABS_IX_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.X = 0x0C;
     set_flag(machine, X_FLAG);
     
@@ -3467,7 +3468,7 @@ TEST(LDY_ABS_IX_indexed) {
 }
 
 TEST(STA_DP_I_indirect) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x42;
     machine->processor.DP = 0x00;
     set_flag(machine, M_FLAG);
@@ -3483,7 +3484,7 @@ TEST(STA_DP_I_indirect) {
 }
 
 TEST(STA_DP_I_IX_indexed_indirect) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x55;
     machine->processor.DP = 0x00;
     machine->processor.X = 0x04;
@@ -3500,7 +3501,7 @@ TEST(STA_DP_I_IX_indexed_indirect) {
 }
 
 TEST(STA_DP_I_IY_indirect_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x66;
     machine->processor.DP = 0x00;
     machine->processor.Y = 0x10;
@@ -3517,7 +3518,7 @@ TEST(STA_DP_I_IY_indirect_indexed) {
 }
 
 TEST(STA_DP_IL_indirect_long) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0x77;
     machine->processor.DP = 0x00;
@@ -3537,7 +3538,7 @@ TEST(STA_DP_IL_indirect_long) {
 }
 
 TEST(STA_DP_IL_IY_indirect_long_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0x88;
     machine->processor.DP = 0x00;
@@ -3558,7 +3559,7 @@ TEST(STA_DP_IL_IY_indirect_long_indexed) {
 }
 
 TEST(STA_SR_stack_relative) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0x99;
     machine->processor.SP = 0x120;
@@ -3573,7 +3574,7 @@ TEST(STA_SR_stack_relative) {
 }
 
 TEST(STA_SR_I_IY_sr_indirect_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0xAA;
     machine->processor.SP = 0x130;
@@ -3591,7 +3592,7 @@ TEST(STA_SR_I_IY_sr_indirect_indexed) {
 }
 
 TEST(STA_ABL_long_absolute) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0xBB;
     set_flag(machine, M_FLAG);
@@ -3605,7 +3606,7 @@ TEST(STA_ABL_long_absolute) {
 }
 
 TEST(STA_ABL_IX_long_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0xCC;
     machine->processor.X = 0x18;
@@ -3620,7 +3621,7 @@ TEST(STA_ABL_IX_long_indexed) {
 }
 
 TEST(STA_ABS_IY_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0xDD;
     machine->processor.Y = 0x20;
     set_flag(machine, M_FLAG);
@@ -3634,7 +3635,7 @@ TEST(STA_ABS_IY_indexed) {
 }
 
 TEST(STX_DP_IY_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.X = 0xEE;
     machine->processor.DP = 0x00;
     machine->processor.Y = 0x0A;
@@ -3649,7 +3650,7 @@ TEST(STX_DP_IY_indexed) {
 }
 
 TEST(STY_DP_IX_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.Y = 0xFF;
     machine->processor.DP = 0x00;
     machine->processor.X = 0x0C;
@@ -3668,7 +3669,7 @@ TEST(STY_DP_IX_indexed) {
 // ============================================================================
 
 TEST(ASL_DP_IX_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.DP = 0x00;
     machine->processor.X = 0x05;
     
@@ -3682,7 +3683,7 @@ TEST(ASL_DP_IX_indexed) {
 }
 
 TEST(ASL_ABS_IX_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.X = 0x10;
     
     uint8_t *bank = get_memory_bank(machine, 0);
@@ -3695,7 +3696,7 @@ TEST(ASL_ABS_IX_indexed) {
 }
 
 TEST(LSR_DP_IX_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.DP = 0x00;
     machine->processor.X = 0x08;
     
@@ -3709,7 +3710,7 @@ TEST(LSR_DP_IX_indexed) {
 }
 
 TEST(LSR_ABS_IX_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.X = 0x20;
     
     uint8_t *bank = get_memory_bank(machine, 0);
@@ -3722,7 +3723,7 @@ TEST(LSR_ABS_IX_indexed) {
 }
 
 TEST(ROL_DP_IX_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.DP = 0x00;
     machine->processor.X = 0x10;
     set_flag(machine, CARRY);
@@ -3737,7 +3738,7 @@ TEST(ROL_DP_IX_indexed) {
 }
 
 TEST(ROL_ABS_IX_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.X = 0x18;
     clear_flag(machine, CARRY);
     
@@ -3752,7 +3753,7 @@ TEST(ROL_ABS_IX_indexed) {
 }
 
 TEST(ROR_DP_IX_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.DP = 0x00;
     machine->processor.X = 0x20;
     set_flag(machine, CARRY);
@@ -3767,7 +3768,7 @@ TEST(ROR_DP_IX_indexed) {
 }
 
 TEST(ROR_ABS_IX_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.X = 0x28;
     clear_flag(machine, CARRY);
     
@@ -3786,7 +3787,7 @@ TEST(ROR_ABS_IX_indexed) {
 // ============================================================================
 
 TEST(INC_DP_IX_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.DP = 0x00;
     machine->processor.X = 0x10;
     set_flag(machine, M_FLAG);
@@ -3801,7 +3802,7 @@ TEST(INC_DP_IX_indexed) {
 }
 
 TEST(INC_ABS_IX_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.X = 0x20;
     set_flag(machine, M_FLAG);
     
@@ -3815,7 +3816,7 @@ TEST(INC_ABS_IX_indexed) {
 }
 
 TEST(DEC_DP_IX_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.DP = 0x00;
     machine->processor.X = 0x18;
     set_flag(machine, M_FLAG);
@@ -3830,7 +3831,7 @@ TEST(DEC_DP_IX_indexed) {
 }
 
 TEST(DEC_ABS_IX_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.X = 0x30;
     set_flag(machine, M_FLAG);
     
@@ -3848,7 +3849,7 @@ TEST(DEC_ABS_IX_indexed) {
 // ============================================================================
 
 TEST(BIT_DP_IX_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0xF0;
     machine->processor.DP = 0x00;
     machine->processor.X = 0x08;
@@ -3866,7 +3867,7 @@ TEST(BIT_DP_IX_indexed) {
 }
 
 TEST(BIT_ABS_IX_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x0F;
     machine->processor.X = 0x10;
     set_flag(machine, M_FLAG);
@@ -3885,7 +3886,7 @@ TEST(BIT_ABS_IX_indexed) {
 // ============================================================================
 
 TEST(CPX_IMM_immediate) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.X = 0x50;
     set_flag(machine, X_FLAG);
     
@@ -3896,7 +3897,7 @@ TEST(CPX_IMM_immediate) {
 }
 
 TEST(CPY_IMM_immediate) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.Y = 0x20;
     set_flag(machine, X_FLAG);
     
@@ -3911,7 +3912,7 @@ TEST(CPY_IMM_immediate) {
 // ============================================================================
 
 TEST(MVN_block_move_negative) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.full = 0x0002;  // Move 3 bytes
     machine->processor.X = 0x1000;       // Source
@@ -3934,7 +3935,7 @@ TEST(MVN_block_move_negative) {
 }
 
 TEST(MVP_block_move_positive) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.full = 0x0002;  // Move 3 bytes
     machine->processor.X = 0x1002;       // Source (end)
@@ -3961,7 +3962,7 @@ TEST(MVP_block_move_positive) {
 // ============================================================================
 
 TEST(ADC_IMM_immediate) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x10;
     set_flag(machine, M_FLAG);
     clear_flag(machine, CARRY);
@@ -3973,7 +3974,7 @@ TEST(ADC_IMM_immediate) {
 }
 
 TEST(SBC_IMM_immediate) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x50;
     set_flag(machine, M_FLAG);
     set_flag(machine, CARRY);
@@ -3985,7 +3986,7 @@ TEST(SBC_IMM_immediate) {
 }
 
 TEST(AND_IMM_immediate) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0xFF;
     set_flag(machine, M_FLAG);
     
@@ -3996,7 +3997,7 @@ TEST(AND_IMM_immediate) {
 }
 
 TEST(ORA_IMM_immediate) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0xF0;
     set_flag(machine, M_FLAG);
     
@@ -4007,7 +4008,7 @@ TEST(ORA_IMM_immediate) {
 }
 
 TEST(EOR_IMM_immediate) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0xFF;
     set_flag(machine, M_FLAG);
     
@@ -4018,7 +4019,7 @@ TEST(EOR_IMM_immediate) {
 }
 
 TEST(CMP_IMM_immediate) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x50;
     set_flag(machine, M_FLAG);
     
@@ -4033,7 +4034,7 @@ TEST(CMP_IMM_immediate) {
 // ============================================================================
 
 TEST(STZ_DP_IX_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.DP = 0x00;
     machine->processor.X = 0x10;
     set_flag(machine, M_FLAG);
@@ -4052,7 +4053,7 @@ TEST(STZ_DP_IX_indexed) {
 // ============================================================================
 
 TEST(LDA_ABS_IY_absolute_indexed_y) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.Y = 0x10;
     set_flag(machine, M_FLAG);
     uint8_t *bank = get_memory_bank(machine, 0);
@@ -4063,7 +4064,7 @@ TEST(LDA_ABS_IY_absolute_indexed_y) {
 }
 
 TEST(LDA_AL_IX_absolute_long_indexed) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.X = 0x08;
     set_flag(machine, M_FLAG);
     uint8_t *bank = get_memory_bank(machine, 0);
@@ -4074,7 +4075,7 @@ TEST(LDA_AL_IX_absolute_long_indexed) {
 }
 
 TEST(ORA_DP_I_IX_dp_indexed_indirect) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.DP = 0x00;
     machine->processor.X = 0x04;
     machine->processor.A.low = 0x0F;
@@ -4089,7 +4090,7 @@ TEST(ORA_DP_I_IX_dp_indexed_indirect) {
 }
 
 TEST(JMP_ABS_IL_absolute_indirect_long) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     uint8_t *bank = get_memory_bank(machine, 0);
     bank[0x2000] = 0x00;
     bank[0x2001] = 0x80;
@@ -4101,7 +4102,7 @@ TEST(JMP_ABS_IL_absolute_indirect_long) {
 }
 
 TEST(JSR_ABS_I_IX_jsr_indexed_indirect) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.X = 0x02;
     machine->processor.SP = 0x01FF;
     machine->processor.emulation_mode = false;
@@ -4114,7 +4115,7 @@ TEST(JSR_ABS_I_IX_jsr_indexed_indirect) {
 }
 
 TEST(PEI_DP_I_push_effective_indirect) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.DP = 0x00;
     machine->processor.SP = 0x01FF;
     machine->processor.emulation_mode = false;
@@ -4127,7 +4128,7 @@ TEST(PEI_DP_I_push_effective_indirect) {
 }
 
 TEST(COP_coprocessor) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     machine->processor.SP = 0x01FF;
     machine->processor.emulation_mode = true;
     COP(machine, 0x42, 0);
@@ -4136,7 +4137,7 @@ TEST(COP_coprocessor) {
 }
 
 TEST(WDM_reserved_for_future) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     uint16_t pc_before = machine->processor.PC;
     WDM(machine, 0, 0);
     ASSERT_EQ(machine->processor.PC, pc_before, "WDM is reserved/no-op");
@@ -4144,7 +4145,7 @@ TEST(WDM_reserved_for_future) {
 }
 
 TEST(STP_stop_processor) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     STP(machine, 0, 0);
     // STP stops the processor - just verify it doesn't crash
     ASSERT_EQ(1, 1, "STP should stop processor");
@@ -4152,7 +4153,7 @@ TEST(STP_stop_processor) {
 }
 
 TEST(WAI_wait_for_interrupt) {
-    state_t *machine = setup_machine();
+    machine_state_t *machine = setup_machine();
     WAI(machine, 0, 0);
     // WAI waits for interrupt - just verify it doesn't crash
     ASSERT_EQ(1, 1, "WAI should wait for interrupt");
