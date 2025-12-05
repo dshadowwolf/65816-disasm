@@ -155,7 +155,7 @@ state_t* COP           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     push_byte(machine, state->P); // Push status register
     // Set Interrupt Disable flag
     set_flag(machine, INTERRUPT_DISABLE);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0);
     if (state->emulation_mode) {
         // In emulation mode, the vector is at $FFF4/$FFF5
         state->PC = read_word(memory_bank, 0xFFF4);
