@@ -99,27 +99,27 @@ void push_byte(state_t *machine, uint8_t value) {
     
     if (state->emulation_mode) {
         // Emulation mode: stack is in page 1 (0x0100-0x01FF)
-        memory_bank[0x0100 | (state->SP & 0xFF)] = value;
+        write_byte(memory_bank, 0x0100 | (state->SP & 0xFF), value);
         state->SP = (state->SP - 1) & 0x1FF;
     } else {
         // Native mode: stack can be anywhere in bank 0
-        memory_bank[state->SP & 0xFFFF] = value;
+        write_byte(memory_bank, state->SP & 0xFFFF, value);
         state->SP = (state->SP - 1) & 0xFFFF;
     }
 }
 
 uint8_t pop_byte(state_t *machine) {
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, 0);
+    uint8_t *memory_bank = get_memory_bank(machine, machine->processor.DBR);
     
     if (state->emulation_mode) {
         // Emulation mode: stack is in page 1 (0x0100-0x01FF)
         state->SP = (state->SP + 1) & 0x1FF;
-        return memory_bank[0x0100 | (state->SP & 0xFF)];
+        return read_byte(memory_bank, 0x0100 | (state->SP & 0xFF));
     } else {
         // Native mode: stack can be anywhere in bank 0
         state->SP = (state->SP + 1) & 0xFFFF;
-        return memory_bank[state->SP & 0xFFFF];
+        return read_byte(memory_bank, state->SP & 0xFFFF);
     }
 }
 
