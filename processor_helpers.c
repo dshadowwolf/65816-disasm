@@ -195,6 +195,46 @@ long_address_t get_dp_address_indirect_long(state_t *machine, uint16_t dp_offset
 uint16_t get_absolute_address(state_t *machine, uint16_t address) {
     return address & 0xFFFF;
 }
+uint16_t get_absolute_address_indexed_x(state_t *machine, uint16_t address) {
+    return (address + machine->processor.X) & 0xFFFF;
+
+}
+uint16_t get_absolute_address_indexed_y(state_t *machine, uint16_t address) {
+    return (address + machine->processor.Y) & 0xFFFF;
+}
+
+long_address_t get_absolute_address_long(state_t *machine, uint16_t address, uint8_t bank) {
+    return get_long_address(machine, address, bank);
+}
+
+long_address_t get_absolute_address_long_indexed_x(state_t *machine, uint16_t address, uint8_t bank) {
+    long_address_t long_addr = get_absolute_address_long(machine, address, bank);
+    long_addr.address = (long_addr.address + machine->processor.X) & 0xFFFF;
+    return long_addr;
+}
+
+long_address_t get_absolute_address_long_indexed_y(state_t *machine, uint16_t address, uint8_t bank) {
+    long_address_t long_addr = get_absolute_address_long(machine, address, bank);
+    long_addr.address = (long_addr.address + machine->processor.Y) & 0xFFFF;
+    return long_addr;
+}
+
+uint16_t get_absolute_address_indirect(state_t *machine, uint16_t address) {
+    uint8_t *memory_bank = get_memory_bank(machine, machine->processor.DBR);
+    return read_word(memory_bank, address);
+
+}
+
+uint16_t get_absolute_address_indirect_indexed_y(state_t *machine, uint16_t address) {
+    uint16_t effective_address = get_absolute_address_indirect(machine, address);
+    return (effective_address + machine->processor.Y) & 0xFFFF;
+
+}
+
+uint16_t get_absolute_address_indirect_indexed_x(state_t *machine, uint16_t address) {
+    uint16_t effective_address = get_absolute_address_indirect(machine, address);
+    return (effective_address + machine->processor.X) & 0xFFFF;
+}
 
 uint16_t get_dp_address_indexed_x(state_t *machine, uint16_t dp_offset) {
     uint16_t dp_address = get_dp_address(machine, dp_offset);

@@ -311,7 +311,7 @@ state_t* PHD           (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 state_t* TSB_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Test and Set Bits - Absolute
     processor_state_t *state = &machine->processor;
-    uint16_t address = arg_one;
+    uint16_t address = get_absolute_address(machine, arg_one);
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     if (is_flag_set(machine, M_FLAG)) {
         uint8_t value = memory_bank[address];
@@ -332,7 +332,7 @@ state_t* TSB_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 
 state_t* ORA_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
-    uint16_t address = arg_one;
+    uint16_t address = get_absolute_address(machine, arg_one);
     uint8_t value = read_byte(get_memory_bank(machine, state->DBR), address);
     if (is_flag_set(machine, M_FLAG)) {
         uint8_t result = state->A.low | value;
@@ -348,7 +348,7 @@ state_t* ORA_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 
 state_t* ASL_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
-    uint16_t address = arg_one;
+    uint16_t address = get_absolute_address(machine, arg_one);
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     if (is_flag_set(machine, M_FLAG)) {
         // 8-bit mode
@@ -371,10 +371,9 @@ state_t* ASL_ABS       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
 // arg_one is the low 16 bits of the address
 state_t* ORA_ABL       (state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
-    uint16_t address = arg_one;
-    uint8_t bank = (uint8_t)(arg_two & 0xFF);
-    uint8_t *memory_bank = get_memory_bank(machine, bank);
-    uint8_t value = read_byte(memory_bank, address);
+    long_address_t address = get_absolute_address_long(machine, arg_one, (uint8_t)(arg_two & 0xFF));
+    uint8_t *memory_bank = get_memory_bank(machine, address.bank);
+    uint8_t value = read_byte(memory_bank, address.address);
     if (is_flag_set(machine, M_FLAG)) {
         uint8_t result = state->A.low | value;
         state->A.low = result;
