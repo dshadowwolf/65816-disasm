@@ -3836,11 +3836,10 @@ TEST(ROR_ABS_IX_indexed) {
     machine->processor.X = 0x28;
     clear_flag(machine, CARRY);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x5028] = 0x01;
+    write_byte_new(machine, 0x5028, 0x01);
     
     ROR_ABS_IX(machine, 0x5000, 0);
-    ASSERT_EQ(bank[0x5028], 0x00, "ROR ABS,X should rotate right indexed");
+    ASSERT_EQ(read_byte_new(machine, 0x5028), 0x00, "ROR ABS,X should rotate right indexed");
     ASSERT_EQ(check_flag(machine, CARRY), true, "ROR should set carry from bit 0");
     
     destroy_machine(machine);
