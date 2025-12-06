@@ -154,13 +154,15 @@ machine_state_t* TSB_DP        (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* ORA_DP        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t dp_address = get_dp_address(machine, arg_one);
-    uint8_t value = read_byte(get_memory_bank(machine, state->DBR), dp_address);
+    uint8_t value = read_byte_dp_sr(machine, dp_address);
 
     if (is_flag_set(machine, M_FLAG)) {
+        uint8_t value = read_byte_dp_sr(machine, dp_address);
         uint8_t result = state->A.low | value;
         state->A.low = result;
         set_flags_nz_8(machine, result);
     } else {
+        uint16_t value = read_word_dp_sr(machine, dp_address);
         uint16_t result = state->A.full | value;
         state->A.full = result;
         set_flags_nz_16(machine, result);

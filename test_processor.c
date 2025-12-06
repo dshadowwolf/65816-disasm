@@ -1549,8 +1549,8 @@ TEST(ORA_DP_direct_page) {
     machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x0F;
     machine->processor.DP = 0x00;
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x10] = 0xF0;
+    long_address_t addr = { .bank = 0, .address = 0x10 };
+    write_byte_long(machine, addr, 0xF0);
     
     ORA_DP(machine, 0x10, 0);
     ASSERT_EQ(machine->processor.A.low, 0xFF, "ORA DP should OR with memory");
@@ -2135,11 +2135,8 @@ TEST(BRK_software_interrupt) {
     machine->processor.PC = 0x8000;
     machine->processor.PBR = 0x01;
     machine->processor.SP = 0x1FF;
-    uint8_t *bank0 = get_memory_bank(machine, 0);
-    
-    // Set up interrupt vector
-    bank0[0xFFE6] = 0x00;  // BRK vector low
-    bank0[0xFFE7] = 0x90;  // BRK vector high
+    long_address_t addr = { .bank = 0, .address = 0xFFE6 };
+    write_word_long(machine, addr, 0x9000);  // Set BRK vector to 0x9000
     
     BRK(machine, 0, 0);
     
