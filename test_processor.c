@@ -3720,11 +3720,10 @@ TEST(ASL_ABS_IX_indexed) {
     machine_state_t *machine = setup_machine();
     machine->processor.X = 0x10;
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x2010] = 0x20;
+    write_byte_new(machine, 0x2010, 0x20);
     
     ASL_ABS_IX(machine, 0x2000, 0);
-    ASSERT_EQ(bank[0x2010], 0x40, "ASL ABS,X should shift left indexed");
+    ASSERT_EQ(read_byte_new(machine, 0x2010), 0x40, "ASL ABS,X should shift left indexed");
     
     destroy_machine(machine);
 }

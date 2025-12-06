@@ -536,17 +536,16 @@ machine_state_t* ASL_ABS_IX    (machine_state_t* machine, uint16_t arg_one, uint
     // ASL Absolute Indexed with X
     processor_state_t *state = &machine->processor;
     uint16_t address = get_absolute_address_indexed_x(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
-    uint8_t value = read_byte(memory_bank, address);
+    uint8_t value = read_byte_new(machine, address);
     if (is_flag_set(machine, M_FLAG)) {
         uint16_t result = (uint16_t)(value << 1);
-        write_byte(memory_bank, address, (uint8_t)(result & 0xFF));
+        write_byte_new(machine, address, (uint8_t)(result & 0xFF));
         check_and_set_carry_8(machine, result);
     } else {
         // Handle 16-bit mode
-        uint16_t value16 = read_word(memory_bank, address);
+        uint16_t value16 = read_word_new(machine, address);
         uint32_t result = (uint32_t)(value16 << 1);
-        write_word(memory_bank, address, (uint16_t)(result & 0xFFFF));
+        write_word_new(machine, address, (uint16_t)(result & 0xFFFF));
         check_and_set_carry_16(machine, result);
     }
     return machine;
