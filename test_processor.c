@@ -1565,10 +1565,9 @@ TEST(ORA_DP_direct_page) {
 TEST(ORA_ABS_absolute) {
     machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x0F;
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x8000] = 0xF0;
+    write_byte_new(machine, 0x4000, 0xF0);
     
-    ORA_ABS(machine, 0x8000, 0);
+    ORA_ABS(machine, 0x4000, 0);
     ASSERT_EQ(machine->processor.A.low, 0xFF, "ORA ABS should OR with memory");
     
     destroy_machine(machine);
@@ -1598,7 +1597,7 @@ TEST(ORA_DP_I_IY_dp_indirect_indexed) {
     bank[0x21] = 0x80;
     bank[0x8010] = 0xF0;
     
-    ORA_I_IY(machine, 0x20, 0);
+    ORA_DP_I_IY(machine, 0x20, 0);
     ASSERT_EQ(machine->processor.A.low, 0xFF, "ORA (DP),Y should work correctly");
     
     destroy_machine(machine);
@@ -1900,10 +1899,10 @@ TEST(ASL_DP_direct_page) {
 TEST(ASL_ABS_absolute) {
     machine_state_t *machine = setup_machine();
     uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x8000] = 0x40;
+    write_byte_new(machine, 0x5000, 0x40);
     
-    ASL_ABS(machine, 0x8000, 0);
-    ASSERT_EQ(bank[0x8000], 0x80, "ASL ABS should shift memory left");
+    ASL_ABS(machine, 0x5000, 0);
+    ASSERT_EQ(read_byte_new(machine, 0x5000), 0x80, "ASL ABS should shift memory left");
     
     destroy_machine(machine);
 }
@@ -2736,11 +2735,27 @@ TEST(ORA_ABL_long_addressing) {
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0x0F;
     set_flag(machine, M_FLAG);
+
     
-    uint8_t *bank = get_memory_bank(machine, 0x02);
-    bank[0x8000] = 0xF0;
+    // a second bank is being allocated for testing purposes
+    machine->memory_banks[1] = (memory_bank_t*)malloc(sizeof(memory_bank_t));
+    memory_region_t *region0 = (memory_region_t*)malloc(sizeof(memory_region_t));
+    memory_bank_t *bank1 = machine->memory_banks[1];
+
+    region0->start_offset = 0x0000;
+    region0->end_offset = 0xFFFF;
+    region0->data = (uint8_t *)malloc(65536 * sizeof(uint8_t));
+    region0->read_byte = read_byte_from_region_nodev;  // Default read/write functions can be set later
+    region0->write_byte = write_byte_to_region_nodev;
+    region0->read_word = read_word_from_region_nodev;
+    region0->write_word = write_word_to_region_nodev;
+    region0->flags = MEM_READWRITE;
+    region0->next = NULL;
+    bank1->regions = region0;
+
+    write_byte_long(machine, (long_address_t){ .bank = 0x01, .address = 0x8000 }, 0xF0);
     
-    ORA_ABL(machine, 0x8000, 0x02);
+    ORA_ABL(machine, 0x8000, 0x01);
     ASSERT_EQ(machine->processor.A.low, 0xFF, "ORA ABL should OR memory with A");
     
     destroy_machine(machine);

@@ -275,7 +275,8 @@ machine_state_t* TSB_ABS       (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* ORA_ABS       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t address = get_absolute_address(machine, arg_one);
-    uint8_t value = read_byte(get_memory_bank(machine, state->DBR), address);
+    uint8_t value = read_byte_new(machine, address);
+    printf("ORA_ABS: address = %04X (%04X), value = %02X\n", address, arg_one, value);
     if (is_flag_set(machine, M_FLAG)) {
         uint8_t result = state->A.low | value;
         state->A.low = result;
@@ -291,18 +292,18 @@ machine_state_t* ORA_ABS       (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* ASL_ABS       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t address = get_absolute_address(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+
     if (is_flag_set(machine, M_FLAG)) {
         // 8-bit mode
-        uint8_t value = read_byte(memory_bank, address);
+        uint8_t value = read_byte_new(machine, address);
         uint16_t result = (uint16_t)(value << 1);
-        write_byte(memory_bank, address, (uint8_t)(result & 0xFF));
+        write_byte_new(machine, address, (uint8_t)(result & 0xFF));
         set_flags_nzc_8(machine, result);
     } else {
         // 16-bit mode - read and write 16 bits
-        uint16_t value = read_word(memory_bank, address);
+        uint16_t value = read_word_new(machine, address);
         uint32_t result = (uint32_t)(value << 1);
-        write_word(memory_bank, address, (uint16_t)(result & 0xFFFF));
+        write_word_new(machine, address, (uint16_t)(result & 0xFFFF));
         set_flags_nzc_16(machine, result);
     }
     return machine;
@@ -315,7 +316,7 @@ machine_state_t* ORA_ABL       (machine_state_t* machine, uint16_t arg_one, uint
     processor_state_t *state = &machine->processor;
     long_address_t address = get_absolute_address_long(machine, arg_one, (uint8_t)(arg_two & 0xFF));
     uint8_t *memory_bank = get_memory_bank(machine, address.bank);
-    uint8_t value = read_byte(memory_bank, address.address);
+    uint8_t value = read_byte_long(machine, address);
     if (is_flag_set(machine, M_FLAG)) {
         uint8_t result = state->A.low | value;
         state->A.low = result;
@@ -336,19 +337,20 @@ machine_state_t* BPL_CB        (machine_state_t* machine, uint16_t arg_one, uint
     return machine;
 }
 
-machine_state_t* ORA_I_IY      (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+machine_state_t* ORA_DP_I_IY      (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
-    uint8_t *memory = get_memory_bank(machine,state->DP);
-    uint16_t effective_address = read_word(memory, arg_one);
-    uint8_t value = read_byte(memory, effective_address & 0xFFFF);
+    uint16_t effective_address = get_dp_address_indirect_indexed_y(machine, arg_one);
+    uint8_t *memory = get_memory_bank(machine, state->DBR);
     if (is_flag_set(machine, M_FLAG)) {
+        uint8_t value = read_byte(memory, effective_address);
         uint8_t result = state->A.low | value;
         state->A.low = result;
         set_flags_nz_8(machine, result);
     } else {
+        uint16_t value = read_word(memory, effective_address);
         uint16_t result = state->A.full | value;
-        set_flags_nz_16(machine, result);
         state->A.full = result;
+        set_flags_nz_16(machine, result);
     }
 
     return machine;

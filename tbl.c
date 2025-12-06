@@ -85,7 +85,7 @@ const opcode_t opcodes[256] = {
     { "ASL",   2,  base, NULL, NULL, READ_16  , Absolute                             , ASL_ABS       /* ASL  a         */ }, //   0XE
     { "ORA",   3,  base, NULL, NULL, READ_24  , AbsoluteLong                         , ORA_ABL       /* ORA  al        */ }, //   0XF
     { "BPL",   1,  base, NULL,  BRA, READ_8   , PCRelative                           , BPL_CB        /* BPL  r         */ }, //  0X10
-    { "ORA",   1,  base, NULL, NULL, READ_8   , DirectPage | Indirect | IndexedY     , ORA_I_IY      /* ORA  (d),y     */ }, //  0X11
+    { "ORA",   1,  base, NULL, NULL, READ_8   , DirectPage | Indirect | IndexedY     , ORA_DP_I_IY   /* ORA  (d),y     */ }, //  0X11
     { "ORA",   1,  base, NULL, NULL, READ_8   , DirectPage | Indirect                , ORA_DP_I      /* ORA  (d)       */ }, //  0X12
     { "ORA",   1,  base, NULL, NULL, READ_8   , StackRelative | Indirect | IndexedY  , ORA_SR_I_IY   /* ORA  (d,s),y   */ }, //  0X13
     { "TRB",   1,  base, NULL, NULL, READ_8   , DirectPage                           , TRB_DP        /* TRB  d         */ }, //  0X14

@@ -30,7 +30,7 @@ machine_state_t* ORA_ABS       (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* ASL_ABS       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two);
 machine_state_t* ORA_ABL       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two);
 machine_state_t* BPL_CB        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two);
-machine_state_t* ORA_I_IY      (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two);
+machine_state_t* ORA_DP_I_IY   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two);
 machine_state_t* ORA_DP_I      (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two);
 machine_state_t* ORA_SR_I_IY   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two);
 machine_state_t* TRB_DP        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two);
