@@ -598,8 +598,8 @@ machine_state_t* JSL_CB        (machine_state_t* machine, uint16_t arg_one, uint
     processor_state_t *state = &machine->processor;
     uint16_t return_address = (state->PC - 1) & 0xFFFF;
     // Push 24-bit return address: bank byte first, then 16-bit address
-    push_byte(machine, state->PBR);
-    push_word(machine, return_address);
+    push_byte_new(machine, state->PBR);
+    push_word_new(machine, return_address);
     state->PC = arg_one & 0xFFFF; // Set PC to target address (ignoring bank for now)
     return machine;
 }
@@ -1807,8 +1807,8 @@ machine_state_t* RTL           (machine_state_t* machine, uint16_t arg_one, uint
     // Return from Subroutine Long
     processor_state_t *state = &machine->processor;
     // Pop 24-bit return address: 16-bit address first, then bank byte
-    uint16_t return_address = pop_word(machine);
-    uint8_t bank_byte = pop_byte(machine);
+    uint16_t return_address = pop_word_new(machine);
+    uint8_t bank_byte = pop_byte_new(machine);
     state->PC = return_address;
     state->PBR = bank_byte;
     return machine;

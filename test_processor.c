@@ -343,7 +343,7 @@ TEST(JSL_and_RTL) {
     
     ASSERT_EQ(machine->processor.PC, 0x2000, "PC should be set to target");
     ASSERT_EQ(machine->processor.SP, 0x1FC, "SP should decrement by 3");
-    ASSERT_EQ(machine->memory[0][0x01FF], 0x01, "PBR should be pushed");
+    ASSERT_EQ(read_byte_new(machine, 0x01FF), 0x01, "PBR should be pushed");
     
     // RTL should restore PBR and PC
     RTL(machine, 0, 0);
