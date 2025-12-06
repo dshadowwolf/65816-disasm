@@ -2270,10 +2270,8 @@ TEST(ADC_DP_I_IY_indirect_indexed) {
     machine->processor.DP = 0x00;
     clear_flag(machine, CARRY);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x10] = 0x00;
-    bank[0x11] = 0x60;
-    bank[0x6004] = 0x14;
+    write_word_new(machine, 0x0010, 0x6000);
+    write_byte_new(machine, 0x6004, 0x14);
     
     ADC_DP_I_IY(machine, 0x10, 0);
     ASSERT_EQ(machine->processor.A.low, 0x20, "ADC (DP),Y should add indirect indexed memory to A");

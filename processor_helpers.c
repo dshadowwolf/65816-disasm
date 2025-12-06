@@ -284,6 +284,11 @@ long_address_t get_dp_address_indirect_long_indexed_y_new(machine_state_t *machi
     return long_addr;
 }
 
+uint16_t get_dp_address_indirect_indexed_y_new(machine_state_t *machine, uint16_t dp_offset) {
+    uint16_t effective_address = get_dp_address_indirect_new(machine, dp_offset);
+    return (effective_address + machine->processor.Y) & 0xFFFF;
+}
+
 uint16_t get_stack_relative_address_indirect_indexed_y_new(machine_state_t *machine, uint8_t offset) {
     uint16_t pointer_address = get_stack_relative_address(machine, offset);
     uint16_t effective_address = read_word_dp_sr(machine, pointer_address);

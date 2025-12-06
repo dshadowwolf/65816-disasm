@@ -1906,8 +1906,8 @@ machine_state_t* ADC_DP_I_IY   (machine_state_t* machine, uint16_t arg_one, uint
     // Add with Carry (Direct Page Indirect Indexed with Y)
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
-    uint16_t effective_address = get_dp_address_indirect_indexed_y(machine, arg_one);
-    uint8_t value = read_byte(memory_bank, effective_address);
+    uint16_t effective_address = get_dp_address_indirect_indexed_y_new(machine, arg_one);
+    uint8_t value = read_byte_new(machine, effective_address);
     uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
     if (is_flag_set(machine, M_FLAG)) {
         // 8-bit mode
