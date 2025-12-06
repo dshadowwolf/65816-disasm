@@ -1233,10 +1233,11 @@ TEST(TSB_DP_test_and_set_bits) {
     machine_state_t *machine = setup_machine();
     uint8_t *bank = get_memory_bank(machine, 0);
     machine->processor.A.low = 0x0F;
-    bank[0x20] = 0xF0;
+    long_address_t addr = { .bank = 0, .address = 0x20 };
+    write_byte_long(machine, addr, 0xF0);
     
     TSB_DP(machine, 0x20, 0);
-    ASSERT_EQ(bank[0x20], 0xFF, "TSB should OR accumulator with memory");
+    ASSERT_EQ(read_byte_long(machine, addr), 0xFF, "TSB should OR accumulator with memory");
     ASSERT_EQ(check_flag(machine, ZERO), true, "TSB should set Z when A & M = 0");
     
     destroy_machine(machine);
@@ -2854,9 +2855,8 @@ TEST(ORA_SR_stack_relative) {
     machine->processor.A.low = 0x12;
     machine->processor.SP = 0x190;
     set_flag(machine, M_FLAG);
-    
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x198] = 0x21;
+    long_address_t addr = { .bank = 0, .address = 0x198 };
+    write_byte_long(machine, addr, 0x21);
     
     ORA_SR(machine, 0x08, 0);
     ASSERT_EQ(machine->processor.A.low, 0x33, "ORA SR,S should OR stack relative memory with A");
@@ -4080,10 +4080,12 @@ TEST(ORA_DP_I_IX_dp_indexed_indirect) {
     machine->processor.X = 0x04;
     machine->processor.A.low = 0x0F;
     set_flag(machine, M_FLAG);
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x14] = 0x00;
-    bank[0x15] = 0x30;
-    bank[0x3000] = 0xF0;
+    long_address_t addr = (long_address_t){ .bank = 0, .address = 0x14 };
+    write_byte_long(machine, addr, 0x00);
+    addr.address++;
+    write_byte_long(machine, addr, 0x30);
+    addr.address = 0x3000;
+    write_byte_long(machine, addr, 0xF0);
     ORA_DP_I_IX(machine, 0x10, 0);
     ASSERT_EQ(machine->processor.A.low, 0xFF, "ORA (DP,X) should OR indexed indirect");
     destroy_machine(machine);

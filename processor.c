@@ -58,24 +58,24 @@ machine_state_t* BRK           (machine_state_t* machine, uint16_t arg_one, uint
     // In native mode push the PBR onto the stack,
     // followed by the PC then the P register
     uint16_t pc = state->PC + 2; // BRK is a 2-byte instruction
-    uint8_t *memory_bank = get_memory_bank(machine, 0); // always bank 0 for BRK vectors
     if (!state->emulation_mode) {
-        push_byte(machine, state->DBR); // Push PBR
+        push_byte_new(machine, state->PBR); // Push PBR
     }
-    push_word(machine, pc); // Push PC
-    push_byte(machine, state->P); // Push status register
+    push_word_new(machine, pc); // Push PC
+    push_byte_new(machine, state->P); // Push status register
+    state->PBR = 0; // BRK forces PBR to 0
+    clear_flag(machine, DECIMAL_MODE); // Clear Break flag
     // Set Interrupt Disable flag
     set_flag(machine, INTERRUPT_DISABLE);
     uint16_t vector_address = state->emulation_mode ? 0xFFFE : 0xFFE6;
-    state->PC = read_word(memory_bank, vector_address);
+    state->PC = read_word_new(machine, vector_address);
     return machine;
 }
 
 machine_state_t* ORA_DP_I_IX   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
-    uint16_t effective_address = get_dp_address_indirect_indexed_x(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
-    uint8_t value = memory_bank[effective_address];
+    uint16_t effective_address = get_dp_address_indirect_indexed_x_new(machine, arg_one);
+    uint8_t value = read_byte_new(machine, effective_address);
     
     if (is_flag_set(machine, M_FLAG)) {
         uint8_t result = state->A.low | value;
@@ -96,19 +96,20 @@ machine_state_t* COP           (machine_state_t* machine, uint16_t arg_one, uint
     // followed by the PC then the P register
     uint16_t pc = state->PC + 2; // COP is a 2-byte instruction
     if (!state->emulation_mode) {
-        push_byte(machine, state->PBR); // Push PBR
+        push_byte_new(machine, state->PBR); // Push PBR
     }
-    push_word(machine, pc); // Push PC
-    push_byte(machine, state->P); // Push status register
+    push_word_new(machine, pc); // Push PC
+    push_byte_new(machine, state->P); // Push status register
     // Set Interrupt Disable flag
     set_flag(machine, INTERRUPT_DISABLE);
-    uint8_t *memory_bank = get_memory_bank(machine, 0);
+    state->PBR = 0; // BRK forces PBR to 0
+    clear_flag(machine, DECIMAL_MODE); // Clear Break flag
     if (state->emulation_mode) {
         // In emulation mode, the vector is at $FFF4/$FFF5
-        state->PC = read_word(memory_bank, 0xFFF4);
+        state->PC = read_word_new(machine, 0xFFF4);
     } else {
         // In native mode the vector is at $FFE4/$FFE5
-        state->PC = read_word(memory_bank, 0xFFE4);
+        state->PC = read_word_new(machine, 0xFFE4);
     }
     return machine;
 }
@@ -116,8 +117,7 @@ machine_state_t* COP           (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* ORA_SR        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t address = get_stack_relative_address(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
-    uint8_t value = read_byte(memory_bank, address);
+    uint8_t value = read_byte_dp_sr(machine, address);
 
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low |= value;
@@ -133,20 +133,20 @@ machine_state_t* TSB_DP        (machine_state_t* machine, uint16_t arg_one, uint
     // Test and Set Bits - Direct Page
     processor_state_t *state = &machine->processor;
     uint16_t dp_address = get_dp_address(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+
     if (is_flag_set(machine, M_FLAG)) {
-        uint8_t value = read_byte(memory_bank, dp_address);
+        uint8_t value = read_byte_dp_sr(machine, dp_address);
         uint8_t test_result = state->A.low & value;
         if (test_result == 0) set_flag(machine, ZERO);
         else clear_flag(machine, ZERO);
-        write_byte(memory_bank, dp_address, value | state->A.low);
+        write_byte_dp_sr(machine, dp_address, value | state->A.low);
     } else {
-        uint16_t value = read_word(memory_bank, dp_address);
+        uint16_t value = read_word_dp_sr(machine, dp_address);
         uint16_t test_result = state->A.full & value;
         if (test_result == 0) set_flag(machine, ZERO);
         else clear_flag(machine, ZERO);
         uint16_t new_value = value | state->A.full;
-        write_word(memory_bank, dp_address, new_value);
+        write_word_dp_sr(machine, dp_address, new_value);
     }
     return machine;
 }
