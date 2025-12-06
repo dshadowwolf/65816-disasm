@@ -113,9 +113,8 @@ memory_region_t *find_memory_region(machine_state_t *machine, uint8_t bank, uint
 
 memory_region_t *find_stack_memory_region(machine_state_t *machine) {
     processor_state_t *state = &machine->processor;
-    uint8_t bank = state->emulation_mode ? 0 : state->DBR;
     uint16_t sp_address = state->emulation_mode ? (0x0100 | (state->SP & 0xFF)) : (state->SP & 0xFFFF);
-    return find_memory_region(machine, bank, sp_address);
+    return find_memory_region(machine, 0, sp_address); // bank 0 for stack
 }
 
 memory_region_t *find_current_memory_region(machine_state_t *machine, uint16_t address) {
@@ -200,6 +199,22 @@ uint16_t read_word_new(machine_state_t *machine, uint16_t address) {
     return 0; // Default return if region not found
 }
 
+uint8_t read_byte_dp_sr(machine_state_t *machine, uint16_t address) {
+    memory_region_t *region = find_stack_memory_region(machine);
+    if (region != NULL) {
+        return READ_BYTE(region, address);
+    }
+    return 0; // Default return if region not found
+}
+
+uint16_t read_word_dp_sr(machine_state_t *machine, uint16_t address) {
+    memory_region_t *region = find_stack_memory_region(machine);
+    if (region != NULL) {
+        return READ_WORD(region, address);
+    }
+    return 0; // Default return if region not found
+}
+
 void write_byte_long(machine_state_t *machine, long_address_t long_addr, uint8_t value) {
     memory_region_t *region = find_memory_region(machine, long_addr.bank, long_addr.address);
     if (region != NULL) {
@@ -238,19 +253,19 @@ uint16_t get_dp_address_indirect_new(machine_state_t *machine, uint16_t dp_offse
 uint16_t get_dp_address_indirect_indexed_x_new(machine_state_t *machine, uint16_t dp_offset) {
     // (DP,X) - Indexed Indirect: add X to DP offset, then read pointer
     uint16_t dp_address = get_dp_address(machine, (dp_offset + machine->processor.X) & 0xFF);
-    return read_word_new(machine, dp_address);
+    return read_word_dp_sr(machine, dp_address);
 }
 
 long_address_t get_dp_address_indirect_long_new(machine_state_t *machine, uint16_t dp_offset) {
     uint16_t dp_address = get_dp_address(machine, dp_offset);
-    uint16_t addr = read_word_new(machine, dp_address);
-    uint8_t bank = read_byte_new(machine, (dp_address + 2) & 0xFFFF);
+    uint16_t addr = read_word_dp_sr(machine, dp_address);
+    uint8_t bank = read_byte_dp_sr(machine, (dp_address + 2) & 0xFFFF);
     return get_long_address(machine, addr, bank);
 }
 
 uint16_t get_stack_relative_address_indirect_indexed_y_new(machine_state_t *machine, uint8_t offset) {
     uint16_t pointer_address = get_stack_relative_address(machine, offset);
-    uint16_t effective_address = read_word_new(machine, pointer_address);
+    uint16_t effective_address = read_word_dp_sr(machine, pointer_address);
     return (effective_address + machine->processor.Y) & 0xFFFF;
 }
 
