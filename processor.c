@@ -115,16 +115,15 @@ machine_state_t* COP           (machine_state_t* machine, uint16_t arg_one, uint
 }
 
 machine_state_t* ORA_SR        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
-    processor_state_t *state = &machine->processor;
     uint16_t address = get_stack_relative_address(machine, arg_one);
     uint8_t value = read_byte_dp_sr(machine, address);
 
     if (is_flag_set(machine, M_FLAG)) {
-        state->A.low |= value;
-        set_flags_nz_8(machine, state->A.low);
+        machine->processor.A.low |= value;
+        set_flags_nz_8(machine, machine->processor.A.low);
     } else {
-        state->A.full |= value;
-        set_flags_nz_16(machine, state->A.full);
+        machine->processor.A.full |= value;
+        set_flags_nz_16(machine, machine->processor.A.full);
     }
     return machine;
 }
