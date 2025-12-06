@@ -2765,9 +2765,23 @@ TEST(ORA_ABL_IX_long_indexed) {
     machine->processor.A.low = 0x11;
     machine->processor.X = 0x14;
     set_flag(machine, M_FLAG);
-    
-    uint8_t *bank = get_memory_bank(machine, 0x01);
-    bank[0x6014] = 0x22;
+
+    machine->memory_banks[1] = (memory_bank_t*)malloc(sizeof(memory_bank_t));
+    memory_region_t *region0 = (memory_region_t*)malloc(sizeof(memory_region_t));
+    memory_bank_t *bank1 = machine->memory_banks[1];
+
+    region0->start_offset = 0x0000;
+    region0->end_offset = 0xFFFF;
+    region0->data = (uint8_t *)malloc(65536 * sizeof(uint8_t));
+    region0->read_byte = read_byte_from_region_nodev;  // Default read/write functions can be set later
+    region0->write_byte = write_byte_to_region_nodev;
+    region0->read_word = read_word_from_region_nodev;
+    region0->write_word = write_word_to_region_nodev;
+    region0->flags = MEM_READWRITE;
+    region0->next = NULL;
+    bank1->regions = region0;
+
+    write_byte_long(machine, (long_address_t){ .bank = 0x01, .address = 0x6014 }, 0x22);
     
     ORA_ABL_IX(machine, 0x6000, 0x01);
     ASSERT_EQ(machine->processor.A.low, 0x33, "ORA ABL,X should OR long indexed memory with A");
