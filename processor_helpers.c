@@ -2,7 +2,7 @@
 #include "machine.h"
 #include <stdint.h>
 #include <stdlib.h>
-
+#include <stdio.h>
 
 bool is_flag_set(machine_state_t *machine, uint8_t flag) {
     return (machine->processor.P & flag) != 0;
@@ -194,7 +194,8 @@ uint8_t read_byte_new(machine_state_t *machine, uint16_t address) {
 uint16_t read_word_new(machine_state_t *machine, uint16_t address) {
     memory_region_t *region = find_current_memory_region(machine, address);
     if (region != NULL) {
-        return READ_WORD(region, address);
+        uint16_t value = READ_WORD(region, address);
+        return value;
     }
     return 0; // Default return if region not found
 }
@@ -232,8 +233,7 @@ void write_word_long(machine_state_t *machine, long_address_t long_addr, uint16_
 uint8_t read_byte_long(machine_state_t *machine, long_address_t long_addr) {
     memory_region_t *region = find_memory_region(machine, long_addr.bank, long_addr.address);
     if (region != NULL) {
-        uint8_t value = READ_BYTE(region, long_addr.address);
-        return value;
+        return READ_BYTE(region, long_addr.address);
     }
     return 0; // Default return if region not found
 }

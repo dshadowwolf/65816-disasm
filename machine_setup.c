@@ -31,8 +31,9 @@ void reset_processor(processor_state_t *state) {
 }
 
 uint8_t read_byte_from_region_nodev(memory_region_t *region, uint16_t address) {
+    uint16_t addr = address - region->start_offset;
     if (region->flags & MEM_READONLY || region->flags & MEM_READWRITE) {
-        return region->data[address];
+        return region->data[addr];
     }
     return 0; // Cannot read from this region
 }

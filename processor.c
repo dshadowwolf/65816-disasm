@@ -104,13 +104,8 @@ machine_state_t* COP           (machine_state_t* machine, uint16_t arg_one, uint
     set_flag(machine, INTERRUPT_DISABLE);
     state->PBR = 0; // BRK forces PBR to 0
     clear_flag(machine, DECIMAL_MODE); // Clear Break flag
-    if (state->emulation_mode) {
-        // In emulation mode, the vector is at $FFF4/$FFF5
-        state->PC = read_word_new(machine, 0xFFF4);
-    } else {
-        // In native mode the vector is at $FFE4/$FFE5
-        state->PC = read_word_new(machine, 0xFFE4);
-    }
+    uint16_t vector = state->emulation_mode?0xFFF4:0xFFE4;
+    state->PC = read_word_new(machine, vector);
     return machine;
 }
 
@@ -1482,7 +1477,6 @@ machine_state_t* LSR_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint
     return machine;
 }
 
-// TODO: Fix for Long Addressing
 machine_state_t* EOR_DP_IL_IY  (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Exclusive OR Accumulator with Memory (Direct Page Indirect Long Indexed with Y)
     processor_state_t *state = &machine->processor;
@@ -2216,12 +2210,11 @@ machine_state_t* BRL_CB        (machine_state_t* machine, uint16_t arg_one, uint
 
 machine_state_t* STA_SR        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     uint16_t address = get_stack_relative_address(machine, arg_one);
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        write_byte(memory_bank, address, state->A.low);
+        write_byte_new(machine, address, state->A.low);
     } else {
-        write_word(memory_bank, address, state->A.full);
+        write_word_new(machine, address, state->A.full);
     }
 
     return machine;
@@ -2229,16 +2222,15 @@ machine_state_t* STA_SR        (machine_state_t* machine, uint16_t arg_one, uint
 
 machine_state_t* STY_DP        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     uint16_t dp_address;
     if (state->emulation_mode) dp_address = 0x0000 | (state->DP & 0xFF);
     else dp_address = state->DP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
     uint16_t effective_address = (dp_address + offset) & 0xFFFF;
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
-        write_byte(memory_bank, effective_address, (uint8_t)state->Y & 0xFF);
+        write_byte_new(machine, effective_address, (uint8_t)state->Y & 0xFF);
     } else {
-        write_word(memory_bank, effective_address, state->Y & 0xFFFF);
+        write_word_new(machine, effective_address, state->Y & 0xFFFF);
     }
 
     return machine;
@@ -2246,12 +2238,11 @@ machine_state_t* STY_DP        (machine_state_t* machine, uint16_t arg_one, uint
 
 machine_state_t* STA_DP        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     uint16_t address = get_dp_address(machine, arg_one);
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        write_byte(memory_bank, address, state->A.low);
+        write_byte_new(machine, address, state->A.low);
     } else {
-        write_word(memory_bank, address, state->A.full);
+        write_word_new(machine, address, state->A.full);
     }
 
     return machine;
@@ -2259,12 +2250,11 @@ machine_state_t* STA_DP        (machine_state_t* machine, uint16_t arg_one, uint
 
 machine_state_t* STX_DP        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     uint16_t address = get_dp_address(machine, arg_one);
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
-        write_byte(memory_bank, address, state->X & 0xFF);
+        write_byte_new(machine, address, state->X & 0xFF);
     } else {
-        write_word(memory_bank, address, state->X & 0xFFFF);
+        write_word_new(machine, address, state->X & 0xFFFF);
     }
 
     return machine;
@@ -2273,13 +2263,11 @@ machine_state_t* STX_DP        (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* STA_DP_IL     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // STore A register, Direct Page Indirect Long
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
-    long_address_t addr = get_dp_address_indirect_long(machine, arg_one);
-    uint8_t *act_bank = get_memory_bank(machine, addr.bank);
-    if (state->emulation_mode | is_flag_set(machine, M_FLAG)) {
-        write_byte(act_bank, addr.address, state->A.low);
+    long_address_t addr = get_dp_address_indirect_long_new(machine, arg_one);
+    if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
+        write_byte_long(machine, addr, state->A.low);
     } else {
-        write_word(act_bank, addr.address, state->A.full);
+        write_word_long(machine, addr, state->A.full);
     }
 
     return machine;
