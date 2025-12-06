@@ -278,6 +278,12 @@ long_address_t get_dp_address_indirect_long_new(machine_state_t *machine, uint16
     return get_long_address(machine, addr, bank);
 }
 
+long_address_t get_dp_address_indirect_long_indexed_y_new(machine_state_t *machine, uint16_t dp_offset) {
+    long_address_t long_addr = get_dp_address_indirect_long_new(machine, dp_offset);
+    long_addr.address = (long_addr.address + machine->processor.Y) & 0xFFFF;
+    return long_addr;
+}
+
 uint16_t get_stack_relative_address_indirect_indexed_y_new(machine_state_t *machine, uint8_t offset) {
     uint16_t pointer_address = get_stack_relative_address(machine, offset);
     uint16_t effective_address = read_word_dp_sr(machine, pointer_address);

@@ -442,10 +442,9 @@ machine_state_t* ASL_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* ORA_DP_IL_IY  (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // OR Accumulator with Memory (Direct Page Indirect Long Indexed with Y)
     processor_state_t *state = &machine->processor;
-    long_address_t effective_address_long = get_dp_address_indirect_long_indexed_y(machine, arg_one);
+    long_address_t effective_address_long = get_dp_address_indirect_long_indexed_y_new(machine, arg_one);
     // Add Y to the address portion
-    uint8_t *memory_bank = get_memory_bank(machine, effective_address_long.bank);
-    uint8_t value = read_byte(memory_bank, effective_address_long.address);
+    uint8_t value = read_byte_long(machine, effective_address_long);
     if (is_flag_set(machine, M_FLAG)) {
         uint8_t result = state->A.low | value;
         state->A.low = result;

@@ -2861,14 +2861,27 @@ TEST(ORA_DP_IL_IY_indirect_long_indexed) {
     machine->processor.Y = 0x10;
     machine->processor.DP = 0x00;
     set_flag(machine, M_FLAG);
+
+    // a second bank is being allocated for testing purposes
+    machine->memory_banks[1] = (memory_bank_t*)malloc(sizeof(memory_bank_t));
+    memory_region_t *region0 = (memory_region_t*)malloc(sizeof(memory_region_t));
+    memory_bank_t *bank1 = machine->memory_banks[1];
+
+    region0->start_offset = 0x0000;
+    region0->end_offset = 0xFFFF;
+    region0->data = (uint8_t *)malloc(65536 * sizeof(uint8_t));
+    region0->read_byte = read_byte_from_region_nodev;  // Default read/write functions can be set later
+    region0->write_byte = write_byte_to_region_nodev;
+    region0->read_word = read_word_from_region_nodev;
+    region0->write_word = write_word_to_region_nodev;
+    region0->flags = MEM_READWRITE;
+    region0->next = NULL;
+    bank1->regions = region0;
     
-    uint8_t *bank0 = get_memory_bank(machine, 0);
-    bank0[0x10] = 0x00;
-    bank0[0x11] = 0x70;
-    bank0[0x12] = 0x02;
+    write_word_new(machine, 0x0010, 0x7002);
+    write_byte_new(machine, 0x0012, 0x01);
     
-    uint8_t *bank2 = get_memory_bank(machine, 0x02);
-    bank2[0x7010] = 0xA0;
+    write_byte_long(machine, (long_address_t){ .bank = 0x01, .address = 0x7012}, 0xA0);
     
     ORA_DP_IL_IY(machine, 0x10, 0);
     ASSERT_EQ(machine->processor.A.low, 0xA5, "ORA [DP],Y should OR indirect long indexed memory with A");
