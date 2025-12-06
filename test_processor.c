@@ -1635,8 +1635,8 @@ TEST(AND_DP_IX_direct_page_indexed) {
     machine->processor.A.low = 0xFF;
     machine->processor.X = 0x05;
     machine->processor.DP = 0x00;
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x15] = 0x0F;
+
+    write_byte_new(machine, 0x15, 0x0F);
     
     AND_DP_IX(machine, 0x10, 0);
     ASSERT_EQ(machine->processor.A.low, 0x0F, "AND DP,X should AND with indexed memory");
@@ -2782,7 +2782,7 @@ TEST(ORA_ABL_IX_long_indexed) {
     bank1->regions = region0;
 
     write_byte_long(machine, (long_address_t){ .bank = 0x01, .address = 0x6014 }, 0x22);
-    
+
     ORA_ABL_IX(machine, 0x6000, 0x01);
     ASSERT_EQ(machine->processor.A.low, 0x33, "ORA ABL,X should OR long indexed memory with A");
     
