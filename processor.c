@@ -21,7 +21,10 @@ machine_state_t* XCE_CB(machine_state_t *machine, uint16_t unused1, uint16_t unu
     if (carry) {
         // Switch to emulation mode
         machine->processor.emulation_mode = true;
+        machine->processor.SP &= 0x00FF;
         machine->processor.SP |= 0x0100; // Set high byte of SP in emulation mode
+        machine->processor.X &= 0x00FF;   // in emulation mode X and Y are 8-bit and lose the high byte
+        machine->processor.Y &= 0x00FF;
     } else {
         // Switch to native mode
         machine->processor.emulation_mode = false;
@@ -30,6 +33,10 @@ machine_state_t* XCE_CB(machine_state_t *machine, uint16_t unused1, uint16_t unu
 }
 
 machine_state_t* SEP_CB(machine_state_t *machine, uint16_t flag, uint16_t unused2) {
+    if (flag & X_FLAG) {
+        machine->processor.X &= 0x00FF; // Set X register to 8-bit
+        machine->processor.Y &= 0x00FF; // Set Y register to 8-bit
+    }
     return set_flag(machine, flag);
 }
 
