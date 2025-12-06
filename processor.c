@@ -1527,9 +1527,9 @@ machine_state_t* PHY           (machine_state_t* machine, uint16_t arg_one, uint
     // Push Y Register onto Stack
     processor_state_t *state = &machine->processor;
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
-        push_byte(machine, state->Y & 0xFF);
+        push_byte_new(machine, state->Y & 0xFF);
     } else {
-        push_word(machine, state->Y);
+        push_word_new(machine, state->Y);
     }
     return machine;
 }
@@ -2084,10 +2084,10 @@ machine_state_t* PLY           (machine_state_t* machine, uint16_t arg_one, uint
     // Pull Y register from the stack
     processor_state_t *state = &machine->processor;
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
-        state->Y = pop_byte(machine);
+        state->Y = pop_byte_new(machine);
         set_flags_nz_8(machine, state->Y);
     } else {
-        state->Y = pop_word(machine);
+        state->Y = pop_word_new(machine);
         set_flags_nz_16(machine, state->Y);
     }
     return machine;
