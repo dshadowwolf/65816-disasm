@@ -115,9 +115,10 @@ machine_state_t* COP           (machine_state_t* machine, uint16_t arg_one, uint
 }
 
 machine_state_t* ORA_SR        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
-    uint16_t address = get_stack_relative_address(machine, arg_one);
-    uint8_t value = read_byte_dp_sr(machine, address);
+    uint16_t address = get_stack_relative_address(machine, arg_one); // get the address we're working on
+    uint8_t value = read_byte_dp_sr(machine, address);                       // load the operand value
 
+    // do the operation, dependent on the size of the accumulator (the M_FLAG being set or clear)
     if (is_flag_set(machine, M_FLAG)) {
         machine->processor.A.low |= value;
         set_flags_nz_8(machine, machine->processor.A.low);
