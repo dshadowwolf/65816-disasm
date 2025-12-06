@@ -461,7 +461,7 @@ machine_state_t* ORA_ABS_IY    (machine_state_t* machine, uint16_t arg_one, uint
     // OR Accumulator with Memory (Absolute Indexed with Y)
     processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_absolute_address_indexed_y(machine, arg_one);
-    uint8_t value = get_memory_bank(machine, state->DBR)[effective_address];
+    uint8_t value = read_byte_new(machine, effective_address);
     if (is_flag_set(machine, M_FLAG)) {
         uint8_t result = state->A.low | value;
         state->A.low = result;

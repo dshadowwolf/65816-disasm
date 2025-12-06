@@ -2794,10 +2794,9 @@ TEST(ORA_ABS_IY_indexed) {
     machine->processor.A.low = 0x10;
     machine->processor.Y = 0x0F;
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x800F] = 0x01;
+    write_byte_new(machine, 0x400F, 0x01);
     
-    ORA_ABS_IY(machine, 0x8000, 0);
+    ORA_ABS_IY(machine, 0x4000, 0);
     ASSERT_EQ(machine->processor.A.low, 0x11, "ORA ABS,Y should OR indexed memory with A");
     
     destroy_machine(machine);
@@ -2882,7 +2881,7 @@ TEST(ORA_DP_IL_IY_indirect_long_indexed) {
     write_byte_new(machine, 0x0012, 0x01);
     
     write_byte_long(machine, (long_address_t){ .bank = 0x01, .address = 0x7012}, 0xA0);
-    
+
     ORA_DP_IL_IY(machine, 0x10, 0);
     ASSERT_EQ(machine->processor.A.low, 0xA5, "ORA [DP],Y should OR indirect long indexed memory with A");
     
