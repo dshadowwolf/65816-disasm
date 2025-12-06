@@ -1276,10 +1276,10 @@ TEST(TRB_ABS_absolute) {
     machine_state_t *machine = setup_machine();
     uint8_t *bank = get_memory_bank(machine, 0);
     machine->processor.A.low = 0x55;
-    bank[0x5000] = 0xFF;
+    write_byte_new(machine, 0x5000, 0xFF);
     
     TRB_ABS(machine, 0x5000, 0);
-    ASSERT_EQ(bank[0x5000], 0xAA, "TRB ABS should clear bits");
+    ASSERT_EQ(read_byte_new(machine, 0x5000), 0xAA, "TRB ABS should clear bits");
     
     destroy_machine(machine);
 }
