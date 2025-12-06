@@ -1163,11 +1163,9 @@ TEST(STZ_stores_zero_16bit) {
 
 TEST(STZ_ABS_absolute) {
     machine_state_t *machine = setup_machine();
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x3000] = 0xFF;
-    
+    write_byte_new(machine, 0x3000, 0xFF);    
     STZ_ABS(machine, 0x3000, 0);
-    ASSERT_EQ(bank[0x3000], 0x00, "STZ ABS should store zero");
+    ASSERT_EQ(read_byte_new(machine, 0x3000), 0x00, "STZ ABS should store zero");
     
     destroy_machine(machine);
 }
@@ -2037,10 +2035,9 @@ TEST(STA_DP_IX_indexed) {
     machine->processor.A.low = 0x42;
     machine->processor.X = 0x05;
     machine->processor.DP = 0x20;
-    uint8_t *bank = get_memory_bank(machine, 0);
     
     STA_DP_IX(machine, 0x10, 0);
-    ASSERT_EQ(bank[0x35], 0x42, "STA DP,X should store to indexed memory");
+    ASSERT_EQ(read_byte_new(machine, 0x35), 0x42, "STA DP,X should store to indexed memory");
     
     destroy_machine(machine);
 }
@@ -2347,7 +2344,7 @@ TEST(ADC_DP_IL_IY_indirect_long_indexed) {
     write_byte_new(machine, 0x0012, 0x01);  // Bank byte for long address
     write_byte_long(machine, (long_address_t){ .bank = 0x01, .address = 0xA005 }, 0x18);
     
-    ADC_DP_IL_IY(machine, 0x10, 0);
+    ADC_DP_IL_IY(machine, 0x10, 1);
     ASSERT_EQ(machine->processor.A.low, 0x1F, "ADC [DP],Y should add indirect long indexed memory to A");
     
     destroy_machine(machine);
@@ -2935,7 +2932,7 @@ TEST(ORA_DP_IL_IY_indirect_long_indexed) {
     
     write_byte_long(machine, (long_address_t){ .bank = 0x01, .address = 0x7012}, 0xA0);
 
-    ORA_DP_IL_IY(machine, 0x10, 0);
+    ORA_DP_IL_IY(machine, 0x10, 1);
     ASSERT_EQ(machine->processor.A.low, 0xA5, "ORA [DP],Y should OR indirect long indexed memory with A");
     
     destroy_machine(machine);
@@ -3639,16 +3636,27 @@ TEST(STA_DP_IL_IY_indirect_long_indexed) {
     machine->processor.DP = 0x00;
     machine->processor.Y = 0x20;
     set_flag(machine, M_FLAG);
-    
-    uint8_t *bank0 = get_memory_bank(machine, 0);
-    bank0[0x70] = 0x00;
-    bank0[0x71] = 0xB0;
-    bank0[0x72] = 0x02;
-    
-    uint8_t *bank2 = get_memory_bank(machine, 0x02);
+
+    machine->memory_banks[2] = (memory_bank_t*)malloc(sizeof(memory_bank_t));
+    memory_region_t *region0 = (memory_region_t*)malloc(sizeof(memory_region_t));
+    memory_bank_t *bank1 = machine->memory_banks[2];
+
+    region0->start_offset = 0x0000;
+    region0->end_offset = 0xFFFF;
+    region0->data = (uint8_t *)malloc(65536 * sizeof(uint8_t));
+    region0->read_byte = read_byte_from_region_nodev;  // Default read/write functions can be set later
+    region0->write_byte = write_byte_to_region_nodev;
+    region0->read_word = read_word_from_region_nodev;
+    region0->write_word = write_word_to_region_nodev;
+    region0->flags = MEM_READWRITE;
+    region0->next = NULL;
+    bank1->regions = region0;
+
+    write_word_new(machine, 0x70, 0xB000);
+    write_byte_new(machine, 0x72, 0x02);
     
     STA_DP_IL_IY(machine, 0x70, 0);
-    ASSERT_EQ(bank2[0xB020], 0x88, "STA [DP],Y should store indirect long indexed");
+    ASSERT_EQ(read_byte_long(machine, (long_address_t){.bank=0x02, .address=0xB020}), 0x88, "STA [DP],Y should store indirect long indexed");
     
     destroy_machine(machine);
 }
@@ -3731,10 +3739,8 @@ TEST(STA_ABS_IY_indexed) {
     machine->processor.Y = 0x20;
     set_flag(machine, M_FLAG);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    
-    STA_ABS_IY(machine, 0xF000, 0);
-    ASSERT_EQ(bank[0xF020], 0xDD, "STA ABS,Y should store indexed");
+    STA_ABS_IY(machine, 0x3000, 0);
+    ASSERT_EQ(read_byte_new(machine, 0x3020), 0xDD, "STA ABS,Y should store indexed");
     
     destroy_machine(machine);
 }
@@ -3746,10 +3752,8 @@ TEST(STX_DP_IY_indexed) {
     machine->processor.Y = 0x0A;
     set_flag(machine, X_FLAG);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    
     STX_DP_IY(machine, 0x40, 0);
-    ASSERT_EQ(bank[0x4A], 0xEE, "STX DP,Y should store indexed");
+    ASSERT_EQ(read_byte_new(machine, 0x4A), 0xEE, "STX DP,Y should store indexed");
     
     destroy_machine(machine);
 }
@@ -3761,10 +3765,8 @@ TEST(STY_DP_IX_indexed) {
     machine->processor.X = 0x0C;
     set_flag(machine, X_FLAG);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    
     STY_DP_IX(machine, 0x50, 0);
-    ASSERT_EQ(bank[0x5C], 0xFF, "STY DP,X should store indexed");
+    ASSERT_EQ(read_byte_new(machine, 0x5C), 0xFF, "STY DP,X should store indexed");
     
     destroy_machine(machine);
 }

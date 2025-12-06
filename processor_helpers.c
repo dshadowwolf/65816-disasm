@@ -302,6 +302,11 @@ long_address_t get_absolute_long_indexed_x_new(machine_state_t *machine, uint16_
     return get_long_address(machine, effective_address, bank);
 }
 
+uint16_t get_dp_address_indexed_y(machine_state_t *machine, uint16_t dp_offset) {
+    uint16_t dp_address = get_dp_address(machine, dp_offset);
+    return (dp_address + machine->processor.Y) & 0xFFFF;
+}
+
 /* End experimental design work */
 
 void push_byte(machine_state_t *machine, uint8_t value) {
