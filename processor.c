@@ -409,8 +409,7 @@ machine_state_t* TRB_DP        (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* ORA_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_dp_address_indexed_x(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
-    uint8_t value = read_byte(memory_bank, effective_address);
+    uint8_t value = read_byte_new(machine, effective_address);
     if (is_flag_set(machine, M_FLAG)) {
         uint8_t result = state->A.low | value;
         state->A.low = result;
@@ -427,15 +426,14 @@ machine_state_t* ASL_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint
     // ASL Direct Page Indexed with X
     processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_dp_address_indexed_x(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
-    uint8_t value = read_byte(memory_bank, effective_address);
+    uint8_t value = read_byte_new(machine, effective_address);
     if (is_flag_set(machine, M_FLAG)) {
         uint16_t result = (uint16_t)(value << 1);
-        write_byte(memory_bank, effective_address, (uint8_t)(result & 0xFF));
+        write_byte_new(machine, effective_address, (uint8_t)(result & 0xFF));
         set_flags_nzc_8(machine, result);
     } else {
         uint32_t full_value = (uint32_t)(value << 1);
-        write_word(memory_bank, effective_address, (uint16_t)(full_value & 0xFFFF));
+        write_word_new(machine, effective_address, (uint16_t)(full_value & 0xFFFF));
         set_flags_nzc_16(machine, full_value);
     }
     return machine;

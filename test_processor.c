@@ -1579,8 +1579,7 @@ TEST(ORA_DP_IX_direct_page_indexed) {
     machine->processor.A.low = 0x0F;
     machine->processor.X = 0x05;
     machine->processor.DP = 0x00;
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x15] = 0xF0;
+    write_byte_new(machine, 0x15, 0xF0);
     
     ORA_DP_IX(machine, 0x10, 0);
     ASSERT_EQ(machine->processor.A.low, 0xFF, "ORA DP,X should OR with indexed memory");
@@ -3699,11 +3698,10 @@ TEST(ASL_DP_IX_indexed) {
     machine->processor.DP = 0x00;
     machine->processor.X = 0x05;
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x25] = 0x40;
+    write_byte_new(machine, 0x25, 0x40);
     
     ASL_DP_IX(machine, 0x20, 0);
-    ASSERT_EQ(bank[0x25], 0x80, "ASL DP,X should shift left indexed");
+    ASSERT_EQ(read_byte_new(machine, 0x25), 0x80, "ASL DP,X should shift left indexed");
     
     destroy_machine(machine);
 }
