@@ -229,6 +229,25 @@ uint16_t read_word_long(machine_state_t *machine, long_address_t long_addr) {
     }
     return 0; // Default return if region not found
 }
+
+uint16_t get_dp_address_indirect_new(machine_state_t *machine, uint16_t dp_offset) {
+    uint16_t dp_address = get_dp_address(machine, dp_offset);
+    return read_word_new(machine, dp_address);
+}
+
+uint16_t get_dp_address_indirect_indexed_x_new(machine_state_t *machine, uint16_t dp_offset) {
+    // (DP,X) - Indexed Indirect: add X to DP offset, then read pointer
+    uint16_t dp_address = get_dp_address(machine, (dp_offset + machine->processor.X) & 0xFF);
+    return read_word_new(machine, dp_address);
+}
+
+long_address_t get_dp_address_indirect_long_new(machine_state_t *machine, uint16_t dp_offset) {
+    uint16_t dp_address = get_dp_address(machine, dp_offset);
+    uint16_t addr = read_word_new(machine, dp_address);
+    uint8_t bank = read_byte_new(machine, (dp_address + 2) & 0xFFFF);
+    return get_long_address(machine, addr, bank);
+}
+
 /* End experimental design work */
 
 void push_byte(machine_state_t *machine, uint8_t value) {
@@ -320,14 +339,12 @@ uint16_t get_dp_address_indirect_indexed_y(machine_state_t *machine, uint16_t dp
     return (effective_address + machine->processor.Y) & 0xFFFF;
 }
 
-// this is wrong and needs to be fixed
 long_address_t get_dp_address_indirect_long(machine_state_t *machine, uint16_t dp_offset) {
     uint16_t dp_address = get_dp_address(machine, dp_offset);
     uint8_t *memory_bank = get_memory_bank(machine, machine->processor.emulation_mode?0:machine->processor.DBR);
-    uint8_t low_byte = memory_bank[dp_address];
-    uint8_t high_byte = memory_bank[(dp_address + 1) & 0xFFFF];
-    uint8_t bank_byte = memory_bank[(dp_address + 2) & 0xFFFF];
-    return get_long_address(machine, (high_byte << 8) | low_byte, bank_byte);
+    uint16_t addr = read_word(memory_bank, dp_address);
+    uint8_t bank = read_byte(memory_bank, (dp_address + 2) & 0xFFFF);
+    return get_long_address(machine, addr, bank);
 }
 
 uint16_t get_absolute_address(machine_state_t *machine, uint16_t address) {
