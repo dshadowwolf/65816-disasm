@@ -2046,10 +2046,9 @@ TEST(STA_ABS_IX_indexed) {
     machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x42;
     machine->processor.X = 0x10;
-    uint8_t *bank = get_memory_bank(machine, 0);
     
-    STA_ABS_IX(machine, 0x8000, 0);
-    ASSERT_EQ(bank[0x8010], 0x42, "STA ABS,X should store to indexed memory");
+    STA_ABS_IX(machine, 0x4000, 0);
+    ASSERT_EQ(read_byte_new(machine, 0x4010), 0x42, "STA ABS,X should store to indexed memory");
     
     destroy_machine(machine);
 }
@@ -3724,11 +3723,24 @@ TEST(STA_ABL_IX_long_indexed) {
     machine->processor.A.low = 0xCC;
     machine->processor.X = 0x18;
     set_flag(machine, M_FLAG);
-    
-    uint8_t *bank4 = get_memory_bank(machine, 0x04);
-    
+
+    machine->memory_banks[4] = (memory_bank_t*)malloc(sizeof(memory_bank_t));
+    memory_region_t *region0 = (memory_region_t*)malloc(sizeof(memory_region_t));
+    memory_bank_t *bank4 = machine->memory_banks[4];
+
+    region0->start_offset = 0x0000;
+    region0->end_offset = 0xFFFF;
+    region0->data = (uint8_t *)malloc(65536 * sizeof(uint8_t));
+    region0->read_byte = read_byte_from_region_nodev;  // Default read/write functions can be set later
+    region0->write_byte = write_byte_to_region_nodev;
+    region0->read_word = read_word_from_region_nodev;
+    region0->write_word = write_word_to_region_nodev;
+    region0->flags = MEM_READWRITE;
+    region0->next = NULL;
+    bank4->regions = region0;
+
     STA_ABL_IX(machine, 0xE000, 0x04);
-    ASSERT_EQ(bank4[0xE018], 0xCC, "STA long,X should store indexed");
+    ASSERT_EQ(read_byte_long(machine, (long_address_t){0x04, 0xE018}), 0xCC, "STA long,X should store indexed");
     
     destroy_machine(machine);
 }

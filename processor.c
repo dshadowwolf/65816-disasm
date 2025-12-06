@@ -2540,12 +2540,11 @@ machine_state_t* STZ_ABS       (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* STA_ABS_IX    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // STore A register, Absolute Indexed X
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     uint16_t address = get_absolute_address_indexed_x(machine, arg_one);
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        write_byte(memory_bank, address, (uint8_t)(state->A.low & 0xFF));
+        write_byte_new(machine, address, (uint8_t)(state->A.low & 0xFF));
     } else {
-        write_word(memory_bank, address, state->A.full);
+        write_word_new(machine, address, state->A.full);
     }
     return machine;
 }
@@ -2567,11 +2566,10 @@ machine_state_t* STA_ABL_IX    (machine_state_t* machine, uint16_t arg_one, uint
     // STore A register, Absolute Long Indexed X
     processor_state_t *state = &machine->processor;
     long_address_t addr = get_absolute_address_long_indexed_x(machine, arg_one, (uint8_t)arg_two);
-    uint8_t *memory_bank = get_memory_bank(machine, addr.bank);
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        write_byte(memory_bank, addr.address, (uint8_t)(state->A.low & 0xFF));
+        write_byte_long(machine, addr, (uint8_t)(state->A.low & 0xFF));
     } else {
-        write_word(memory_bank, addr.address, state->A.full);
+        write_word_long(machine, addr, state->A.full);
     }
     return machine;
 }
