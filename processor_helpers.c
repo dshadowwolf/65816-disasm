@@ -186,7 +186,8 @@ void write_word_new(machine_state_t *machine, uint16_t address, uint16_t value) 
 uint8_t read_byte_new(machine_state_t *machine, uint16_t address) {
     memory_region_t *region = find_current_memory_region(machine, address);
     if (region != NULL) {
-        return READ_BYTE(region, address);
+        uint8_t value = READ_BYTE(region, address);
+        return value;
     }
     return 0; // Default return if region not found
 }

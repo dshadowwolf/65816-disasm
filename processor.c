@@ -2326,31 +2326,28 @@ machine_state_t* TXA           (machine_state_t* machine, uint16_t arg_one, uint
 
 machine_state_t* PHB           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Push Data Bank register onto stack
-    processor_state_t *state = &machine->processor;
-    push_byte(machine, state->DBR);
+    push_byte_new(machine, machine->processor.DBR);
     return machine;
 }
 
 machine_state_t* STY_ABS       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     uint16_t address = get_absolute_address(machine, arg_one);
     if (is_flag_set(machine, X_FLAG) || state->emulation_mode) {
-        write_byte(memory_bank, address, (uint8_t)(state->Y & 0xFF));
+        write_byte_new(machine, address, (uint8_t)(state->Y & 0xFF));
     } else {
-        write_word(memory_bank, address, (uint16_t)(state->Y & 0xFFFF));
+        write_word_new(machine, address, (uint16_t)(state->Y & 0xFFFF));
     }
     return machine;
 }
 
 machine_state_t* STA_ABS       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     uint16_t address = get_absolute_address(machine, arg_one);
     if (is_flag_set(machine, M_FLAG) || state->emulation_mode) {
-        write_byte(memory_bank, address, state->A.low);
+        write_byte_new(machine, address, state->A.low);
     } else {
-        write_word(memory_bank, address, state->A.full);
+        write_word_new(machine, address, state->A.full);
     }
     return machine;
 }
@@ -2815,7 +2812,7 @@ machine_state_t* TAX           (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* PLB           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // PuLl Data Bank register from stack
     processor_state_t *state = &machine->processor;
-    state->DBR = pop_byte(machine);
+    state->DBR = pop_byte_new(machine);
     set_flags_nz_8(machine, state->DBR);
     return machine;
 }
@@ -2839,12 +2836,11 @@ machine_state_t* LDA_ABS       (machine_state_t* machine, uint16_t arg_one, uint
     // LoaD A, Absolute
     processor_state_t *state = &machine->processor;
     uint16_t address = get_absolute_address(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        state->A.low = read_byte(memory_bank, address);
+        state->A.low = read_byte_new(machine, address);
         set_flags_nz_8(machine, state->A.low);
     } else {
-        state->A.full = read_word(memory_bank, address);
+        state->A.full = read_word_new(machine, address);
         set_flags_nz_16(machine, state->A.full);
     }
     return machine;

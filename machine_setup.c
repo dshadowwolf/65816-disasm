@@ -48,6 +48,7 @@ uint16_t read_word_from_region_nodev(memory_region_t *region, uint16_t address) 
 }
 
 void write_byte_to_region_nodev(memory_region_t *region, uint16_t address, uint8_t value) {
+    uint16_t addr = address - region->start_offset;
     if (region->flags & MEM_READWRITE) {
         region->data[address - region->start_offset] = value;
     }

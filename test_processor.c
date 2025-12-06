@@ -476,7 +476,7 @@ TEST(STA_and_LDA_ABS) {
     
     STA_ABS(machine, 0x2000, 0);
     
-    ASSERT_EQ(machine->memory[0][0x2000], 0x99, "Should store to absolute address");
+    ASSERT_EQ(read_byte_new(machine, 0x2000), 0x99, "Should store to absolute address");
     
     machine->processor.A.low = 0;
     LDA_ABS(machine, 0x2000, 0);
@@ -1051,11 +1051,11 @@ TEST(PHB_and_PLB) {
     machine_state_t *machine = setup_machine();
     machine->processor.SP = 0x1FF;
     machine->processor.DBR = 0x55;
-    uint8_t *bank = get_memory_bank(machine, 0);
-    
+
     PHB(machine, 0, 0);
     ASSERT_EQ(machine->processor.SP, 0x1FE, "PHB should decrement SP");
-    ASSERT_EQ(bank[0x1FF], 0x55, "PHB should push DBR");
+    uint8_t bank_value = read_byte_long(machine, (long_address_t) {.bank = 0, .address= 0x1FF});
+    ASSERT_EQ(bank_value, 0x55, "PHB should push DBR");
     
     machine->processor.DBR = 0x00;
     PLB(machine, 0, 0);
@@ -1461,11 +1461,10 @@ TEST(LDY_DP_direct_page) {
 
 TEST(STY_ABS_absolute) {
     machine_state_t *machine = setup_machine();
-    uint8_t *bank = get_memory_bank(machine, 0);
     machine->processor.Y = 0x77;
     
     STY_ABS(machine, 0x6000, 0);
-    ASSERT_EQ(bank[0x6000], 0x77, "STY ABS should store Y");
+    ASSERT_EQ(read_byte_new(machine, 0x6000), 0x77, "STY ABS should store Y");
     
     destroy_machine(machine);
 }
