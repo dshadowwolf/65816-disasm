@@ -1874,8 +1874,7 @@ machine_state_t* ADC_ABL       (machine_state_t* machine, uint16_t arg_one, uint
     // Add with Carry (Absolute Long)
     processor_state_t *state = &machine->processor;
     long_address_t addr = get_absolute_address_long(machine, arg_one, arg_two);
-    uint8_t *memory_bank = get_memory_bank(machine, addr.bank);
-    uint8_t value = read_byte(memory_bank, addr.address);
+    uint8_t value = read_byte_long(machine, addr);
     uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
     if (is_flag_set(machine, M_FLAG)) {
         // 8-bit mode
