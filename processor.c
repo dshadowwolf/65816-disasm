@@ -1929,9 +1929,8 @@ machine_state_t* ADC_DP_I_IY   (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* ADC_DP_I      (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry (Direct Page Indirect)
     processor_state_t *state = &machine->processor;
-    uint16_t effective_address = get_dp_address_indirect(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
-    uint8_t value = read_byte(memory_bank, effective_address);
+    uint16_t effective_address = get_dp_address_indirect_new(machine, arg_one);
+    uint8_t value = read_byte_new(machine, effective_address);
     uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
     if (is_flag_set(machine, M_FLAG)) {
         // 8-bit mode
@@ -1941,7 +1940,7 @@ machine_state_t* ADC_DP_I      (machine_state_t* machine, uint16_t arg_one, uint
         check_and_set_carry_8(machine, result);
     } else {
         // 16-bit mode
-        uint16_t value16 = ((uint16_t)memory_bank[effective_address]) | ((uint16_t)memory_bank[(effective_address + 1) & 0xFFFF] << 8);
+        uint16_t value16 = read_word_new(machine, effective_address);
         uint32_t result = (uint32_t)state->A.full + (uint32_t)(value16 & 0xFFFF) + carry;
         state->A.full = (uint16_t)(result & 0xFFFF);
         // Set Carry flag

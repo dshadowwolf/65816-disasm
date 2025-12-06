@@ -2234,10 +2234,8 @@ TEST(ADC_DP_I_indirect) {
     machine->processor.DP = 0x00;
     clear_flag(machine, CARRY);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x10] = 0x00;
-    bank[0x11] = 0x80;
-    bank[0x8000] = 0x17;
+    write_word_new(machine, 0x0010, 0x7000);
+    write_byte_new(machine, 0x7000, 0x17);
     
     ADC_DP_I(machine, 0x10, 0);
     ASSERT_EQ(machine->processor.A.low, 0x1F, "ADC (DP) should add indirect memory to A");
