@@ -2264,6 +2264,7 @@ machine_state_t* STA_DP_IL     (machine_state_t* machine, uint16_t arg_one, uint
     // STore A register, Direct Page Indirect Long
     processor_state_t *state = &machine->processor;
     long_address_t addr = get_dp_address_indirect_long_new(machine, arg_one);
+    printf("STA_DP_IL to bank %02X addr %04X\n", addr.bank, addr.address);
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         write_byte_long(machine, addr, state->A.low);
     } else {
@@ -2673,23 +2674,12 @@ machine_state_t* LDX_DP        (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* LDA_DP_IL     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD A, Direct Page Indirect Long
     processor_state_t *state = &machine->processor;
-    uint16_t dp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
-    if (state->emulation_mode) dp_address = 0x0000 | (state->DP & 0xFF);
-    else dp_address = state->DP & 0xFFFF;
-    uint8_t offset = (uint8_t)arg_one;
-    uint16_t effective_address_ptr = (dp_address + offset) & 0xFFFF;
-    uint8_t low_byte = memory_bank[effective_address_ptr];
-    uint8_t high_byte = memory_bank[(effective_address_ptr + 1) & 0xFFFF];
-    uint8_t page = memory_bank[(effective_address_ptr + 2) & 0xFFFF];
-    uint8_t *act_bank = get_memory_bank(machine, page);
-    uint16_t base_address = (((uint16_t)high_byte << 8) & 0xFF00) | (low_byte & 0xFF);
+    long_address_t address = get_dp_address_indirect_long_new(machine, arg_one);
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        state->A.low = act_bank[base_address];
+        state->A.low = read_byte_long(machine, address);
         set_flags_nz_8(machine, state->A.low);
     } else {
-        state->A.low = act_bank[base_address];
-        state->A.high = act_bank[(base_address + 1) & 0xFFFF];
+        state->A.full = read_word_long(machine, address);
         set_flags_nz_16(machine, state->A.full);
     }
     return machine;
@@ -2749,13 +2739,12 @@ machine_state_t* PLB           (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* LDY_ABS       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD Y, Absolute
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     uint16_t address = get_absolute_address(machine, arg_one);
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
-        state->Y = read_byte(memory_bank, address);
+        state->Y = read_byte_new(machine, address);
         set_flags_nz_8(machine, state->Y);
     } else {
-        state->Y = read_word(memory_bank, address);
+        state->Y = read_word_new(machine, address);
         set_flags_nz_16(machine, state->Y);
     }
     return machine;
