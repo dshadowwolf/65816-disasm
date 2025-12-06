@@ -4096,11 +4096,10 @@ TEST(STZ_DP_IX_indexed) {
     machine->processor.X = 0x10;
     set_flag(machine, M_FLAG);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0xA0] = 0xFF;
+    write_byte_new(machine, 0x00A0, 0xFF);
     
     STZ_DP_IX(machine, 0x90, 0);
-    ASSERT_EQ(bank[0xA0], 0x00, "STZ DP,X should store zero indexed");
+    ASSERT_EQ(read_byte_new(machine, 0x00A0), 0x00, "STZ DP,X should store zero indexed");
     
     destroy_machine(machine);
 }

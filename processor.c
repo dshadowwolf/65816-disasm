@@ -1954,10 +1954,7 @@ machine_state_t* ADC_SR_I_IY   (machine_state_t* machine, uint16_t arg_one, uint
     processor_state_t *state = &machine->processor;
     uint16_t address = get_stack_relative_address_indirect_indexed_y_new(machine, arg_one);
     uint8_t value = read_byte_new(machine, address);
-    printf("ADC_SR_I_IY: Read value 0x%02X from address 0x%04X\n", value, address);
-    printf("ADC_SR_I_IY: Accumulator before: 0x%04X\n", is_flag_set(machine, M_FLAG) ? state->A.low : state->A.full);
     uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
-    printf("ADC_SR_I_IY: Carry: %d\n", carry);
     if (is_flag_set(machine, M_FLAG)) {
         // 8-bit mode
         uint16_t result = (uint16_t)state->A.low + (uint16_t)(value & 0xFF) + carry;
@@ -1979,8 +1976,7 @@ machine_state_t* STZ_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint
     // Store Zero, Direct Page Indexed with X
     processor_state_t *state = &machine->processor;
     uint16_t address = get_dp_address_indexed_x(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
-    memory_bank[address] = 0x00;
+    write_byte_new(machine, address, 0x00);
     return machine;
 }
 
