@@ -2354,12 +2354,11 @@ machine_state_t* STA_ABS       (machine_state_t* machine, uint16_t arg_one, uint
 
 machine_state_t* STX_ABS       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     uint16_t address = get_absolute_address(machine, arg_one);
     if (is_flag_set(machine, X_FLAG) || state->emulation_mode) {
-        write_byte(memory_bank, address, (uint8_t)(state->X & 0xFF));
+        write_byte_new(machine, address, (uint8_t)(state->X & 0xFF));
     } else {
-        write_word(memory_bank, address, (uint16_t)(state->X & 0xFFFF));
+        write_word_new(machine, address, (uint16_t)(state->X & 0xFFFF));
     }
     return machine;
 }
@@ -2367,11 +2366,10 @@ machine_state_t* STX_ABS       (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* STA_ABL       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     long_address_t addr = get_absolute_address_long(machine, arg_one, arg_two);
-    uint8_t *memory_bank = get_memory_bank(machine, addr.bank);
     if (is_flag_set(machine, M_FLAG) || state->emulation_mode) {
-        write_byte(memory_bank, addr.address, (uint8_t)(state->A.low & 0xFF));
+        write_byte_long(machine, addr, (uint8_t)(state->A.low & 0xFF));
     } else {
-        write_word(memory_bank, addr.address, state->A.full);
+        write_word_long(machine, addr, state->A.full);
     }
     return machine;
 }
@@ -2850,12 +2848,11 @@ machine_state_t* LDX_ABS       (machine_state_t* machine, uint16_t arg_one, uint
     // LoaD X, Absolute
     processor_state_t *state = &machine->processor;
     uint16_t address = get_absolute_address(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
-        state->X = read_byte(memory_bank, address);
+        state->X = read_byte_new(machine, address);
         set_flags_nz_8(machine, state->X);
     } else {
-        state->X = read_word(memory_bank, address);
+        state->X = read_word_new(machine, address);
         set_flags_nz_16(machine, state->X);
     }
     return machine;

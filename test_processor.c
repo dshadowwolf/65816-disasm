@@ -493,8 +493,8 @@ TEST(LDX_and_STX) {
     machine->processor.X = 0x5678;
     
     STX_ABS(machine, 0x3000, 0);
-    ASSERT_EQ(machine->memory[0][0x3000], 0x78, "Low byte stored");
-    ASSERT_EQ(machine->memory[0][0x3001], 0x56, "High byte stored");
+    ASSERT_EQ(read_byte_new(machine, 0x3000), 0x78, "Low byte stored");
+    ASSERT_EQ(read_byte_new(machine, 0x3001), 0x56, "High byte stored");
     
     machine->processor.X = 0;
     LDX_ABS(machine, 0x3000, 0);
@@ -1426,11 +1426,25 @@ TEST(LDA_ABL_long_addressing) {
 
 TEST(STA_ABL_long_addressing) {
     machine_state_t *machine = setup_machine();
-    uint8_t *bank = get_memory_bank(machine, 0x03);
     machine->processor.A.low = 0x99;
+
+    machine->memory_banks[3] = (memory_bank_t*)malloc(sizeof(memory_bank_t));
+    memory_region_t *region0 = (memory_region_t*)malloc(sizeof(memory_region_t));
+    memory_bank_t *bank1 = machine->memory_banks[3];
+
+    region0->start_offset = 0x0000;
+    region0->end_offset = 0xFFFF;
+    region0->data = (uint8_t *)malloc(65536 * sizeof(uint8_t));
+    region0->read_byte = read_byte_from_region_nodev;  // Default read/write functions can be set later
+    region0->write_byte = write_byte_to_region_nodev;
+    region0->read_word = read_word_from_region_nodev;
+    region0->write_word = write_word_to_region_nodev;
+    region0->flags = MEM_READWRITE;
+    region0->next = NULL;
+    bank1->regions = region0;
     
     STA_ABL(machine, 0x4000, 0x03);
-    ASSERT_EQ(bank[0x4000], 0x99, "STA long should store to any bank");
+    ASSERT_EQ(read_byte_long(machine, (long_address_t){0x03, 0x4000}), 0x99, "STA long should store to any bank");
     
     destroy_machine(machine);
 }
@@ -2049,10 +2063,9 @@ TEST(STA_ABS_IX_indexed) {
 
 TEST(LDX_ABS_absolute) {
     machine_state_t *machine = setup_machine();
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x8000] = 0x42;
+    write_byte_new(machine, 0x7000, 0x42);
     
-    LDX_ABS(machine, 0x8000, 0);
+    LDX_ABS(machine, 0x7000, 0);
     ASSERT_EQ(machine->processor.X, 0x42, "LDX ABS should load X from memory");
     
     destroy_machine(machine);
@@ -3680,11 +3693,25 @@ TEST(STA_ABL_long_absolute) {
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0xBB;
     set_flag(machine, M_FLAG);
-    
-    uint8_t *bank3 = get_memory_bank(machine, 0x03);
+
+    machine->memory_banks[3] = (memory_bank_t*)malloc(sizeof(memory_bank_t));
+    memory_region_t *region0 = (memory_region_t*)malloc(sizeof(memory_region_t));
+    memory_bank_t *bank1 = machine->memory_banks[3];
+
+    region0->start_offset = 0x0000;
+    region0->end_offset = 0xFFFF;
+    region0->data = (uint8_t *)malloc(65536 * sizeof(uint8_t));
+    region0->read_byte = read_byte_from_region_nodev;  // Default read/write functions can be set later
+    region0->write_byte = write_byte_to_region_nodev;
+    region0->read_word = read_word_from_region_nodev;
+    region0->write_word = write_word_to_region_nodev;
+    region0->flags = MEM_READWRITE;
+    region0->next = NULL;
+    bank1->regions = region0;
+
     
     STA_ABL(machine, 0xD000, 0x03);
-    ASSERT_EQ(bank3[0xD000], 0xBB, "STA long should store to bank");
+    ASSERT_EQ(read_byte_long(machine, (long_address_t){0x03, 0xD000}), 0xBB, "STA long should store to bank");
     
     destroy_machine(machine);
 }
