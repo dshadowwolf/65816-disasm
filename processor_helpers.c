@@ -245,6 +245,20 @@ uint16_t read_word_long(machine_state_t *machine, long_address_t long_addr) {
     return 0; // Default return if region not found
 }
 
+void write_byte_dp_sr(machine_state_t *machine, uint16_t address, uint8_t value) {
+    memory_region_t *region = find_stack_memory_region(machine);
+    if (region != NULL) {
+        WRITE_BYTE(region, address, value);
+    }
+}
+
+void write_word_dp_sr(machine_state_t *machine, uint16_t address, uint16_t value) {
+    memory_region_t *region = find_stack_memory_region(machine);
+    if (region != NULL) {
+        WRITE_WORD(region, address, value);
+    }
+}
+
 uint16_t get_dp_address_indirect_new(machine_state_t *machine, uint16_t dp_offset) {
     uint16_t dp_address = get_dp_address(machine, dp_offset);
     return read_word_new(machine, dp_address);
