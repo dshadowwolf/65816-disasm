@@ -2782,12 +2782,11 @@ machine_state_t* LDA_ABL       (machine_state_t* machine, uint16_t arg_one, uint
     // LoaD A, Absolute Long
     processor_state_t *state = &machine->processor;
     long_address_t addr = get_absolute_address_long(machine, arg_one, arg_two);
-    uint8_t *memory_bank = get_memory_bank(machine, addr.bank);
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        state->A.low = read_byte(memory_bank, addr.address);
+        state->A.low = read_byte_long(machine, addr);
         set_flags_nz_8(machine, state->A.low);
     } else {
-        state->A.full = read_word(memory_bank, addr.address);
+        state->A.full = read_word_long(machine, addr);
         set_flags_nz_16(machine, state->A.full);
     }
     return machine;
