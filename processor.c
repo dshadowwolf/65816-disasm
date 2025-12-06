@@ -2007,7 +2007,7 @@ machine_state_t* ROR_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     uint16_t address = get_dp_address_indexed_x(machine, arg_one);
-    uint8_t value = read_byte(memory_bank, address);
+    uint8_t value = read_byte_new(machine, address);
     uint16_t carry = is_flag_set(machine, CARRY) ? 0x80 : 0x00;
     uint8_t carry_out = value & 0x01;
 
@@ -2016,13 +2016,13 @@ machine_state_t* ROR_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint
         uint16_t result = (value >> 1) | carry;
         if (carry_out) set_flag(machine, CARRY);
         else clear_flag(machine, CARRY);
-        write_byte(memory_bank, address, ((uint8_t)result) & 0xFF);
+        write_byte_new(machine, address, ((uint8_t)result) & 0xFF);
     } else {
         // 16-bit mode
         uint32_t result = (value >> 1) | carry;
         if (carry_out) set_flag(machine, CARRY);
         else clear_flag(machine, CARRY);
-        write_word(memory_bank, address, result & 0xFFFF);
+        write_word_new(machine, address, result & 0xFFFF);
     }
 
     return machine;

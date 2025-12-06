@@ -3815,11 +3815,10 @@ TEST(ROR_DP_IX_indexed) {
     machine->processor.X = 0x20;
     set_flag(machine, CARRY);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x50] = 0x02;
+    write_word_new(machine, 0x50, 0x02);
     
     ROR_DP_IX(machine, 0x30, 0);
-    ASSERT_EQ(bank[0x50], 0x81, "ROR DP,X should rotate right indexed with carry");
+    ASSERT_EQ(read_byte_new(machine, 0x50), 0x81, "ROR DP,X should rotate right indexed with carry");
     
     destroy_machine(machine);
 }
