@@ -2384,41 +2384,22 @@ machine_state_t* BCC_CB        (machine_state_t* machine, uint16_t arg_one, uint
 
 machine_state_t* STA_DP_I_IY   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
-    uint16_t dp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
-    if (state->emulation_mode) dp_address = 0x0000 | (state->DP & 0xFF);
-    else dp_address = state->DP & 0xFFFF;
-    uint8_t offset = (uint8_t)arg_one;
-    uint16_t effective_address_ptr = (dp_address + offset) & 0xFFFF;
-    uint8_t low_byte = memory_bank[effective_address_ptr];
-    uint8_t high_byte = memory_bank[(effective_address_ptr + 1) & 0xFFFF];
-    uint16_t base_address = ((uint16_t)high_byte << 8) | low_byte;
-    uint16_t effective_address = (base_address + state->Y) & 0xFFFF;
+    uint16_t address = get_dp_address_indirect_indexed_y_new(machine, arg_one);
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        memory_bank[effective_address] = (uint8_t)(state->A.low & 0xFF);
+        write_byte_new(machine, address, (uint8_t)(state->A.low & 0xFF));
     } else {
-        memory_bank[effective_address] = (uint8_t)(state->A.low & 0xFF);
-        memory_bank[effective_address+1] = (uint8_t)(state->A.high & 0xFF);
+        write_word_new(machine, address, state->A.full);
     }
     return machine;
 }
 
 machine_state_t* STA_DP_I      (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
-    uint16_t dp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
-    if (state->emulation_mode) dp_address = 0x0000 | (state->DP & 0xFF);
-    else dp_address = state->DP & 0xFFFF;
-    uint8_t offset = (uint8_t)arg_one;
-    uint16_t effective_address_ptr = (dp_address + offset) & 0xFFFF;
-    uint8_t low_byte = memory_bank[effective_address_ptr];
-    uint8_t high_byte = memory_bank[(effective_address_ptr + 1) & 0xFFFF];
-    uint16_t base_address = ((uint16_t)high_byte << 8) | low_byte;
+    uint16_t address = get_dp_address_indirect_new(machine, arg_one);
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        memory_bank[base_address] = (uint8_t)(state->A.low & 0xFF);
+        write_byte_new(machine, address, (uint8_t)(state->A.low & 0xFF));
     } else {
-        memory_bank[base_address] = (uint8_t)(state->A.low & 0xFF);
-        memory_bank[base_address+1] = (uint8_t)(state->A.high & 0xFF);
+        write_word_new(machine, address, state->A.full);
     }
 
     return machine;

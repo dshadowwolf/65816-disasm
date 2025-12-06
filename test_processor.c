@@ -3563,12 +3563,10 @@ TEST(STA_DP_I_indirect) {
     machine->processor.DP = 0x00;
     set_flag(machine, M_FLAG);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x50] = 0x00;
-    bank[0x51] = 0x70;
+    write_word_new(machine, 0x0050, 0x7000);
     
     STA_DP_I(machine, 0x50, 0);
-    ASSERT_EQ(bank[0x7000], 0x42, "STA (DP) should store via indirect");
+    ASSERT_EQ(read_byte_new(machine, 0x7000), 0x42, "STA (DP) should store via indirect");
     
     destroy_machine(machine);
 }
@@ -3595,12 +3593,10 @@ TEST(STA_DP_I_IY_indirect_indexed) {
     machine->processor.Y = 0x10;
     set_flag(machine, M_FLAG);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x20] = 0x00;
-    bank[0x21] = 0x90;
+    write_word_new(machine, 0x20, 0x6000);
     
     STA_DP_I_IY(machine, 0x20, 0);
-    ASSERT_EQ(bank[0x9010], 0x66, "STA (DP),Y should store indirect indexed");
+    ASSERT_EQ(read_byte_new(machine, 0x6010), 0x66, "STA (DP),Y should store indirect indexed");
     
     destroy_machine(machine);
 }
