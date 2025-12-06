@@ -2107,7 +2107,7 @@ machine_state_t* JMP_ABS_I_IX  (machine_state_t* machine, uint16_t arg_one, uint
     processor_state_t *state = &machine->processor;
     uint8_t *memory_bank = get_memory_bank(machine, state->PBR);
     uint16_t indexed_address = get_absolute_address_indexed_x(machine, arg_one);
-    uint16_t target_address = read_word(memory_bank, indexed_address);
+    uint16_t target_address = read_word_new(machine, indexed_address);
     state->PC = target_address;
     return machine;
 }

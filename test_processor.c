@@ -1002,8 +1002,7 @@ TEST(JMP_ABS_I_IX_indexed_indirect) {
     machine->processor.X = 0x04;
     
     // Set up indirect address at 0x1004
-    bank[0x1004] = 0x00;
-    bank[0x1005] = 0x90;
+    write_word_new(machine, 0x1004, 0x9000);
     
     JMP_ABS_I_IX(machine, 0x1000, 0);
     ASSERT_EQ(machine->processor.PC, 0x9000, "JMP (abs,X) should use X offset");
