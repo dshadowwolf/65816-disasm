@@ -2164,11 +2164,10 @@ machine_state_t* ROR_ABS_IX    (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* ADC_AL_IX     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry, Absolute Long Indexed X
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, (uint8_t)(arg_two & 0xFF));
     uint16_t mask = is_flag_set(machine, X_FLAG) ? 0xFF : 0xFFFF;
-    uint16_t effective_addr = (arg_one + (state->X & mask)) &0xFFFF;
+    long_address_t effective_addr = get_absolute_long_indexed_x_new(machine, arg_one, arg_two);
     uint8_t carry_in = is_flag_set(machine, CARRY) ? 1 : 0;
-    uint16_t value = read_byte(memory_bank, effective_addr);
+    uint16_t value = read_byte_long(machine, effective_addr);
     if (is_flag_set(machine, M_FLAG)) {
         uint16_t result = state->A.low + value + carry_in;
         set_flags_nzc_8(machine, result);
@@ -2192,17 +2191,16 @@ machine_state_t* BRA_CB        (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* STA_DP_I_IX   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t dp_address;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     if (state->emulation_mode) dp_address = 0x0000 | (state->DP & 0xFF);
     else dp_address = state->DP & 0xFFFF;
     uint8_t offset = (uint8_t)arg_one;
     // (DP,X) means: add X to DP+offset, THEN read pointer
-    uint16_t address = get_dp_address_indirect_indexed_x(machine, arg_one);
+    uint16_t address = get_dp_address_indirect_indexed_x_new(machine, arg_one);
 
     if( is_flag_set(machine, M_FLAG)) {
-        write_byte(memory_bank, address, state->A.low);
+        write_byte_new(machine, address, state->A.low);
     } else {
-        write_word(memory_bank, address, state->A.full);
+        write_word_new(machine, address, state->A.full);
     }
     return machine;
 }

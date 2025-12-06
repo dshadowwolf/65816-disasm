@@ -295,6 +295,12 @@ uint16_t get_stack_relative_address_indirect_indexed_y_new(machine_state_t *mach
     return (effective_address + machine->processor.Y) & 0xFFFF;
 }
 
+long_address_t get_absolute_long_indexed_x_new(machine_state_t *machine, uint16_t address, uint8_t bank) {
+    processor_state_t *state = &machine->processor;
+    uint16_t effective_address = (address + (state->X & 0xFFFF)) & 0xFFFF;
+    return get_long_address(machine, effective_address, bank);
+}
+
 /* End experimental design work */
 
 void push_byte(machine_state_t *machine, uint8_t value) {
