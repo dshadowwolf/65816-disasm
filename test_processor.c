@@ -2186,10 +2186,9 @@ TEST(ADC_ABS_IX_indexed) {
     machine->processor.X = 0x05;
     clear_flag(machine, CARRY);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x8005] = 0x15;
+    write_byte_new(machine, 0x7005, 0x15);
     
-    ADC_ABS_IX(machine, 0x8000, 0);
+    ADC_ABS_IX(machine, 0x7000, 0);
     ASSERT_EQ(machine->processor.A.low, 0x25, "ADC ABS,X should add indexed memory to A");
     
     destroy_machine(machine);

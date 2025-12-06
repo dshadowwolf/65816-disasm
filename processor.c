@@ -2118,7 +2118,7 @@ machine_state_t* ADC_ABS_IX    (machine_state_t* machine, uint16_t arg_one, uint
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     uint16_t address = get_absolute_address_indexed_x(machine, arg_one);
     uint16_t mask = is_flag_set(machine, X_FLAG) ? 0xFF : 0xFFFF;
-    uint8_t value = read_byte(memory_bank, address);
+    uint8_t value = read_byte_new(machine, address);
     uint16_t carry = is_flag_set(machine, CARRY) ? 0x80 : 0x00;
     uint8_t carry_out = value & 0x01;
 
