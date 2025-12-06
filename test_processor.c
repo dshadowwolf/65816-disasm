@@ -1885,11 +1885,10 @@ TEST(CPY_ABS_absolute) {
 TEST(ASL_DP_direct_page) {
     machine_state_t *machine = setup_machine();
     machine->processor.DP = 0x00;
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x10] = 0x40;
+    write_byte_dp_sr(machine, 0x10, 0x40);
     
     ASL_DP(machine, 0x10, 0);
-    ASSERT_EQ(bank[0x10], 0x80, "ASL DP should shift memory left");
+    ASSERT_EQ(read_byte_dp_sr(machine, 0x10), 0x80, "ASL DP should shift memory left");
     
     destroy_machine(machine);
 }
@@ -2808,16 +2807,32 @@ TEST(ORA_DP_IL_indirect_long) {
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0x0A;
     machine->processor.DP = 0x00;
+
+    // a second bank is being allocated for testing purposes
+    machine->memory_banks[1] = (memory_bank_t*)malloc(sizeof(memory_bank_t));
+    memory_region_t *region0 = (memory_region_t*)malloc(sizeof(memory_region_t));
+    memory_bank_t *bank1 = machine->memory_banks[1];
+
+    region0->start_offset = 0x0000;
+    region0->end_offset = 0xFFFF;
+    region0->data = (uint8_t *)malloc(65536 * sizeof(uint8_t));
+    region0->read_byte = read_byte_from_region_nodev;  // Default read/write functions can be set later
+    region0->write_byte = write_byte_to_region_nodev;
+    region0->read_word = read_word_from_region_nodev;
+    region0->write_word = write_word_to_region_nodev;
+    region0->flags = MEM_READWRITE;
+    region0->next = NULL;
+    bank1->regions = region0;
+
     set_flag(machine, M_FLAG);
     
-    uint8_t *bank0 = get_memory_bank(machine, 0);
-    bank0[0x10] = 0x00;
-    bank0[0x11] = 0x60;
-    bank0[0x12] = 0x01;
-    
-    uint8_t *bank1 = get_memory_bank(machine, 0x01);
-    bank1[0x6000] = 0x50;
-    
+    write_byte_dp_sr(machine, 0x10, 0x00);
+    write_byte_dp_sr(machine, 0x11, 0x60);
+    write_byte_dp_sr(machine, 0x12, 0x01);
+
+    long_address_t addr = { .bank = 0x01, .address = 0x6000 };
+    write_byte_long(machine, addr, 0x50);
+
     ORA_DP_IL(machine, 0x10, 0);
     ASSERT_EQ(machine->processor.A.low, 0x5A, "ORA [DP] should OR indirect long memory with A");
     

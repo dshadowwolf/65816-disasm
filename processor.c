@@ -173,15 +173,15 @@ machine_state_t* ORA_DP        (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* ASL_DP        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t dp_address = get_dp_address(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
-    uint8_t value = memory_bank[dp_address];
+    uint8_t value = read_byte_dp_sr(machine, dp_address);
+
     if (is_flag_set(machine, M_FLAG)) {
         uint16_t result = ((uint16_t)value) << 1;
-        memory_bank[dp_address] = (uint8_t)(result & 0xFF);
+        write_byte_dp_sr(machine, dp_address, (uint8_t)(result & 0xFF));
         set_flags_nzc_8(machine, result);
     } else {
         uint32_t full_value = (uint32_t)(value << 1);
-        memory_bank[dp_address] = (uint8_t)(full_value & 0xFF);
+        write_word_dp_sr(machine, dp_address, (uint16_t)(full_value & 0xFFFF));
         set_flags_nzc_16(machine, full_value);
     }
     return machine;
@@ -189,9 +189,10 @@ machine_state_t* ASL_DP        (machine_state_t* machine, uint16_t arg_one, uint
 
 machine_state_t* ORA_DP_IL     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
-    long_address_t effective_address = get_dp_address_indirect_long(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, effective_address.bank);
-    uint8_t value = memory_bank[effective_address.address];
+    long_address_t effective_address = get_dp_address_indirect_long_new(machine, arg_one);
+    uint8_t value = read_byte_long(machine, effective_address);
+    printf("ORA_DP_IL: start offset = %04X\n", arg_one);
+    printf("ORA_DP_IL: effective_address = %02X:%04X, value = %02X\n", effective_address.bank, effective_address.address, value);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low |= value;
         set_flags_nz_8(machine, state->A.low);
@@ -207,7 +208,7 @@ machine_state_t* PHP           (machine_state_t* machine, uint16_t arg_one, uint
     uint16_t sp_address;
     if(state->emulation_mode) sp_address = 0x0100 | (state->SP & 0xFF);
     else sp_address = state->SP;
-    push_byte(machine, state->P);
+    push_byte_new(machine, state->P);
     return machine;
 }
 
@@ -716,7 +717,7 @@ machine_state_t* PLP           (machine_state_t* machine, uint16_t arg_one, uint
     processor_state_t *state = &machine->processor;
     uint16_t sp_address;
 
-    state->P = pop_byte(machine);
+    state->P = pop_byte_new(machine);
     if (state->emulation_mode) {
         set_flag(machine, M_FLAG);
         set_flag(machine, X_FLAG);
