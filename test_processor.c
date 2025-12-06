@@ -3674,12 +3674,10 @@ TEST(STA_SR_I_IY_sr_indirect_indexed) {
     machine->processor.Y = 0x15;
     set_flag(machine, M_FLAG);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x136] = 0x00;
-    bank[0x137] = 0xC0;
+    write_word_new(machine, 0x136, 0x00C0);
     
     STA_SR_I_IY(machine, 0x06, 0);
-    ASSERT_EQ(bank[0xC015], 0xAA, "STA (SR,S),Y should store SR indirect indexed");
+    ASSERT_EQ(read_byte_new(machine, 0x00D5), 0xAA, "STA (SR,S),Y should store SR indirect indexed");
     
     destroy_machine(machine);
 }

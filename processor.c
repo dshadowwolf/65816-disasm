@@ -2408,12 +2408,12 @@ machine_state_t* STA_DP_I      (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* STA_SR_I_IY   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // STore A, Stack-relative, Indirect, Indexed by Y
     processor_state_t *state = &machine->processor;
-    uint16_t address = get_stack_relative_address_indirect_indexed_y(machine, arg_one);
-    uint8_t *target_bank = get_memory_bank(machine, state->DBR);
+    uint16_t address = get_stack_relative_address_indirect_indexed_y_new(machine, arg_one);
+    printf("STA_SR_I_IY address: %04X\n", address);
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        write_byte(target_bank, address, (uint8_t)(state->A.low & 0xFF));
+        write_byte_new(machine, address, (uint8_t)(state->A.low & 0xFF));
     } else {
-        write_word(target_bank, address, state->A.full);
+        write_word_new(machine, address, state->A.full);
     }
 
     return machine;
