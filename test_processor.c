@@ -1401,9 +1401,8 @@ TEST(XCE_CB_exchange_carry_emulation) {
 
 TEST(LDA_DP_direct_page) {
     machine_state_t *machine = setup_machine();
-    uint8_t *bank = get_memory_bank(machine, 0);
     machine->processor.DP = 0x00;  // DP at zero page
-    bank[0x05] = 0x42;
+    write_byte_new(machine, 0x05, 0x42);
     
     LDA_DP(machine, 0x05, 0);
     ASSERT_EQ(machine->processor.A.low, 0x42, "LDA DP should load from direct page");
@@ -1449,9 +1448,8 @@ TEST(STA_ABL_long_addressing) {
 
 TEST(LDX_DP_direct_page) {
     machine_state_t *machine = setup_machine();
-    uint8_t *bank = get_memory_bank(machine, 0);
     machine->processor.DP = 0x00;
-    bank[0x08] = 0x55;
+    write_byte_new(machine, 0x08, 0x55);
     
     LDX_DP(machine, 0x08, 0);
     ASSERT_EQ(machine->processor.X & 0xFF, 0x55, "LDX DP should load X from direct page");
@@ -1461,9 +1459,9 @@ TEST(LDX_DP_direct_page) {
 
 TEST(LDY_DP_direct_page) {
     machine_state_t *machine = setup_machine();
-    uint8_t *bank = get_memory_bank(machine, 0);
     machine->processor.DP = 0x00;
-    bank[0x05] = 0x66;
+
+    write_byte_new(machine, 0x05, 0x66);
     
     LDY_DP(machine, 0x05, 0);
     ASSERT_EQ(machine->processor.Y & 0xFF, 0x66, "LDY DP should load Y from direct page");
@@ -3355,8 +3353,7 @@ TEST(LDA_SR_stack_relative) {
     machine->processor.SP = 0x100;
     set_flag(machine, M_FLAG);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x10A] = 0x55;
+    write_byte_new(machine, 0x10A, 0x55);
     
     LDA_SR(machine, 0x0A, 0);
     ASSERT_EQ(machine->processor.A.low, 0x55, "LDA SR,S should load from stack relative");
@@ -3386,10 +3383,8 @@ TEST(LDA_DP_I_IX_indexed_indirect) {
     machine->processor.X = 0x05;
     set_flag(machine, M_FLAG);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x15] = 0x00;
-    bank[0x16] = 0x60;
-    bank[0x6000] = 0xBB;
+    write_word_new(machine, 0x0015, 0x6000);
+    write_byte_new(machine, 0x6000, 0xBB);
     
     LDA_DP_I_IX(machine, 0x10, 0);
     ASSERT_EQ(machine->processor.A.low, 0xBB, "LDA (DP,X) should load indexed indirect");
