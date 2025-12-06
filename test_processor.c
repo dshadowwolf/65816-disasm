@@ -1971,10 +1971,11 @@ TEST(ROR_ABS_absolute) {
     machine_state_t *machine = setup_machine();
     machine->processor.P |= CARRY;
     uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x8000] = 0x02;
+
+    write_byte_new(machine, 0x7000, 0x02);
     
-    ROR_ABS(machine, 0x8000, 0);
-    ASSERT_EQ(bank[0x8000], 0x81, "ROR ABS should rotate memory right with carry");
+    ROR_ABS(machine, 0x7000, 0);
+    ASSERT_EQ(read_byte_new(machine, 0x7000), 0x81, "ROR ABS should rotate memory right with carry");
     
     destroy_machine(machine);
 }

@@ -1848,24 +1848,23 @@ machine_state_t* ADC_ABS       (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* ROR_ABS       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Rotate Right, Absolute
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     uint16_t base_address = get_absolute_address(machine, arg_one);
-    uint8_t value = read_byte(memory_bank, base_address);
+    uint8_t value = read_byte_new(machine, base_address);
     if (is_flag_set(machine, M_FLAG)) {
         // 8-bit mode
         uint8_t carry_in = is_flag_set(machine, CARRY) ? 0x80 : 0x00;
         check_and_set_carry_8(machine, value);
         uint16_t result = (value >> 1) | carry_in;
         set_flags_nz_8(machine, result);
-        write_byte(memory_bank, base_address, result);
+        write_byte_new(machine, base_address, result);
     } else {
         // 16-bit mode
         uint16_t carry_in = is_flag_set(machine, CARRY) ? 0x8000 : 0x0000;
         check_and_set_carry_16(machine, value);
-        uint16_t value16 = read_word(memory_bank, base_address);
+        uint16_t value16 = read_word_new(machine, base_address);
         value16 = (value16 >> 1) | carry_in;
         set_flags_nz_16(machine, value16);
-        write_word(memory_bank, base_address, value16);
+        write_word_new(machine, base_address, value16);
     }
     return machine;
 }
