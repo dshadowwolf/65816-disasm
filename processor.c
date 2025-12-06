@@ -1983,19 +1983,18 @@ machine_state_t* STZ_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* ADC_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry (Direct Page Indexed with X)
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     uint16_t address = get_dp_address_indexed_x(machine, arg_one);
     uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
     if (is_flag_set(machine, M_FLAG)) {
         // 8-bit mode
-        uint8_t value = read_byte(memory_bank, address);
+        uint8_t value = read_byte_new(machine, address);
         uint16_t result = (uint16_t)state->A.low + (uint16_t)value + carry;
         state->A.low = (uint8_t)(result & 0xFF);
         // Set Carry flag
         check_and_set_carry_8(machine, result);
     } else {
         // 16-bit mode
-        uint16_t value = read_word(memory_bank, address);
+        uint16_t value = read_word_new(machine, address);
         uint32_t result = (uint32_t)state->A.full + (uint32_t)value + carry;
         state->A.full = (uint16_t)(result & 0xFFFF);
         // Set Carry flag

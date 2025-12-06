@@ -1725,8 +1725,8 @@ TEST(ADC_DP_IX_direct_page_indexed) {
     machine->processor.X = 0x05;
     machine->processor.P &= ~CARRY;
     machine->processor.DP = 0x00;
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x15] = 0x20;
+
+    write_byte_new(machine, 0x0015, 0x20);
     
     ADC_DP_IX(machine, 0x10, 0);
     ASSERT_EQ(machine->processor.A.low, 0x30, "ADC DP,X should add with indexed memory");
