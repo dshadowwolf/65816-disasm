@@ -2780,10 +2780,8 @@ TEST(ORA_ABS_IX_indexed) {
     machine->processor.A.low = 0x44;
     machine->processor.X = 0x0E;
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x800E] = 0x88;
-    
-    ORA_ABS_IX(machine, 0x8000, 0);
+    write_byte_new(machine, 0x600E, 0x88);
+    ORA_ABS_IX(machine, 0x6000, 0);
     ASSERT_EQ(machine->processor.A.low, 0xCC, "ORA ABS,X should OR indexed memory with A");
     
     destroy_machine(machine);
