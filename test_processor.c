@@ -1038,8 +1038,12 @@ TEST(PHD_and_PLD) {
     machine->processor.DP = 0x42;
     
     PHD(machine, 0, 0);
-    // PHD pushes 16-bit DP, but DP is only 8-bit in this implementation
-    // Skip this test or adjust expectations
+    ASSERT_EQ(machine->processor.SP, 0x1FE, "PHD should decrement SP");
+
+    machine->processor.DP = 0x00;
+    PLD(machine, 0, 0);
+    ASSERT_EQ(machine->processor.SP, 0x1FF, "PLD should increment SP");
+    ASSERT_EQ(machine->processor.DP, 0x42, "PLD should restore DP value");
     
     destroy_machine(machine);
 }
@@ -1259,10 +1263,10 @@ TEST(TSB_ABS_absolute) {
     machine_state_t *machine = setup_machine();
     uint8_t *bank = get_memory_bank(machine, 0);
     machine->processor.A.low = 0x55;
-    bank[0x4000] = 0xAA;
+    write_byte_new(machine, 0x4000, 0xAA);
     
     TSB_ABS(machine, 0x4000, 0);
-    ASSERT_EQ(bank[0x4000], 0xFF, "TSB ABS should OR accumulator with memory");
+    ASSERT_EQ(read_byte_new(machine, 0x4000), 0xFF, "TSB ABS should OR accumulator with memory");
     
     destroy_machine(machine);
 }

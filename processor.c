@@ -242,13 +242,10 @@ machine_state_t* ASL           (machine_state_t* machine, uint16_t arg_one, uint
 }
 
 machine_state_t* PHD           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
-    processor_state_t *state = &machine->processor;
-    uint16_t sp_address = 0x0100 | (state->SP & 0xFF);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     if (is_flag_set(machine, M_FLAG)) {
-        push_byte(machine, state->DP & 0xFF);
+        push_byte_new(machine, machine->processor.DP & 0xFF);
     } else {
-        push_word(machine, state->DP);
+        push_word_new(machine, machine->processor.DP);
     }
     return machine;
 }
@@ -256,21 +253,21 @@ machine_state_t* PHD           (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* TSB_ABS       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Test and Set Bits - Absolute
     processor_state_t *state = &machine->processor;
+    
     uint16_t address = get_absolute_address(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     if (is_flag_set(machine, M_FLAG)) {
-        uint8_t value = memory_bank[address];
+        uint8_t value = read_byte_new(machine, address);
         uint8_t test_result = state->A.low & value;
         if (test_result == 0) set_flag(machine, ZERO);
         else clear_flag(machine, ZERO);
-        write_byte(memory_bank, address, value | state->A.low);
+        write_byte_new(machine, address, value | state->A.low);
     } else {
-        uint16_t value = memory_bank[address] | ((uint16_t)memory_bank[address + 1] << 8);
+        uint16_t value = read_word_new(machine, address);
         uint16_t test_result = state->A.full & value;
         if (test_result == 0) set_flag(machine, ZERO);
         else clear_flag(machine, ZERO);
         uint16_t new_value = value | state->A.full;
-        write_word(memory_bank, address, new_value);
+        write_word_new(machine, address, new_value);
     }
     return machine;
 }
@@ -767,9 +764,13 @@ machine_state_t* ROL           (machine_state_t* machine, uint16_t arg_one, uint
 
 machine_state_t* PLD           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Pull Direct Page Register from Stack
-    processor_state_t *state = &machine->processor;
-    uint16_t sp_address;
-    state->DP = pop_word(machine);
+    if (is_flag_set(machine, M_FLAG)) {
+        machine->processor.DP = pop_byte_new(machine);
+        machine->processor.DP &= 0x00FF; // Zero upper byte in 8-bit mode
+    } else {
+        machine->processor.DP = pop_word_new(machine);
+    }
+
     return machine;
 }
 
