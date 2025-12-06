@@ -2034,9 +2034,8 @@ machine_state_t* ADC_DP_IL_IY  (machine_state_t* machine, uint16_t arg_one, uint
     uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
 
     // get address somehow
-    long_address_t address = get_dp_address_indirect_long_indexed_y(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, address.bank);
-    uint8_t value = read_byte(memory_bank, address.address);
+    long_address_t address = get_dp_address_indirect_long_indexed_y_new(machine, arg_one);
+    uint8_t value = read_byte_long(machine, address);
 
     if (is_flag_set(machine, M_FLAG)) {
         // 8-bit mode
@@ -2065,10 +2064,9 @@ machine_state_t* SEI           (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* ADC_ABS_IY    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry, Absolute Indexed by Y
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     uint16_t effective_addr = get_absolute_address_indexed_y(machine, arg_one);
     uint8_t carry_in = is_flag_set(machine, CARRY) ? 1 : 0;
-    uint16_t value = read_byte(memory_bank, effective_addr);
+    uint16_t value = read_byte_new(machine, effective_addr);
     if (is_flag_set(machine, M_FLAG)) {
         uint16_t result = state->A.low + value + carry_in;
         set_flags_nzc_8(machine, result);
