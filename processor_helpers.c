@@ -176,7 +176,7 @@ void write_byte_new(machine_state_t *machine, uint16_t address, uint8_t value) {
     }
 }
 
-void write_word_new(machine_state_t *machine, uint16_t address, uint8_t value) {
+void write_word_new(machine_state_t *machine, uint16_t address, uint16_t value) {
     memory_region_t *region = find_current_memory_region(machine, address);
     if (region != NULL) {
         WRITE_WORD(region, address, value);
@@ -231,11 +231,8 @@ void write_word_long(machine_state_t *machine, long_address_t long_addr, uint16_
 
 uint8_t read_byte_long(machine_state_t *machine, long_address_t long_addr) {
     memory_region_t *region = find_memory_region(machine, long_addr.bank, long_addr.address);
-    printf("read_byte_long: bank=%02X, address=%04X\n", long_addr.bank, long_addr.address);
-    printf("read_byte_long: region=%p\n", (void*)region);
     if (region != NULL) {
         uint8_t value = READ_BYTE(region, long_addr.address);
-        printf("read_byte_long: value=%02X\n", value);
         return value;
     }
     return 0; // Default return if region not found

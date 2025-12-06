@@ -191,8 +191,6 @@ machine_state_t* ORA_DP_IL     (machine_state_t* machine, uint16_t arg_one, uint
     processor_state_t *state = &machine->processor;
     long_address_t effective_address = get_dp_address_indirect_long_new(machine, arg_one);
     uint8_t value = read_byte_long(machine, effective_address);
-    printf("ORA_DP_IL: start offset = %04X\n", arg_one);
-    printf("ORA_DP_IL: effective_address = %02X:%04X, value = %02X\n", effective_address.bank, effective_address.address, value);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low |= value;
         set_flags_nz_8(machine, state->A.low);
@@ -276,7 +274,6 @@ machine_state_t* ORA_ABS       (machine_state_t* machine, uint16_t arg_one, uint
     processor_state_t *state = &machine->processor;
     uint16_t address = get_absolute_address(machine, arg_one);
     uint8_t value = read_byte_new(machine, address);
-    printf("ORA_ABS: address = %04X (%04X), value = %02X\n", address, arg_one, value);
     if (is_flag_set(machine, M_FLAG)) {
         uint8_t result = state->A.low | value;
         state->A.low = result;
@@ -340,14 +337,13 @@ machine_state_t* BPL_CB        (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* ORA_DP_I_IY      (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_dp_address_indirect_indexed_y(machine, arg_one);
-    uint8_t *memory = get_memory_bank(machine, state->DBR);
     if (is_flag_set(machine, M_FLAG)) {
-        uint8_t value = read_byte(memory, effective_address);
+        uint8_t value = read_byte_new(machine, effective_address);
         uint8_t result = state->A.low | value;
         state->A.low = result;
         set_flags_nz_8(machine, result);
     } else {
-        uint16_t value = read_word(memory, effective_address);
+        uint16_t value = read_word_new(machine, effective_address);
         uint16_t result = state->A.full | value;
         state->A.full = result;
         set_flags_nz_16(machine, result);
@@ -358,9 +354,8 @@ machine_state_t* ORA_DP_I_IY      (machine_state_t* machine, uint16_t arg_one, u
 
 machine_state_t* ORA_DP_I      (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
-    uint16_t effective_address = get_dp_address_indirect(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
-    uint8_t value = read_byte(memory_bank, effective_address);
+    uint16_t effective_address = get_dp_address_indirect_new(machine, arg_one);
+    uint8_t value = read_byte_new(machine, effective_address);
     if (is_flag_set(machine, M_FLAG)) {
         uint8_t result = state->A.low | value;
         state->A.low = result;
@@ -375,15 +370,14 @@ machine_state_t* ORA_DP_I      (machine_state_t* machine, uint16_t arg_one, uint
 
 machine_state_t* ORA_SR_I_IY   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
-    uint16_t address = get_stack_relative_address_indirect_indexed_y(machine, arg_one);
-    uint8_t *pbr_bank = get_memory_bank(machine, state->DBR);
-    uint8_t value = read_byte(pbr_bank, address);
+    uint16_t address = get_stack_relative_address_indirect_indexed_y_new(machine, arg_one);
+    uint8_t value = read_byte_new(machine, address);
     if (is_flag_set(machine, M_FLAG)) {
         uint8_t result = state->A.low | value;
         state->A.low = result;
         set_flags_nz_8(machine, result);
     } else {
-        uint16_t value16 = read_word(pbr_bank, address);
+        uint16_t value16 = read_word_new(machine, address);
         uint16_t result = state->A.full | value16;
         state->A.full = result;
         set_flags_nz_16(machine, result);
@@ -394,22 +388,20 @@ machine_state_t* ORA_SR_I_IY   (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* TRB_DP        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Test and Reset Bits - Direct Page
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     uint16_t dp_address = get_dp_address(machine, arg_one);
     if (is_flag_set(machine, M_FLAG)) {
-        uint8_t value = read_byte(memory_bank, dp_address);
+        uint8_t value = read_byte_new(machine, dp_address);
         uint8_t test_result = state->A.low & value;
         if (test_result == 0) set_flag(machine, ZERO);
         else clear_flag(machine, ZERO);
-        memory_bank[dp_address] = value & (~state->A.low);  // Clear bits
+        write_byte_new(machine, dp_address, value & (~state->A.low));
     } else {
-        uint16_t value = read_word(memory_bank, dp_address);
+        uint16_t value = read_word_new(machine, dp_address);
         uint16_t test_result = state->A.full & value;
         if (test_result == 0) set_flag(machine, ZERO);
         else clear_flag(machine, ZERO);
         uint16_t new_value = value & (~state->A.full);
-        memory_bank[dp_address] = new_value & 0xFF;
-        memory_bank[dp_address + 1] = (new_value >> 8) & 0xFF;
+        write_word_new(machine, dp_address, new_value);
     }
     return machine;
 }

@@ -1251,10 +1251,11 @@ TEST(TRB_DP_test_and_reset_bits) {
     machine_state_t *machine = setup_machine();
     uint8_t *bank = get_memory_bank(machine, 0);
     machine->processor.A.low = 0x0F;
-    bank[0x30] = 0xFF;
+
+    write_byte_new(machine, 0x0030, 0xF0);
     
-    TRB_DP(machine, 0x30, 0);
-    ASSERT_EQ(bank[0x30], 0xF0, "TRB should clear bits set in A");
+    TRB_DP(machine, 0x0030, 0);
+    ASSERT_EQ(read_byte_new(machine, 0x0030), 0xF0, "TRB should clear bits set in A");
     
     destroy_machine(machine);
 }
@@ -1592,10 +1593,8 @@ TEST(ORA_DP_I_IY_dp_indirect_indexed) {
     machine->processor.A.low = 0x0F;
     machine->processor.Y = 0x10;
     machine->processor.DP = 0x00;
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x20] = 0x00;
-    bank[0x21] = 0x80;
-    bank[0x8010] = 0xF0;
+    write_word_new(machine, 0x20, 0x00);  // Pointer at DP 0x20 points to 0x4000
+    write_byte_new(machine, 0x10, 0xF0);
     
     ORA_DP_I_IY(machine, 0x20, 0);
     ASSERT_EQ(machine->processor.A.low, 0xFF, "ORA (DP),Y should work correctly");
@@ -2810,10 +2809,8 @@ TEST(ORA_DP_I_indirect) {
     machine->processor.A.low = 0x20;
     machine->processor.DP = 0x00;
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x10] = 0x00;
-    bank[0x11] = 0x50;
-    bank[0x5000] = 0x02;
+    write_word_new(machine, 0x0010, 0x5000);
+    write_byte_new(machine, 0x5000, 0x02);
     
     ORA_DP_I(machine, 0x10, 0);
     ASSERT_EQ(machine->processor.A.low, 0x22, "ORA (DP) should OR indirect memory with A");
@@ -2903,10 +2900,8 @@ TEST(ORA_SR_I_IY_sr_indirect_indexed) {
     machine->processor.SP = 0x180;
     set_flag(machine, M_FLAG);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x185] = 0x00;
-    bank[0x186] = 0x20;
-    bank[0x2011] = 0x04;
+    write_word_new(machine, 0x185, 0x2000);
+    write_byte_new(machine, 0x2011, 0x04);
     
     ORA_SR_I_IY(machine, 0x05, 0);
     ASSERT_EQ(machine->processor.A.low, 0x44, "ORA (SR,S),Y should OR SR indirect indexed memory with A");

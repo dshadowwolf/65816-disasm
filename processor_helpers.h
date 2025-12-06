@@ -85,7 +85,7 @@ void push_word_new(machine_state_t *machine, uint16_t value);
 uint8_t pop_byte_new(machine_state_t *machine);
 uint16_t pop_word_new(machine_state_t *machine);
 void write_byte_new(machine_state_t *machine, uint16_t address, uint8_t value);
-void write_word_new(machine_state_t *machine, uint16_t address, uint8_t value);
+void write_word_new(machine_state_t *machine, uint16_t address, uint16_t value);
 uint8_t read_byte_new(machine_state_t *machine, uint16_t address);
 uint16_t read_word_new(machine_state_t *machine, uint16_t address);
 uint8_t read_byte_dp_sr(machine_state_t *machine, uint16_t address);
@@ -98,6 +98,8 @@ uint8_t read_byte_long(machine_state_t *machine, long_address_t long_addr);
 uint16_t read_word_long(machine_state_t *machine, long_address_t long_addr);
 uint16_t get_dp_address_indirect_new(machine_state_t *machine, uint16_t dp_offset);
 uint16_t get_dp_address_indirect_indexed_x_new(machine_state_t *machine, uint16_t dp_offset);
+uint16_t get_dp_address_indirect_indexed_y_new(machine_state_t *machine, uint16_t dp_offset);
 long_address_t get_dp_address_indirect_long_new(machine_state_t *machine, uint16_t dp_offset);
+uint16_t get_stack_relative_address_indirect_new(machine_state_t *machine, uint8_t offset);
 uint16_t get_stack_relative_address_indirect_indexed_y_new(machine_state_t *machine, uint8_t offset);
 #endif // PROCESSOR_HELPERS_H
