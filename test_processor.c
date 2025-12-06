@@ -2348,10 +2348,8 @@ TEST(ADC_SR_I_IY_sr_indirect_indexed) {
     clear_flag(machine, CARRY);
     set_flag(machine, M_FLAG);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x1E5] = 0x00;
-    bank[0x1E6] = 0x50;
-    bank[0x5003] = 0x15;
+    write_word_new(machine, 0x01E5, 0x5000);
+    write_byte_new(machine, 0x5003, 0x15);
     
     ADC_SR_I_IY(machine, 0x05, 0);
     ASSERT_EQ(machine->processor.A.low, 0x20, "ADC (SR,S),Y should add SR indirect indexed memory to A");

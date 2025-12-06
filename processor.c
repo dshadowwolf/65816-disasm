@@ -1952,10 +1952,12 @@ machine_state_t* ADC_DP_I      (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* ADC_SR_I_IY   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry (Stack Relative Indirect Indexed with Y)
     processor_state_t *state = &machine->processor;
-    uint16_t address = get_stack_relative_address_indirect_indexed_y(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
-    uint8_t value = read_byte(memory_bank, address);
+    uint16_t address = get_stack_relative_address_indirect_indexed_y_new(machine, arg_one);
+    uint8_t value = read_byte_new(machine, address);
+    printf("ADC_SR_I_IY: Read value 0x%02X from address 0x%04X\n", value, address);
+    printf("ADC_SR_I_IY: Accumulator before: 0x%04X\n", is_flag_set(machine, M_FLAG) ? state->A.low : state->A.full);
     uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
+    printf("ADC_SR_I_IY: Carry: %d\n", carry);
     if (is_flag_set(machine, M_FLAG)) {
         // 8-bit mode
         uint16_t result = (uint16_t)state->A.low + (uint16_t)(value & 0xFF) + carry;
@@ -1964,7 +1966,7 @@ machine_state_t* ADC_SR_I_IY   (machine_state_t* machine, uint16_t arg_one, uint
         check_and_set_carry_8(machine, result);
     } else {
         // 16-bit mode
-        uint16_t value16 = read_word(memory_bank, address);
+        uint16_t value16 = read_word_new(machine, address);
         uint32_t result = (uint32_t)state->A.full + (uint32_t)(value16 & 0xFFFF) + carry;
         state->A.full = (uint16_t)(result & 0xFFFF);
         // Set Carry flag
