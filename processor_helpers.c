@@ -248,6 +248,12 @@ long_address_t get_dp_address_indirect_long_new(machine_state_t *machine, uint16
     return get_long_address(machine, addr, bank);
 }
 
+uint16_t get_stack_relative_address_indirect_indexed_y_new(machine_state_t *machine, uint8_t offset) {
+    uint16_t pointer_address = get_stack_relative_address(machine, offset);
+    uint16_t effective_address = read_word_new(machine, pointer_address);
+    return (effective_address + machine->processor.Y) & 0xFFFF;
+}
+
 /* End experimental design work */
 
 void push_byte(machine_state_t *machine, uint8_t value) {
@@ -341,7 +347,7 @@ uint16_t get_dp_address_indirect_indexed_y(machine_state_t *machine, uint16_t dp
 
 long_address_t get_dp_address_indirect_long(machine_state_t *machine, uint16_t dp_offset) {
     uint16_t dp_address = get_dp_address(machine, dp_offset);
-    uint8_t *memory_bank = get_memory_bank(machine, machine->processor.emulation_mode?0:machine->processor.DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0); // Direct page always in bank 0
     uint16_t addr = read_word(memory_bank, dp_address);
     uint8_t bank = read_byte(memory_bank, (dp_address + 2) & 0xFFFF);
     return get_long_address(machine, addr, bank);
@@ -433,13 +439,13 @@ uint16_t get_stack_relative_address_indexed_y(machine_state_t *machine, uint8_t 
 
 uint16_t get_stack_relative_address_indirect(machine_state_t *machine, uint8_t offset) {
     uint16_t base_address = get_stack_relative_address(machine, offset);
-    uint8_t *memory_bank = get_memory_bank(machine, machine->processor.emulation_mode?0:machine->processor.DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0); // Stack relative always in bank 0
     return read_word(memory_bank, base_address);
 }
 
 uint16_t get_stack_relative_address_indirect_indexed_y(machine_state_t *machine, uint8_t offset) {
     uint16_t pointer_address = get_stack_relative_address(machine, offset);
-    uint8_t *memory_bank = get_memory_bank(machine, machine->processor.emulation_mode?0:machine->processor.DBR);
+    uint8_t *memory_bank = get_memory_bank(machine, 0); // Stack relative always in bank 0
     uint16_t effective_address = read_word(memory_bank, pointer_address);
     return (effective_address + machine->processor.Y) & 0xFFFF;
 }
