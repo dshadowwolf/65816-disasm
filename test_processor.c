@@ -2486,10 +2486,8 @@ TEST(SBC_DP_I_IX_indexed_indirect) {
     machine->processor.DP = 0x00;
     set_flag(machine, CARRY);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x14] = 0x00;
-    bank[0x15] = 0x60;
-    bank[0x6000] = 0x13;
+    write_word_new(machine, 0x0014, 0x6000);
+    write_byte_new(machine, 0x6000, 0x13);
     
     SBC_DP_I_IX(machine, 0x10, 0);
     ASSERT_EQ(machine->processor.A.low, 0x20, "SBC (DP,X) should subtract indexed indirect memory from A");
@@ -2568,8 +2566,7 @@ TEST(SBC_SR_stack_relative) {
     set_flag(machine, CARRY);
     set_flag(machine, M_FLAG);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x1D8] = 0x12;
+    write_byte_dp_sr(machine, 0x1D8, 0x12);
     
     SBC_SR(machine, 0x08, 0);
     ASSERT_EQ(machine->processor.A.low, 0x20, "SBC SR,S should subtract stack relative memory from A");
@@ -3212,9 +3209,23 @@ TEST(CMP_ABL_IX_long_indexed) {
     machine->processor.A.low = 0x40;
     machine->processor.X = 0x1A;
     set_flag(machine, M_FLAG);
-    
-    uint8_t *bank = get_memory_bank(machine, 0x01);
-    bank[0x401A] = 0x40;
+        
+    machine->memory_banks[1] = (memory_bank_t*)malloc(sizeof(memory_bank_t));
+    memory_region_t *region0 = (memory_region_t*)malloc(sizeof(memory_region_t));
+    memory_bank_t *bank1 = machine->memory_banks[1];
+
+    region0->start_offset = 0x0000;
+    region0->end_offset = 0xFFFF;
+    region0->data = (uint8_t *)malloc(65536 * sizeof(uint8_t));
+    region0->read_byte = read_byte_from_region_nodev;  // Default read/write functions can be set later
+    region0->write_byte = write_byte_to_region_nodev;
+    region0->read_word = read_word_from_region_nodev;
+    region0->write_word = write_word_to_region_nodev;
+    region0->flags = MEM_READWRITE;
+    region0->next = NULL;
+    bank1->regions = region0;
+
+    write_byte_long(machine, (long_address_t) { .bank=0x01, .address=0x401A }, 0x40);
     
     CMP_ABL_IX(machine, 0x4000, 0x01);
     ASSERT_EQ(check_flag(machine, ZERO), true, "CMP ABL,X should set zero when equal");
