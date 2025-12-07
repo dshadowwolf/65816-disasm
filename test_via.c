@@ -318,8 +318,8 @@ void test_register_access(void) {
 
 int main(void) {
     printf("╔═══════════════════════════════════════════════╗\n");
-    printf("║  6522 VIA (Versatile Interface Adapter)      ║\n");
-    printf("║  Emulation Test Suite                        ║\n");
+    printf("║  6522 VIA (Versatile Interface Adapter)       ║\n");
+    printf("║  Emulation Test Suite                         ║\n");
     printf("╚═══════════════════════════════════════════════╝\n");
     
     test_register_access();
@@ -332,7 +332,7 @@ int main(void) {
     
     printf("\n");
     printf("╔═══════════════════════════════════════════════╗\n");
-    printf("║  All tests completed successfully!           ║\n");
+    printf("║  All tests completed successfully!            ║\n");
     printf("╚═══════════════════════════════════════════════╝\n");
     
     return 0;
