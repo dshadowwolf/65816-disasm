@@ -380,8 +380,8 @@ TEST(PEA_pushes_effective_address) {
     PEA_ABS(machine, 0x1234, 0);
     
     ASSERT_EQ(machine->processor.SP, 0x1FD, "SP should decrement by 2");
-    ASSERT_EQ(machine->memory[0][0x01FF], 0x12, "High byte should be pushed");
-    ASSERT_EQ(machine->memory[0][0x01FE], 0x34, "Low byte should be pushed");
+    ASSERT_EQ(read_byte_new(machine, 0x01FF), 0x12, "High byte should be pushed");
+    ASSERT_EQ(read_byte_new(machine, 0x01FE), 0x34, "Low byte should be pushed");
     
     destroy_machine(machine);
 }
@@ -1793,8 +1793,8 @@ TEST(SBC_DP_IX_direct_page_indexed) {
     machine->processor.X = 0x05;
     machine->processor.P |= CARRY;
     machine->processor.DP = 0x00;
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x15] = 0x20;
+
+    write_byte_new(machine, 0x0015, 0x20);
     
     SBC_DP_IX(machine, 0x10, 0);
     ASSERT_EQ(machine->processor.A.low, 0x30, "SBC DP,X should subtract with indexed memory");
@@ -2482,10 +2482,8 @@ TEST(SBC_DP_I_indirect) {
     machine->processor.DP = 0x00;
     set_flag(machine, CARRY);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x10] = 0x00;
-    bank[0x11] = 0x70;
-    bank[0x7000] = 0x08;
+    write_word_new(machine, 0x0010, 0x7000);
+    write_byte_new(machine, 0x7000, 0x08);
     
     SBC_DP_I(machine, 0x10, 0);
     ASSERT_EQ(machine->processor.A.low, 0x20, "SBC (DP) should subtract indirect memory from A");
@@ -2608,10 +2606,8 @@ TEST(SBC_SR_I_IY_sr_indirect_indexed) {
     set_flag(machine, CARRY);
     set_flag(machine, M_FLAG);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x1C6] = 0x00;
-    bank[0x1C7] = 0x40;
-    bank[0x4005] = 0x15;
+    write_word_new(machine, 0x01C6, 0x4000);
+    write_byte_new(machine, 0x4005, 0x15);
     
     SBC_SR_I_IY(machine, 0x06, 0);
     ASSERT_EQ(machine->processor.A.low, 0x20, "SBC (SR,S),Y should subtract SR indirect indexed memory from A");
