@@ -1824,10 +1824,10 @@ TEST(CMP_DP_direct_page) {
 TEST(CMP_ABS_absolute) {
     machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x50;
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x8000] = 0x30;
+
+    write_byte_new(machine, 0x4000, 0x50);
     
-    CMP_ABS(machine, 0x8000, 0);
+    CMP_ABS(machine, 0x4000, 0);
     ASSERT_EQ(check_flag(machine, ZERO), false, "CMP ABS should clear zero when not equal");
     ASSERT_EQ(check_flag(machine, CARRY), true, "CMP ABS should set carry when A > M");
     

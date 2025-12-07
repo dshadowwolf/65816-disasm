@@ -3225,17 +3225,16 @@ machine_state_t* CMP_ABS       (machine_state_t* machine, uint16_t arg_one, uint
     // CoMPare A, Absolute
     processor_state_t *state = &machine->processor;
     uint16_t address = get_absolute_address(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     uint16_t value_to_compare;
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        value_to_compare = read_byte(memory_bank, address);
+        value_to_compare = read_byte_new(machine, address);
         uint16_t result = (uint16_t)(state->A.low & 0xFF) - (uint16_t)(value_to_compare & 0xFF);
         // Carry is set if no borrow occurred
         if (result & 0x8000) clear_flag(machine, CARRY);  // Borrow occurred
         else set_flag(machine, CARRY);  // No borrow
         set_flags_nz_8(machine, result & 0xFF);
     } else {
-        value_to_compare = read_word(memory_bank, address);
+        value_to_compare = read_word_new(machine, address);
         uint32_t result = (uint32_t)(state->A.full & 0xFFFF) - (uint32_t)(value_to_compare & 0xFFFF);
         // Carry is set if no borrow occurred
         if (result & 0x80000000) clear_flag(machine, CARRY);  // Borrow occurred
