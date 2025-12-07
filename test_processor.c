@@ -278,8 +278,8 @@ TEST(PLX_16bit_mode) {
     machine->processor.SP = 0x1FD;
     machine->processor.emulation_mode = false;
     machine->processor.P &= ~X_FLAG;
-    machine->memory[0][0x01FE] = 0xCD;
-    machine->memory[0][0x01FF] = 0xAB;
+
+    write_word_new(machine, 0x01FE, 0xABCD);
     
     PLX(machine, 0, 0);
     
@@ -2437,8 +2437,7 @@ TEST(SBC_ABL_IX_long_indexed) {
     set_flag(machine, CARRY);
     set_flag(machine, M_FLAG);
     
-    uint8_t *bank = get_memory_bank(machine, 0x01);
-    bank[0x7010] = 0x20;
+    write_byte_new(machine, 0x7010, 0x20);
     
     SBC_ABL_IX(machine, 0x7000, 0x01);
     ASSERT_EQ(machine->processor.A.low, 0x30, "SBC ABL,X should subtract long indexed memory from A");
@@ -2452,10 +2451,9 @@ TEST(SBC_ABS_IX_indexed) {
     machine->processor.X = 0x08;
     set_flag(machine, CARRY);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x8008] = 0x15;
+    write_byte_new(machine, 0x5008, 0x15);
     
-    SBC_ABS_IX(machine, 0x8000, 0);
+    SBC_ABS_IX(machine, 0x5000, 0);
     ASSERT_EQ(machine->processor.A.low, 0x2B, "SBC ABS,X should subtract indexed memory from A");
     
     destroy_machine(machine);
@@ -2467,10 +2465,9 @@ TEST(SBC_ABS_IY_indexed) {
     machine->processor.Y = 0x06;
     set_flag(machine, CARRY);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x8006] = 0x10;
+    write_byte_new(machine, 0x7006, 0x10);
     
-    SBC_ABS_IY(machine, 0x8000, 0);
+    SBC_ABS_IY(machine, 0x7000, 0);
     ASSERT_EQ(machine->processor.A.low, 0x25, "SBC ABS,Y should subtract indexed memory from A");
     
     destroy_machine(machine);
@@ -2567,13 +2564,25 @@ TEST(SBC_DP_IL_IY_indirect_long_indexed) {
     set_flag(machine, CARRY);
     set_flag(machine, M_FLAG);
     
-    uint8_t *bank0 = get_memory_bank(machine, 0);
-    bank0[0x10] = 0x00;
-    bank0[0x11] = 0x90;
-    bank0[0x12] = 0x02;
     
-    uint8_t *bank2 = get_memory_bank(machine, 0x02);
-    bank2[0x9008] = 0x0A;
+    machine->memory_banks[2] = (memory_bank_t*)malloc(sizeof(memory_bank_t));
+    memory_region_t *region0 = (memory_region_t*)malloc(sizeof(memory_region_t));
+    memory_bank_t *bank2 = machine->memory_banks[2];
+
+    region0->start_offset = 0x0000;
+    region0->end_offset = 0xFFFF;
+    region0->data = (uint8_t *)malloc(65536 * sizeof(uint8_t));
+    region0->read_byte = read_byte_from_region_nodev;  // Default read/write functions can be set later
+    region0->write_byte = write_byte_to_region_nodev;
+    region0->read_word = read_word_from_region_nodev;
+    region0->write_word = write_word_to_region_nodev;
+    region0->flags = MEM_READWRITE;
+    region0->next = NULL;
+    bank2->regions = region0;
+
+    write_word_new(machine, 0x0010, 0x9000);
+    write_byte_new(machine, 0x0012, 0x02);  // Bank byte for long address
+    write_byte_long(machine, (long_address_t){ .bank = 0x02, .address = 0x9008 }, 0x0A);
     
     SBC_DP_IL_IY(machine, 0x10, 0);
     ASSERT_EQ(machine->processor.A.low, 0x20, "SBC [DP],Y should subtract indirect long indexed memory from A");
@@ -3990,11 +3999,10 @@ TEST(INC_DP_IX_indexed) {
     machine->processor.X = 0x10;
     set_flag(machine, M_FLAG);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x60] = 0x41;
+    write_byte_new(machine, 0x0060, 0x41);
     
     INC_DP_IX(machine, 0x50, 0);
-    ASSERT_EQ(bank[0x60], 0x42, "INC DP,X should increment indexed");
+    ASSERT_EQ(read_byte_new(machine, 0x0060), 0x42, "INC DP,X should increment indexed");
     
     destroy_machine(machine);
 }
@@ -4004,11 +4012,10 @@ TEST(INC_ABS_IX_indexed) {
     machine->processor.X = 0x20;
     set_flag(machine, M_FLAG);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x6020] = 0x7F;
+    write_byte_new(machine, 0x6020, 0x7F);
     
     INC_ABS_IX(machine, 0x6000, 0);
-    ASSERT_EQ(bank[0x6020], 0x80, "INC ABS,X should increment indexed");
+    ASSERT_EQ(read_byte_new(machine, 0x6020), 0x80, "INC ABS,X should increment indexed");
     
     destroy_machine(machine);
 }
@@ -4301,9 +4308,8 @@ TEST(JSR_ABS_I_IX_jsr_indexed_indirect) {
     machine->processor.X = 0x02;
     machine->processor.SP = 0x01FF;
     machine->processor.emulation_mode = false;
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x1002] = 0x00;
-    bank[0x1003] = 0x90;
+
+    write_word_new(machine, 0x1002, 0x9000);
     JSR_ABS_I_IX(machine, 0x1000, 0);
     ASSERT_EQ(machine->processor.PC, 0x9000, "JSR (ABS,X) should jump indexed indirect");
     destroy_machine(machine);
