@@ -3404,18 +3404,17 @@ machine_state_t* CLD_CB        (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* CMP_ABS_IY    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // CoMPare A, Absolute Indexed by Y
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     uint16_t effective_address = get_absolute_address_indexed_y(machine, arg_one);
     uint16_t value_to_compare;
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        value_to_compare = read_byte(memory_bank, effective_address);
+        value_to_compare = read_byte_new(machine, effective_address);
         uint16_t result = (uint16_t)(state->A.low & 0xFF) - (uint16_t)(value_to_compare & 0xFF);
         // Carry is set if no borrow occurred
         if (result & 0x8000) clear_flag(machine, CARRY);  // Borrow occurred
         else set_flag(machine, CARRY);  // No borrow
         set_flags_nz_8(machine, result & 0xFF);
     } else {
-        value_to_compare = read_word(memory_bank, effective_address);
+        value_to_compare = read_word_new(machine, effective_address);
         uint32_t result = (uint32_t)(state->A.full & 0xFFFF) - (uint32_t)(value_to_compare & 0xFFFF);
         // Carry is set if no borrow occurred
         if (result & 0x80000000) clear_flag(machine, CARRY);  // Borrow occurred
@@ -3429,9 +3428,9 @@ machine_state_t* PHX           (machine_state_t* machine, uint16_t arg_one, uint
     // PusH X
     processor_state_t *state = &machine->processor;
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
-        push_byte(machine, state->X & 0xFF);
+        push_byte_new(machine, state->X & 0xFF);
     } else {
-        push_word(machine, state->X);
+        push_word_new(machine, state->X);
     }
     return machine;
 }
@@ -3456,15 +3455,14 @@ machine_state_t* JMP_ABS_IL    (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* CMP_ABS_IX    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // CoMPare A, Absolute Indexed by X
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     uint16_t effective_address = get_absolute_address_indexed_x(machine, arg_one);
     uint16_t value_to_compare;
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        value_to_compare = read_byte(memory_bank, effective_address);
+        value_to_compare = read_byte_new(machine, effective_address);
         uint8_t result = (state->A.low & 0xFF) - (value_to_compare & 0xFF);
         set_flags_nzc_8(machine, result);
     } else {
-        value_to_compare = read_word(memory_bank, effective_address);
+        value_to_compare = read_word_new(machine, effective_address);
         uint16_t result = (state->A.full & 0xFFFF) - (value_to_compare & 0xFFFF);
         set_flags_nzc_16(machine, result);
     }
@@ -3474,17 +3472,16 @@ machine_state_t* CMP_ABS_IX    (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* DEC_ABS_IX    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // DECrement, Absolute Indexed by X
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     uint16_t effective_address = get_absolute_address_indexed_x(machine, arg_one);
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        uint8_t value = read_byte(memory_bank, effective_address);
+        uint8_t value = read_byte_new(machine, effective_address);
         value = (value - 1) & 0xFF;
-        write_byte(memory_bank, effective_address, value);
+        write_byte_new(machine, effective_address, value);
         set_flags_nz_8(machine, value);
     } else {
-        uint16_t value = read_word(memory_bank, effective_address);
+        uint16_t value = read_word_new(machine, effective_address);
         value = (value - 1) & 0xFFFF;
-        write_word(memory_bank, effective_address, value);
+        write_word_new(machine, effective_address, value);
         set_flags_nz_16(machine, value);
     }
     return machine;

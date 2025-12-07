@@ -267,8 +267,8 @@ TEST(PHX_16bit_mode) {
     PHX(machine, 0, 0);
     
     ASSERT_EQ(machine->processor.SP, 0x1FD, "Stack pointer should decrement by 2");
-    ASSERT_EQ(machine->memory[0][0x01FF], 0xAB, "High byte should be pushed first");
-    ASSERT_EQ(machine->memory[0][0x01FE], 0xCD, "Low byte should be pushed second");
+    ASSERT_EQ(read_byte_new(machine, 0x01FF), 0xAB, "High byte should be pushed first");
+    ASSERT_EQ(read_byte_new(machine, 0x01FE), 0xCD, "Low byte should be pushed second");
     
     destroy_machine(machine);
 }
@@ -3227,10 +3227,9 @@ TEST(CMP_ABS_IX_indexed) {
     machine->processor.A.low = 0x60;
     machine->processor.X = 0x1B;
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x801B] = 0x70;
+    write_byte_new(machine, 0x701B, 0x70);
     
-    CMP_ABS_IX(machine, 0x8000, 0);
+    CMP_ABS_IX(machine, 0x7000, 0);
     ASSERT_EQ(check_flag(machine, CARRY), false, "CMP ABS,X should clear carry when A < M");
     ASSERT_EQ(check_flag(machine, NEGATIVE), true, "CMP ABS,X should set negative");
     
@@ -3242,10 +3241,9 @@ TEST(CMP_ABS_IY_indexed) {
     machine->processor.A.low = 0x80;
     machine->processor.Y = 0x1C;
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x801C] = 0x50;
+    write_byte_new(machine, 0x701C, 0x50);
     
-    CMP_ABS_IY(machine, 0x8000, 0);
+    CMP_ABS_IY(machine, 0x7000, 0);
     ASSERT_EQ(check_flag(machine, CARRY), true, "CMP ABS,Y should set carry when A >= M");
     
     destroy_machine(machine);
@@ -4002,11 +4000,10 @@ TEST(DEC_ABS_IX_indexed) {
     machine->processor.X = 0x30;
     set_flag(machine, M_FLAG);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x7030] = 0x01;
+    write_byte_new(machine, 0x7030, 0x01);
     
     DEC_ABS_IX(machine, 0x7000, 0);
-    ASSERT_EQ(bank[0x7030], 0x00, "DEC ABS,X should decrement indexed");
+    ASSERT_EQ(read_byte_new(machine, 0x7030), 0x00, "DEC ABS,X should decrement indexed");
     
     destroy_machine(machine);
 }
