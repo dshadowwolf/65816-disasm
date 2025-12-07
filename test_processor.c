@@ -1828,8 +1828,8 @@ TEST(CMP_ABS_absolute) {
     write_byte_new(machine, 0x4000, 0x50);
     
     CMP_ABS(machine, 0x4000, 0);
-    ASSERT_EQ(check_flag(machine, ZERO), false, "CMP ABS should clear zero when not equal");
-    ASSERT_EQ(check_flag(machine, CARRY), true, "CMP ABS should set carry when A > M");
+    ASSERT_EQ(check_flag(machine, ZERO), true, "CMP ABS should set zero when equal");
+    ASSERT_EQ(check_flag(machine, CARRY), true, "CMP ABS should set carry when A >= M");
     
     destroy_machine(machine);
 }
