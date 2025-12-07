@@ -319,8 +319,8 @@ void test_interrupt_flags(void) {
 
 int main(void) {
     printf("╔═══════════════════════════════════════════════╗\n");
-    printf("║  6521 PIA (Peripheral Interface Adapter)     ║\n");
-    printf("║  Emulation Test Suite                        ║\n");
+    printf("║  6521 PIA (Peripheral Interface Adapter)      ║\n");
+    printf("║  Emulation Test Suite                         ║\n");
     printf("╚═══════════════════════════════════════════════╝\n");
     
     test_basic_io();
@@ -333,7 +333,7 @@ int main(void) {
     
     printf("\n");
     printf("╔═══════════════════════════════════════════════╗\n");
-    printf("║  All tests completed successfully!           ║\n");
+    printf("║  All tests completed successfully!            ║\n");
     printf("╚═══════════════════════════════════════════════╝\n");
     
     return 0;
