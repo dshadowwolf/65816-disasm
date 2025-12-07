@@ -1894,10 +1894,10 @@ TEST(CPY_DP_direct_page) {
 TEST(CPY_ABS_absolute) {
     machine_state_t *machine = setup_machine();
     machine->processor.Y = 0x50;
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x8000] = 0x30;
+
+    write_byte_new(machine, 0x4000, 0x30);
     
-    CPY_ABS(machine, 0x8000, 0);
+    CPY_ABS(machine, 0x4000, 0);
     ASSERT_EQ(check_flag(machine, CARRY), true, "CPY ABS should set carry when Y >= M");
     
     destroy_machine(machine);
@@ -3273,13 +3273,25 @@ TEST(CMP_DP_IL_indirect_long) {
     machine->processor.DP = 0x00;
     set_flag(machine, M_FLAG);
     
-    uint8_t *bank0 = get_memory_bank(machine, 0);
-    bank0[0x10] = 0x00;
-    bank0[0x11] = 0x40;
-    bank0[0x12] = 0x01;
+    machine->memory_banks[1] = (memory_bank_t*)malloc(sizeof(memory_bank_t));
+    memory_region_t *region0 = (memory_region_t*)malloc(sizeof(memory_region_t));
+    memory_bank_t *bank1 = machine->memory_banks[1];
+
+    region0->start_offset = 0x0000;
+    region0->end_offset = 0xFFFF;
+    region0->data = (uint8_t *)malloc(65536 * sizeof(uint8_t));
+    region0->read_byte = read_byte_from_region_nodev;  // Default read/write functions can be set later
+    region0->write_byte = write_byte_to_region_nodev;
+    region0->read_word = read_word_from_region_nodev;
+    region0->write_word = write_word_to_region_nodev;
+    region0->flags = MEM_READWRITE;
+    region0->next = NULL;
+    bank1->regions = region0;
+
+    write_word_new(machine, 0x10, 0x4000);
+    write_byte_new(machine, 0x12, 0x01);
     
-    uint8_t *bank1 = get_memory_bank(machine, 0x01);
-    bank1[0x4000] = 0x60;
+    write_byte_long(machine, (long_address_t){ .bank = 0x01, .address = 0x4000 }, 0x60);
     
     CMP_DP_IL(machine, 0x10, 0);
     ASSERT_EQ(check_flag(machine, CARRY), true, "CMP [DP] should set carry when A >= M");
