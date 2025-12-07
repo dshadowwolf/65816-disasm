@@ -1839,8 +1839,8 @@ TEST(CMP_DP_IX_direct_page_indexed) {
     machine->processor.A.low = 0x50;
     machine->processor.X = 0x05;
     machine->processor.DP = 0x00;
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x15] = 0x60;
+
+    write_byte_dp_sr(machine, 0x0015, 0x60);
     
     CMP_DP_IX(machine, 0x10, 0);
     ASSERT_EQ(check_flag(machine, CARRY), false, "CMP DP,X should clear carry when A < M");
@@ -3180,7 +3180,23 @@ TEST(CMP_ABL_long_addressing) {
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0x50;
     set_flag(machine, M_FLAG);
-    
+        
+    machine->memory_banks[2] = (memory_bank_t*)malloc(sizeof(memory_bank_t));
+    memory_region_t *region0 = (memory_region_t*)malloc(sizeof(memory_region_t));
+    memory_bank_t *bank1 = machine->memory_banks[2];
+
+    region0->start_offset = 0x0000;
+    region0->end_offset = 0xFFFF;
+    region0->data = (uint8_t *)malloc(65536 * sizeof(uint8_t));
+    region0->read_byte = read_byte_from_region_nodev;  // Default read/write functions can be set later
+    region0->write_byte = write_byte_to_region_nodev;
+    region0->read_word = read_word_from_region_nodev;
+    region0->write_word = write_word_to_region_nodev;
+    region0->flags = MEM_READWRITE;
+    region0->next = NULL;
+    bank1->regions = region0;
+
+    write_byte_long(machine, (long_address_t) { .bank=0x02, .address=0x8000 }, 0x30);
     uint8_t *bank = get_memory_bank(machine, 0x02);
     bank[0x8000] = 0x30;
     
@@ -3240,10 +3256,8 @@ TEST(CMP_DP_I_indirect) {
     machine->processor.A.low = 0x45;
     machine->processor.DP = 0x00;
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x10] = 0x00;
-    bank[0x11] = 0x30;
-    bank[0x3000] = 0x45;
+    write_word_dp_sr(machine, 0x10, 0x3000);
+    write_byte_dp_sr(machine, 0x3000, 0x45);
     
     CMP_DP_I(machine, 0x10, 0);
     ASSERT_EQ(check_flag(machine, ZERO), true, "CMP (DP) should set zero when equal");
@@ -3307,13 +3321,25 @@ TEST(CMP_DP_IL_IY_indirect_long_indexed) {
     machine->processor.DP = 0x00;
     set_flag(machine, M_FLAG);
     
-    uint8_t *bank0 = get_memory_bank(machine, 0);
-    bank0[0x10] = 0x00;
-    bank0[0x11] = 0x50;
-    bank0[0x12] = 0x02;
+    machine->memory_banks[2] = (memory_bank_t*)malloc(sizeof(memory_bank_t));
+    memory_region_t *region0 = (memory_region_t*)malloc(sizeof(memory_region_t));
+    memory_bank_t *bank2 = machine->memory_banks[2];
+
+    region0->start_offset = 0x0000;
+    region0->end_offset = 0xFFFF;
+    region0->data = (uint8_t *)malloc(65536 * sizeof(uint8_t));
+    region0->read_byte = read_byte_from_region_nodev;  // Default read/write functions can be set later
+    region0->write_byte = write_byte_to_region_nodev;
+    region0->read_word = read_word_from_region_nodev;
+    region0->write_word = write_word_to_region_nodev;
+    region0->flags = MEM_READWRITE;
+    region0->next = NULL;
+    bank2->regions = region0;
+
+    write_word_new(machine, 0x10, 0x5000);
+    write_byte_new(machine, 0x12, 0x02);
     
-    uint8_t *bank2 = get_memory_bank(machine, 0x02);
-    bank2[0x501E] = 0x38;
+    write_byte_long(machine, (long_address_t){ .bank = 0x02, .address = 0x501E}, 0x38);
     
     CMP_DP_IL_IY(machine, 0x10, 0);
     ASSERT_EQ(check_flag(machine, ZERO), true, "CMP [DP],Y should set zero when equal");
@@ -3344,10 +3370,8 @@ TEST(CMP_SR_I_IY_sr_indirect_indexed) {
     machine->processor.SP = 0x140;
     set_flag(machine, M_FLAG);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x147] = 0x00;
-    bank[0x148] = 0x10;
-    bank[0x101F] = 0x35;
+    write_word_new(machine, 0x147, 0x1000);
+    write_byte_new(machine, 0x101F, 0x35);
     
     CMP_SR_I_IY(machine, 0x07, 0);
     ASSERT_EQ(check_flag(machine, CARRY), false, "CMP (SR,S),Y should clear carry when A < M");
@@ -3965,11 +3989,10 @@ TEST(DEC_DP_IX_indexed) {
     machine->processor.X = 0x18;
     set_flag(machine, M_FLAG);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x78] = 0x80;
+    write_byte_new(machine, 0x78, 0x80);
     
     DEC_DP_IX(machine, 0x60, 0);
-    ASSERT_EQ(bank[0x78], 0x7F, "DEC DP,X should decrement indexed");
+    ASSERT_EQ(read_byte_new(machine, 0x78), 0x7F, "DEC DP,X should decrement indexed");
     
     destroy_machine(machine);
 }
@@ -4262,9 +4285,7 @@ TEST(PEI_DP_I_push_effective_indirect) {
     machine->processor.DP = 0x00;
     machine->processor.SP = 0x01FF;
     machine->processor.emulation_mode = false;
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x20] = 0x34;
-    bank[0x21] = 0x12;
+    write_word_new(machine, 0x0020, 0x1234);
     PEI_DP_I(machine, 0x20, 0);
     ASSERT_EQ(machine->processor.SP, 0x01FD, "PEI should push 16-bit value");
     destroy_machine(machine);
