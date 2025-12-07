@@ -3248,16 +3248,15 @@ machine_state_t* DEC_ABS       (machine_state_t* machine, uint16_t arg_one, uint
     // DECrement Absolute
     processor_state_t *state = &machine->processor;
     uint16_t address = get_absolute_address(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        uint8_t value = read_byte(memory_bank, address);
+        uint8_t value = read_byte_new(machine, address);
         value = (value - 1) & 0xFF;
-        write_byte(memory_bank, address, value);
+        write_byte_new(machine, address, value);
         set_flags_nz_8(machine, value);
     } else {
-        uint16_t value = read_word(memory_bank, address);
+        uint16_t value = read_word_new(machine, address);
         value = (value - 1) & 0xFFFF;
-        write_word(memory_bank, address, value);
+        write_word_new(machine, address, value);
         set_flags_nz_16(machine, value);
     }
     return machine;
