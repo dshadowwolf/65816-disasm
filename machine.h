@@ -51,7 +51,6 @@ typedef struct memory_region_s {
 } memory_region_t;
 
 typedef struct memory_bank_s {
-    struct memory_bank_s *next;
     memory_region_t *regions;
 } memory_bank_t;
 // end experimental design work
