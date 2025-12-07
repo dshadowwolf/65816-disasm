@@ -2804,13 +2804,12 @@ machine_state_t* BCS_CB        (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* LDA_DP_I_IY   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD A, Direct Page Indirect Indexed by Y
     processor_state_t *state = &machine->processor;
-    uint16_t address = get_dp_address_indirect_indexed_y(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint16_t address = get_dp_address_indirect_indexed_y_new(machine, arg_one);
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        state->A.low = read_byte(memory_bank, address);
+        state->A.low = read_byte_new(machine, address);
         set_flags_nz_8(machine, state->A.low);
     } else {
-        state->A.full = read_word(memory_bank, address);
+        state->A.full = read_word_new(machine, address);
         set_flags_nz_16(machine, state->A.full);
     }
     return machine;
@@ -2819,13 +2818,12 @@ machine_state_t* LDA_DP_I_IY   (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* LDA_DP_I      (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD A, Direct Page Indirect
     processor_state_t *state = &machine->processor;
-    uint16_t address = get_dp_address_indirect(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint16_t address = get_dp_address_indirect_new(machine, arg_one);
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        state->A.low = read_byte(memory_bank, address);
+        state->A.low = read_byte_new(machine, address);
         set_flags_nz_8(machine, state->A.low);
     } else {
-        state->A.full = read_word(memory_bank, address);
+        state->A.full = read_word_new(machine, address);
         set_flags_nz_16(machine, state->A.full);
     }
     return machine;
@@ -2834,13 +2832,12 @@ machine_state_t* LDA_DP_I      (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* LDA_SR_I_IY   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // LoaD A, Stack Relative Indirect Indexed by Y
     processor_state_t *state = &machine->processor;
-    uint16_t address = get_stack_relative_address_indirect_indexed_y(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint16_t address = get_stack_relative_address_indirect_indexed_y_new(machine, arg_one);
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        state->A.low = read_byte(memory_bank, address);
+        state->A.low = read_byte_new(machine, address);
         set_flags_nz_8(machine, state->A.low);
     } else {
-        state->A.full = read_word(memory_bank, address);
+        state->A.full = read_word_new(machine, address);
         set_flags_nz_16(machine, state->A.full);
     }
     return machine;
@@ -2850,12 +2847,11 @@ machine_state_t* LDY_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint
     // LoaD Y, Direct Page Indexed by X
     processor_state_t *state = &machine->processor;
     uint16_t address = get_dp_address_indexed_x(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
-        state->Y = read_byte(memory_bank, address);
+        state->Y = read_byte_new(machine, address);
         set_flags_nz_8(machine, state->Y);
     } else {
-        state->Y = read_word(memory_bank, address);
+        state->Y = read_word_new(machine, address);
         set_flags_nz_16(machine, state->Y);
     }
     return machine;
@@ -2865,12 +2861,11 @@ machine_state_t* LDA_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint
     // LoaD A, Direct Page Indexed by X
     processor_state_t *state = &machine->processor;
     uint16_t dp_address = get_dp_address_indexed_x(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        state->A.low = read_byte(memory_bank, dp_address);
+        state->A.low = read_byte_new(machine, dp_address);
         set_flags_nz_8(machine, state->A.low);
     } else {
-        state->A.full = read_word(memory_bank, dp_address);
+        state->A.full = read_word_new(machine, dp_address);
         set_flags_nz_16(machine, state->A.full);
     }
     return machine;
@@ -2880,12 +2875,11 @@ machine_state_t* LDX_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint
     // LoaD X, Direct Page Indexed by Y
     processor_state_t *state = &machine->processor;
     uint16_t address = get_dp_address_indexed_x(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     if (state->emulation_mode || is_flag_set(machine, X_FLAG)) {
-        state->X = read_byte(memory_bank, address);
+        state->X = read_byte_new(machine, address);
         set_flags_nz_8(machine, state->X);
     } else {
-        state->X = read_word(memory_bank, address);
+        state->X = read_word_new(machine, address);
         set_flags_nz_16(machine, state->X);
     }
     return machine;

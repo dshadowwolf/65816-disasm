@@ -2011,8 +2011,7 @@ TEST(LDA_DP_IX_indexed) {
     machine_state_t *machine = setup_machine();
     machine->processor.X = 0x05;
     machine->processor.DP = 0x00;
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x15] = 0x42;
+    write_byte_new(machine, 0x0015, 0x42);
     
     LDA_DP_IX(machine, 0x10, 0);
     ASSERT_EQ(machine->processor.A.low, 0x42, "LDA DP,X should load from indexed memory");
@@ -3380,10 +3379,8 @@ TEST(LDA_DP_I_direct_page_indirect) {
     machine->processor.DP = 0x00;
     set_flag(machine, M_FLAG);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x20] = 0x00;
-    bank[0x21] = 0x50;
-    bank[0x5000] = 0xAA;
+    write_word_new(machine, 0x0020, 0x5000);
+    write_byte_new(machine, 0x5000, 0xAA);
     
     LDA_DP_I(machine, 0x20, 0);
     ASSERT_EQ(machine->processor.A.low, 0xAA, "LDA (DP) should load via indirect");
@@ -3412,10 +3409,8 @@ TEST(LDA_DP_I_IY_indirect_indexed) {
     machine->processor.Y = 0x10;
     set_flag(machine, M_FLAG);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x20] = 0x00;
-    bank[0x21] = 0x70;
-    bank[0x7010] = 0xCC;
+    write_word_new(machine, 0x0020, 0x7000);
+    write_byte_new(machine, 0x7010, 0xCC);
     
     LDA_DP_I_IY(machine, 0x20, 0);
     ASSERT_EQ(machine->processor.A.low, 0xCC, "LDA (DP),Y should load indirect indexed");
@@ -3483,11 +3478,8 @@ TEST(LDA_SR_I_IY_sr_indirect_indexed) {
     machine->processor.Y = 0x08;
     set_flag(machine, M_FLAG);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x155] = 0x00;
-    bank[0x156] = 0xA0;
-    bank[0xA008] = 0xFF;
-    
+    write_word_new(machine, 0x155, 0x7000);
+    write_byte_new(machine, 0x7008, 0xFF);
     LDA_SR_I_IY(machine, 0x05, 0);
     ASSERT_EQ(machine->processor.A.low, 0xFF, "LDA (SR,S),Y should load SR indirect indexed");
     
@@ -3511,8 +3503,7 @@ TEST(LDX_DP_IX_indexed) {
     machine->processor.X = 0x05;
     set_flag(machine, X_FLAG);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x25] = 0x77;
+    write_byte_new(machine, 0x0025, 0x77);
     
     LDX_DP_IX(machine, 0x20, 0);
     ASSERT_EQ(machine->processor.X & 0xFF, 0x77, "LDX DP,X should load indexed");
@@ -3551,8 +3542,7 @@ TEST(LDY_DP_IX_indexed) {
     machine->processor.X = 0x08;
     set_flag(machine, X_FLAG);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x38] = 0x99;
+    write_byte_new(machine, 0x0038, 0x99);
     
     LDY_DP_IX(machine, 0x30, 0);
     ASSERT_EQ(machine->processor.Y & 0xFF, 0x99, "LDY DP,X should load indexed");
