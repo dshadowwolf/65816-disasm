@@ -3457,13 +3457,24 @@ TEST(LDA_DP_IL_IY_indirect_long_indexed) {
     machine->processor.Y = 0x20;
     set_flag(machine, M_FLAG);
     
-    uint8_t *bank0 = get_memory_bank(machine, 0);
-    bank0[0x40] = 0x00;
-    bank0[0x41] = 0x90;
-    bank0[0x42] = 0x02;
+    machine->memory_banks[2] = (memory_bank_t*)malloc(sizeof(memory_bank_t));
+    memory_region_t *region0 = (memory_region_t*)malloc(sizeof(memory_region_t));
+    memory_bank_t *bank2 = machine->memory_banks[2];
+
+    region0->start_offset = 0x0000;
+    region0->end_offset = 0xFFFF;
+    region0->data = (uint8_t *)malloc(65536 * sizeof(uint8_t));
+    region0->read_byte = read_byte_from_region_nodev;  // Default read/write functions can be set later
+    region0->write_byte = write_byte_to_region_nodev;
+    region0->read_word = read_word_from_region_nodev;
+    region0->write_word = write_word_to_region_nodev;
+    region0->flags = MEM_READWRITE;
+    region0->next = NULL;
+    bank2->regions = region0;
     
-    uint8_t *bank2 = get_memory_bank(machine, 0x02);
-    bank2[0x9020] = 0xEE;
+    write_word_new(machine, 0x0040, 0x9000);
+    write_byte_new(machine, 0x0042, 0x02);
+    write_byte_long(machine, (long_address_t){ .bank = 0x02, .address = 0x9020 }, 0xEE);
     
     LDA_DP_IL_IY(machine, 0x40, 0);
     ASSERT_EQ(machine->processor.A.low, 0xEE, "LDA [DP],Y should load indirect long indexed");
@@ -4181,8 +4192,7 @@ TEST(LDA_ABS_IY_absolute_indexed_y) {
     machine_state_t *machine = setup_machine();
     machine->processor.Y = 0x10;
     set_flag(machine, M_FLAG);
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x4010] = 0xAB;
+    write_byte_new(machine, 0x4010, 0xAB);
     LDA_ABS_IY(machine, 0x4000, 0);
     ASSERT_EQ(machine->processor.A.low, 0xAB, "LDA ABS,Y should load indexed");
     destroy_machine(machine);
