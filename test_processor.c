@@ -1511,11 +1511,11 @@ TEST(INC_DP_direct_page) {
 
 TEST(DEC_DP_direct_page) {
     machine_state_t *machine = setup_machine();
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x50] = 0x20;
+
+    write_byte_new(machine, 0x50, 0x20);
     
     DEC_DP(machine, 0x50, 0);
-    ASSERT_EQ(bank[0x50], 0x1F, "DEC DP should decrement memory");
+    ASSERT_EQ(read_byte_new(machine, 0x50), 0x1F, "DEC DP should decrement memory");
     
     destroy_machine(machine);
 }
@@ -1811,8 +1811,8 @@ TEST(CMP_DP_direct_page) {
     machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x50;
     machine->processor.DP = 0x00;
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x10] = 0x50;
+
+    write_byte_new(machine, 0x10, 0x50);
     
     CMP_DP(machine, 0x10, 0);
     ASSERT_EQ(check_flag(machine, ZERO), true, "CMP DP should set zero when equal");
@@ -1882,8 +1882,8 @@ TEST(CPY_DP_direct_page) {
     machine_state_t *machine = setup_machine();
     machine->processor.Y = 0x50;
     machine->processor.DP = 0x00;
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x10] = 0x50;
+
+    write_byte_new(machine, 0x10, 0x50);
     
     CPY_DP(machine, 0x10, 0);
     ASSERT_EQ(check_flag(machine, ZERO), true, "CPY DP should set zero when equal");
