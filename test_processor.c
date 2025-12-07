@@ -2022,10 +2022,10 @@ TEST(LDA_DP_IX_indexed) {
 TEST(LDA_ABS_IX_indexed) {
     machine_state_t *machine = setup_machine();
     machine->processor.X = 0x10;
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x8010] = 0x42;
+
+    write_byte_new(machine, 0x6010, 0x42);
     
-    LDA_ABS_IX(machine, 0x8000, 0);
+    LDA_ABS_IX(machine, 0x6000, 0);
     ASSERT_EQ(machine->processor.A.low, 0x42, "LDA ABS,X should load from indexed memory");
     
     destroy_machine(machine);
@@ -3257,10 +3257,8 @@ TEST(CMP_DP_I_IX_indexed_indirect) {
     machine->processor.X = 0x1D;
     machine->processor.DP = 0x00;
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x2D] = 0x00;
-    bank[0x2E] = 0x20;
-    bank[0x2000] = 0x66;
+    write_word_new(machine, 0x2D, 0x2000);
+    write_byte_new(machine, 0x2000, 0x66);
     
     CMP_DP_I_IX(machine, 0x10, 0);
     ASSERT_EQ(check_flag(machine, CARRY), false, "CMP (DP,X) should clear carry when A < M");
@@ -3318,8 +3316,7 @@ TEST(CMP_SR_stack_relative) {
     machine->processor.SP = 0x150;
     set_flag(machine, M_FLAG);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x15A] = 0x80;
+    write_byte_new(machine, 0x15A, 0x80);
     
     CMP_SR(machine, 0x0A, 0);
     ASSERT_EQ(check_flag(machine, CARRY), true, "CMP SR,S should set carry when A >= M");
@@ -3527,8 +3524,7 @@ TEST(LDX_ABS_IY_indexed) {
     machine->processor.Y = 0x10;
     set_flag(machine, X_FLAG);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x2010] = 0x88;
+    write_byte_new(machine, 0x2010, 0x88);
     
     LDX_ABS_IY(machine, 0x2000, 0);
     ASSERT_EQ(machine->processor.X & 0xFF, 0x88, "LDX ABS,Y should load indexed");
@@ -3566,8 +3562,7 @@ TEST(LDY_ABS_IX_indexed) {
     machine->processor.X = 0x0C;
     set_flag(machine, X_FLAG);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x300C] = 0xAA;
+    write_byte_new(machine, 0x300C, 0xAA);
     
     LDY_ABS_IX(machine, 0x3000, 0);
     ASSERT_EQ(machine->processor.Y & 0xFF, 0xAA, "LDY ABS,X should load indexed");
@@ -4202,8 +4197,7 @@ TEST(LDA_AL_IX_absolute_long_indexed) {
     machine_state_t *machine = setup_machine();
     machine->processor.X = 0x08;
     set_flag(machine, M_FLAG);
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x5008] = 0xCD;
+    write_byte_new(machine, 0x5008, 0xCD);
     LDA_AL_IX(machine, 0x5000, 0);
     ASSERT_EQ(machine->processor.A.low, 0xCD, "LDA AL,X should load long indexed");
     destroy_machine(machine);
