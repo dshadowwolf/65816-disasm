@@ -7,7 +7,13 @@ tester: list.o map.o codetable.o outs.o map.o tbl.o state.o disasm.o main.o  pro
 test_processor: test_processor.o processor.o processor_helpers.o state.o machine_setup.o
 	gcc -o $@ $^
 
-lib: list.o map.o codetable.o outs.o map.o tbl.o state.o disasm.o processor.o processor_helpers.o machine_setup.o
+test_via: test_via.o via6522.o
+	gcc -o $@ $^
+
+test_pia: test_pia.o pia6521.o
+	gcc -o $@ $^
+
+lib: list.o map.o codetable.o outs.o map.o tbl.o state.o disasm.o processor.o processor_helpers.o machine_setup.o via6522.o pia6521.o
 	ar rcs lib65816disasm.a $^
 	ranlib lib65816disasm.a
 
@@ -15,5 +21,5 @@ test: test_processor
 	./test_processor
 
 clean:
-	rm -f *.o tester test_processor lib65816disasm.a
+	rm -f *.o tester test_processor test_via test_pia lib65816disasm.a
 
