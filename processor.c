@@ -3746,16 +3746,15 @@ machine_state_t* SBC_ABS       (machine_state_t* machine, uint16_t arg_one, uint
     // SuBtract with Carry, Absolute
     processor_state_t *state = &machine->processor;
     uint16_t address = get_absolute_address(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     uint16_t value_to_subtract;
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        value_to_subtract = read_byte(memory_bank, address);
+        value_to_subtract = read_byte_new(machine, address);
         uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
         uint8_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) - carry;
         set_flags_nzc_8(machine, result);
         state->A.low = result & 0xFF;
     } else {
-        value_to_subtract = read_word(memory_bank, address);
+        value_to_subtract = read_word_new(machine, address);
         uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
         uint16_t result = (state->A.full & 0xFFFF) - (value_to_subtract & 0xFFFF) - carry;
         set_flags_nzc_16(machine, result);
@@ -3767,17 +3766,16 @@ machine_state_t* SBC_ABS       (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* INC_ABS       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // INCrement value, Absolute
     processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
     uint16_t address = get_absolute_address(machine, arg_one);
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        uint8_t value = read_byte(memory_bank, address);
+        uint8_t value = read_byte_new(machine, address);
         value = (value + 1) & 0xFF;
-        write_byte(memory_bank, arg_one, value);
+        write_byte_new(machine, address, value);
         set_flags_nz_8(machine, value);
     } else {
-        uint16_t value = read_word(memory_bank, address);
+        uint16_t value = read_word_new(machine, address);
         value = (value + 1) & 0xFFFF;
-        write_word(memory_bank, arg_one, value);
+        write_word_new(machine, address, value);
         set_flags_nz_16(machine, value);
     }
     return machine;
@@ -3787,16 +3785,15 @@ machine_state_t* SBC_ABL       (machine_state_t* machine, uint16_t arg_one, uint
     // SuBtract with Carry, Absolute Long
     processor_state_t *state = &machine->processor;
     long_address_t addr = get_absolute_address_long(machine, arg_one, arg_two);
-    uint8_t *memory_bank = get_memory_bank(machine, addr.bank);
     uint16_t value_to_subtract;
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        value_to_subtract = read_byte(memory_bank, addr.address);
+        value_to_subtract = read_byte_long(machine, addr);
         uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
         uint8_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) - carry;
         set_flags_nzc_8(machine, result);
         state->A.low = result & 0xFF;
     } else {
-        value_to_subtract = read_word(memory_bank, addr.address);
+        value_to_subtract = read_word_long(machine, addr);
         uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
         uint16_t result = (state->A.full & 0xFFFF) - (value_to_subtract & 0xFFFF) - carry;
         set_flags_nzc_16(machine, result);
@@ -3818,17 +3815,16 @@ machine_state_t* BEQ_CB        (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* SBC_DP_I_IY   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Direct Page Indirect Indexed by Y
     processor_state_t *state = &machine->processor;
-    uint16_t address = get_dp_address_indirect_indexed_y(machine, arg_one);
-    uint8_t *memory_bank = get_memory_bank(machine, state->DBR);
+    uint16_t address = get_dp_address_indirect_indexed_y_new(machine, arg_one);
     uint16_t value_to_subtract;
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        value_to_subtract = read_byte(memory_bank, address);
+        value_to_subtract = read_byte_new(machine, address);
         uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
         uint8_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) - carry;
         set_flags_nzc_8(machine, result);
         state->A.low = result & 0xFF;
     } else {
-        value_to_subtract = read_word(memory_bank, address);
+        value_to_subtract = read_word_new(machine, address);
         uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
         uint16_t result = (state->A.full & 0xFFFF) - (value_to_subtract & 0xFFFF) - carry;
         set_flags_nzc_16(machine, result);
