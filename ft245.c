@@ -67,23 +67,8 @@ uint8_t ft245_read(ft245_t* ft245) {
 }
 
 void ft245_write(ft245_t* ft245, uint8_t data) {
-    // Store data on bus
+    // Just store data on bus - actual write triggered by WR signal
     ft245->data_bus = data;
-    
-    // Check if WR is asserted (high) and buffer has space
-    if (ft245->wr && ft245->tx_fifo_count < FT245_TX_FIFO_SIZE) {
-        // Write data to TX FIFO immediately (FT245 has minimal setup time)
-        ft245->tx_fifo[ft245->tx_fifo_head] = data;
-        ft245->tx_fifo_head = (ft245->tx_fifo_head + 1) % FT245_TX_FIFO_SIZE;
-        ft245->tx_fifo_count++;
-        
-        // Call USB transmit callback if available
-        if (ft245->usb_tx_callback) {
-            ft245->usb_tx_callback(ft245->usb_context, data);
-        }
-        
-        update_status_signals(ft245);
-    }
 }
 
 void ft245_set_rd(ft245_t* ft245, bool state) {
@@ -100,8 +85,22 @@ void ft245_set_wr(ft245_t* ft245, bool state) {
     bool old_state = ft245->wr;
     ft245->wr = state;  // Active high in async mode
     
-    // On rising edge, start write operation
+    // On rising edge, perform write operation if data is on bus
     if (!old_state && ft245->wr) {
+        // Check if buffer has space
+        if (ft245->tx_fifo_count < FT245_TX_FIFO_SIZE) {
+            // Write data from data bus to TX FIFO
+            ft245->tx_fifo[ft245->tx_fifo_head] = ft245->data_bus;
+            ft245->tx_fifo_head = (ft245->tx_fifo_head + 1) % FT245_TX_FIFO_SIZE;
+            ft245->tx_fifo_count++;
+            
+            // Call USB transmit callback if available
+            if (ft245->usb_tx_callback) {
+                ft245->usb_tx_callback(ft245->usb_context, ft245->data_bus);
+            }
+            
+            update_status_signals(ft245);
+        }
         ft245->write_timer = 0;
     }
 }
