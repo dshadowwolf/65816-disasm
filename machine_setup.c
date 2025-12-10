@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "via6522.h"
 #include "board_fifo.h"
 #include "pia6521.h"
@@ -408,6 +409,72 @@ acia6551_t* get_acia_instance(void) {
         g_acia_initialized = true;
     }
     return &g_acia;
+}
+
+// Load a binary file into the ROM region (0x8000-0xFFFF)
+// Returns: 0 on success, -1 on error
+int load_rom_from_file(machine_state_t *machine, const char *filename) {
+    FILE *fp = fopen(filename, "rb");
+    if (!fp) {
+        fprintf(stderr, "Error: Cannot open ROM file '%s'\n", filename);
+        return -1;
+    }
+    
+    // Get file size
+    fseek(fp, 0, SEEK_END);
+    long file_size = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
+    
+    // ROM region is 0x8000-0xFFFF (32KB)
+    const size_t rom_size = 32768;
+    
+    if (file_size > rom_size) {
+        fprintf(stderr, "Warning: ROM file '%s' is %ld bytes, truncating to %zu bytes\n",
+                filename, file_size, rom_size);
+        file_size = rom_size;
+    }
+    
+    // Find the ROM region (region2 at 0x8000-0xFFFF)
+    memory_bank_t *bank0 = machine->memory_banks[0];
+    if (!bank0) {
+        fprintf(stderr, "Error: Memory bank 0 not initialized\n");
+        fclose(fp);
+        return -1;
+    }
+    
+    memory_region_t *rom_region = NULL;
+    memory_region_t *region = bank0->regions;
+    while (region) {
+        if (region->start_offset == 0x8000 && region->end_offset == 0xFFFF) {
+            rom_region = region;
+            break;
+        }
+        region = region->next;
+    }
+    
+    if (!rom_region || !rom_region->data) {
+        fprintf(stderr, "Error: ROM region not found or not initialized\n");
+        fclose(fp);
+        return -1;
+    }
+    
+    // Clear ROM to 0xFF (typical unprogrammed ROM state)
+    memset(rom_region->data, 0xFF, rom_size);
+    
+    // Read file into ROM
+    size_t bytes_read = fread(rom_region->data, 1, file_size, fp);
+    fclose(fp);
+    
+    if (bytes_read != (size_t)file_size) {
+        fprintf(stderr, "Error: Failed to read complete ROM file (read %zu of %ld bytes)\n",
+                bytes_read, file_size);
+        return -1;
+    }
+    
+    printf("Loaded %zu bytes from '%s' into ROM at 0x8000-0x%04X\n",
+           bytes_read, filename, 0x8000 + (int)bytes_read - 1);
+    
+    return 0;
 }
 
 void reset_machine(machine_state_t *machine) {
