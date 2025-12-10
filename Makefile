@@ -34,6 +34,9 @@ test_acia_integration: test_acia_integration.o lib65816disasm.a
 test_rom_load: test_rom_load.o lib65816disasm.a
 	gcc -o $@ $< -L. -l65816disasm
 
+example_emulated_state: example_emulated_state.o lib65816disasm.a
+	gcc -o $@ $< -L. -l65816disasm
+
 lib65816disasm.a: list.o map.o codetable.o outs.o map.o tbl.o state.o disasm.o processor.o processor_helpers.o machine_setup.o via6522.o pia6521.o acia6551.o ft245.o board_fifo.o
 	ar rcs lib65816disasm.a $^
 	ranlib lib65816disasm.a
