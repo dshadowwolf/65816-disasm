@@ -25,6 +25,9 @@ test_board_fifo: test_board_fifo.o board_fifo.o via6522.o ft245.o
 test_integration: test_integration.o lib65816disasm.a
 	gcc -o $@ $< -L. -l65816disasm
 
+test_pia_integration: test_pia_integration.o lib65816disasm.a
+	gcc -o $@ $< -L. -l65816disasm
+
 lib65816disasm.a: list.o map.o codetable.o outs.o map.o tbl.o state.o disasm.o processor.o processor_helpers.o machine_setup.o via6522.o pia6521.o acia6551.o ft245.o board_fifo.o
 	ar rcs lib65816disasm.a $^
 	ranlib lib65816disasm.a
@@ -33,5 +36,5 @@ test: test_processor
 	./test_processor
 
 clean:
-	rm -f *.o tester test_processor test_via test_pia test_acia test_ft245 test_board_fifo test_integration lib65816disasm.a
+	rm -f *.o tester test_processor test_via test_pia test_acia test_ft245 test_board_fifo test_integration test_pia_integration lib65816disasm.a
 

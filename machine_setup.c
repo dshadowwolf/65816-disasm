@@ -5,6 +5,11 @@
 #include <stdio.h>
 #include "via6522.h"
 #include "board_fifo.h"
+#include "pia6521.h"
+
+// Global PIA instance (at 0x7FA0)
+static pia6521_t g_pia;
+static bool g_pia_initialized = false;
 
 // Global VIA instance (standalone at 0x7FC0)
 static via6522_t g_via;
@@ -70,6 +75,16 @@ void write_word_to_region_nodev(memory_region_t *memory, uint16_t address, uint1
 }
 
 uint8_t read_byte_from_region_dev(memory_region_t *region, uint16_t address) {
+    // PIA is mapped at 0x7FA0-0x7FA3 (4 registers)
+    if (address >= 0x7FA0 && address <= 0x7FA3) {
+        if (!g_pia_initialized) {
+            pia6521_init(&g_pia);
+            g_pia_initialized = true;
+        }
+        uint8_t reg = address & 0x03;  // Get register offset (0-3)
+        return pia6521_read(&g_pia, reg);
+    }
+    
     // Standalone VIA is mapped at 0x7FC0-0x7FCF (16 registers)
     if (address >= 0x7FC0 && address <= 0x7FCF) {
         if (!g_via_initialized) {
@@ -101,6 +116,17 @@ uint16_t read_word_from_region_dev(memory_region_t *region, uint16_t address) {
 }
 
 void write_byte_to_region_dev(memory_region_t *region, uint16_t address, uint8_t value) {
+    // PIA is mapped at 0x7FA0-0x7FA3 (4 registers)
+    if (address >= 0x7FA0 && address <= 0x7FA3) {
+        if (!g_pia_initialized) {
+            pia6521_init(&g_pia);
+            g_pia_initialized = true;
+        }
+        uint8_t reg = address & 0x03;  // Get register offset (0-3)
+        pia6521_write(&g_pia, reg, value);
+        return;
+    }
+    
     // Standalone VIA is mapped at 0x7FC0-0x7FCF (16 registers)
     if (address >= 0x7FC0 && address <= 0x7FCF) {
         if (!g_via_initialized) {
@@ -155,13 +181,35 @@ void initialize_machine(machine_state_t *machine) {
     memory_region_t *region2 = (memory_region_t*)malloc(sizeof(memory_region_t));
 
     region0->start_offset = 0x0000;
-    region0->end_offset = 0x7FBF;
-    region0->data = (uint8_t *)malloc(0x7FC0 * sizeof(uint8_t));
+    region0->end_offset = 0x7F9F;
+    region0->data = (uint8_t *)malloc(0x7FA0 * sizeof(uint8_t));
     region0->read_byte = read_byte_from_region_nodev;
     region0->write_byte = write_byte_to_region_nodev;
     region0->read_word = read_word_from_region_nodev;
     region0->write_word = write_word_to_region_nodev;
     region0->flags = MEM_READWRITE;
+
+    // Region: PIA at 0x7FA0-0x7FA3 (4 bytes)
+    memory_region_t *region_pia = (memory_region_t*)malloc(sizeof(memory_region_t));
+    region_pia->start_offset = 0x7FA0;
+    region_pia->end_offset = 0x7FA3;
+    region_pia->data = NULL; // No backing storage for devices
+    region_pia->read_byte = read_byte_from_region_dev;
+    region_pia->write_byte = write_byte_to_region_dev;
+    region_pia->read_word = read_word_from_region_dev;
+    region_pia->write_word = write_word_to_region_dev;
+    region_pia->flags = MEM_DEVICE;
+
+    // Region: Gap between PIA and VIA (0x7FA4-0x7FBF)
+    memory_region_t *region_gap1 = (memory_region_t*)malloc(sizeof(memory_region_t));
+    region_gap1->start_offset = 0x7FA4;
+    region_gap1->end_offset = 0x7FBF;
+    region_gap1->data = NULL;
+    region_gap1->read_byte = read_byte_from_region_dev;
+    region_gap1->write_byte = write_byte_to_region_dev;
+    region_gap1->read_word = read_word_from_region_dev;
+    region_gap1->write_word = write_word_to_region_dev;
+    region_gap1->flags = MEM_DEVICE;
 
     // Region: Standalone VIA at 0x7FC0-0x7FCF (16 bytes)
     memory_region_t *region_via = (memory_region_t*)malloc(sizeof(memory_region_t));
@@ -215,7 +263,9 @@ void initialize_machine(machine_state_t *machine) {
     region2->flags = MEM_READONLY;
     
     // Link all regions together
-    region0->next = region_via;
+    region0->next = region_pia;
+    region_pia->next = region_gap1;
+    region_gap1->next = region_via;
     region_via->next = region_gap;
     region_gap->next = region_board_fifo;
     region_board_fifo->next = region1;
@@ -227,6 +277,8 @@ void initialize_machine(machine_state_t *machine) {
 
 // Clock devices (call this in your main emulation loop)
 void machine_clock_devices(machine_state_t *machine) {
+    // PIA at 0x7FA0 doesn't need clocking (no timers)
+    
     // Clock standalone VIA at 0x7FC0
     if (g_via_initialized) {
         via6522_clock(&g_via);
@@ -283,6 +335,15 @@ via6522_t* get_via_instance(void) {
         g_via_initialized = true;
     }
     return &g_via;
+}
+
+// Get PIA instance for direct access (e.g., setting callbacks)
+pia6521_t* get_pia_instance(void) {
+    if (!g_pia_initialized) {
+        pia6521_init(&g_pia);
+        g_pia_initialized = true;
+    }
+    return &g_pia;
 }
 
 void reset_machine(machine_state_t *machine) {
