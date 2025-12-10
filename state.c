@@ -17,18 +17,39 @@ typedef struct p_state_s {
 #define CLEAR_FLAG(state, flag) (state.flags) &= ~(flag)
 #define CHECK_FLAG(state, flag) !!((state.flags) & (flag))
 
+// Legacy disassembler state (kept for compatibility)
 static p_state_t processor_state;
+
+// Global pointer to actual emulated machine state
+static processor_state_t *g_emulated_processor = NULL;
 
 void init() {
     memset(&processor_state, 0, sizeof(p_state_t));
 }
 
+// Set the emulated processor state to use for flag checks
+void set_emulated_processor(processor_state_t *proc) {
+    g_emulated_processor = proc;
+}
+
+// Check M flag: if emulated processor is set, use it; otherwise use legacy state
 bool isMSet() {
+    if (g_emulated_processor) {
+        if (g_emulated_processor->emulation_mode) return false;
+        return !!(g_emulated_processor->P & M_FLAG);
+    }
+    // Legacy fallback
     if(CHECK_FLAG(processor_state, E_FLAG)) return false;
     return CHECK_FLAG(processor_state, M_FLAG);
 }
 
+// Check X flag: if emulated processor is set, use it; otherwise use legacy state
 bool isXSet() {
+    if (g_emulated_processor) {
+        if (g_emulated_processor->emulation_mode) return false;
+        return !!(g_emulated_processor->P & X_FLAG);
+    }
+    // Legacy fallback
     if(CHECK_FLAG(processor_state, E_FLAG)) return false;
     return CHECK_FLAG(processor_state, X_FLAG);
 }

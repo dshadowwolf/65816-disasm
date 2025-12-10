@@ -4,7 +4,10 @@
 #define E_FLAG 0x04  // 6502 emulation mode flag   -- XCE
 #define CARRY  0x08  // Carry Flag -- needed for tracking what the XCE instruction does
 */
+#include "machine.h"
+
 void init();
+void set_emulated_processor(processor_state_t *proc);
 bool isMSet();
 bool isXSet();
 bool isESet();
