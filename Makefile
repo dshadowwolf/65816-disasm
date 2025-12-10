@@ -43,6 +43,12 @@ test_single_step: test_single_step.o lib65816disasm.a
 test_hex_load: test_hex_load.o lib65816disasm.a
 	gcc -o $@ $< -L. -l65816disasm
 
+intel_hex_loader: intel_hex_loader.o lib65816disasm.a
+	gcc -o $@ $< -L. -l65816disasm
+
+srec_loader: srec_loader.o lib65816disasm.a
+	gcc -o $@ $< -L. -l65816disasm
+
 lib65816disasm.a: list.o map.o codetable.o outs.o map.o tbl.o state.o disasm.o processor.o processor_helpers.o machine_setup.o via6522.o pia6521.o acia6551.o ft245.o board_fifo.o
 	ar rcs lib65816disasm.a $^
 	ranlib lib65816disasm.a
@@ -51,5 +57,5 @@ test: test_processor
 	./test_processor
 
 clean:
-	rm -f *.o tester test_processor test_via test_pia test_acia test_ft245 test_board_fifo test_integration test_pia_integration test_acia_integration test_rom_load test_single_step test_hex_load example_emulated_state lib65816disasm.a test_rom.bin test_program.hex
+	rm -f *.o tester test_processor test_via test_pia test_acia test_ft245 test_board_fifo test_integration test_pia_integration test_acia_integration test_rom_load test_single_step test_hex_load intel_hex_loader srec_loader example_emulated_state lib65816disasm.a test_rom.bin test_program.hex
 

@@ -35,22 +35,24 @@ void set_emulated_processor(processor_state_t *proc) {
 // Check M flag: if emulated processor is set, use it; otherwise use legacy state
 bool isMSet() {
     if (g_emulated_processor) {
-        if (g_emulated_processor->emulation_mode) return false;
+        // In emulation mode, X and M are always 1 (8-bit mode)
+        if (g_emulated_processor->emulation_mode) return true;
         return !!(g_emulated_processor->P & M_FLAG);
     }
     // Legacy fallback
-    if(CHECK_FLAG(processor_state, E_FLAG)) return false;
+    if(CHECK_FLAG(processor_state, E_FLAG)) return true;
     return CHECK_FLAG(processor_state, M_FLAG);
 }
 
 // Check X flag: if emulated processor is set, use it; otherwise use legacy state
 bool isXSet() {
     if (g_emulated_processor) {
-        if (g_emulated_processor->emulation_mode) return false;
+        // In emulation mode, X and M are always 1 (8-bit mode)
+        if (g_emulated_processor->emulation_mode) return true;
         return !!(g_emulated_processor->P & X_FLAG);
     }
     // Legacy fallback
-    if(CHECK_FLAG(processor_state, E_FLAG)) return false;
+    if(CHECK_FLAG(processor_state, E_FLAG)) return true;
     return CHECK_FLAG(processor_state, X_FLAG);
 }
 
