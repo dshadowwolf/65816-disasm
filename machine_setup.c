@@ -6,6 +6,11 @@
 #include "via6522.h"
 #include "board_fifo.h"
 #include "pia6521.h"
+#include "acia6551.h"
+
+// Global ACIA instance (at 0x7F80)
+static acia6551_t g_acia;
+static bool g_acia_initialized = false;
 
 // Global PIA instance (at 0x7FA0)
 static pia6521_t g_pia;
@@ -75,6 +80,16 @@ void write_word_to_region_nodev(memory_region_t *memory, uint16_t address, uint1
 }
 
 uint8_t read_byte_from_region_dev(memory_region_t *region, uint16_t address) {
+    // ACIA is mapped at 0x7F80-0x7F83 (4 registers)
+    if (address >= 0x7F80 && address <= 0x7F83) {
+        if (!g_acia_initialized) {
+            acia6551_init(&g_acia);
+            g_acia_initialized = true;
+        }
+        uint8_t reg = address & 0x03;  // Get register offset (0-3)
+        return acia6551_read(&g_acia, reg);
+    }
+    
     // PIA is mapped at 0x7FA0-0x7FA3 (4 registers)
     if (address >= 0x7FA0 && address <= 0x7FA3) {
         if (!g_pia_initialized) {
@@ -116,6 +131,17 @@ uint16_t read_word_from_region_dev(memory_region_t *region, uint16_t address) {
 }
 
 void write_byte_to_region_dev(memory_region_t *region, uint16_t address, uint8_t value) {
+    // ACIA is mapped at 0x7F80-0x7F83 (4 registers)
+    if (address >= 0x7F80 && address <= 0x7F83) {
+        if (!g_acia_initialized) {
+            acia6551_init(&g_acia);
+            g_acia_initialized = true;
+        }
+        uint8_t reg = address & 0x03;  // Get register offset (0-3)
+        acia6551_write(&g_acia, reg, value);
+        return;
+    }
+    
     // PIA is mapped at 0x7FA0-0x7FA3 (4 registers)
     if (address >= 0x7FA0 && address <= 0x7FA3) {
         if (!g_pia_initialized) {
@@ -181,13 +207,35 @@ void initialize_machine(machine_state_t *machine) {
     memory_region_t *region2 = (memory_region_t*)malloc(sizeof(memory_region_t));
 
     region0->start_offset = 0x0000;
-    region0->end_offset = 0x7F9F;
-    region0->data = (uint8_t *)malloc(0x7FA0 * sizeof(uint8_t));
+    region0->end_offset = 0x7F7F;
+    region0->data = (uint8_t *)malloc(0x7F80 * sizeof(uint8_t));
     region0->read_byte = read_byte_from_region_nodev;
     region0->write_byte = write_byte_to_region_nodev;
     region0->read_word = read_word_from_region_nodev;
     region0->write_word = write_word_to_region_nodev;
     region0->flags = MEM_READWRITE;
+
+    // Region: ACIA at 0x7F80-0x7F83 (4 bytes)
+    memory_region_t *region_acia = (memory_region_t*)malloc(sizeof(memory_region_t));
+    region_acia->start_offset = 0x7F80;
+    region_acia->end_offset = 0x7F83;
+    region_acia->data = NULL; // No backing storage for devices
+    region_acia->read_byte = read_byte_from_region_dev;
+    region_acia->write_byte = write_byte_to_region_dev;
+    region_acia->read_word = read_word_from_region_dev;
+    region_acia->write_word = write_word_to_region_dev;
+    region_acia->flags = MEM_DEVICE;
+
+    // Region: Gap between ACIA and PIA (0x7F84-0x7F9F)
+    memory_region_t *region_gap_acia_pia = (memory_region_t*)malloc(sizeof(memory_region_t));
+    region_gap_acia_pia->start_offset = 0x7F84;
+    region_gap_acia_pia->end_offset = 0x7F9F;
+    region_gap_acia_pia->data = NULL;
+    region_gap_acia_pia->read_byte = read_byte_from_region_dev;
+    region_gap_acia_pia->write_byte = write_byte_to_region_dev;
+    region_gap_acia_pia->read_word = read_word_from_region_dev;
+    region_gap_acia_pia->write_word = write_word_to_region_dev;
+    region_gap_acia_pia->flags = MEM_DEVICE;
 
     // Region: PIA at 0x7FA0-0x7FA3 (4 bytes)
     memory_region_t *region_pia = (memory_region_t*)malloc(sizeof(memory_region_t));
@@ -263,7 +311,9 @@ void initialize_machine(machine_state_t *machine) {
     region2->flags = MEM_READONLY;
     
     // Link all regions together
-    region0->next = region_pia;
+    region0->next = region_acia;
+    region_acia->next = region_gap_acia_pia;
+    region_gap_acia_pia->next = region_pia;
     region_pia->next = region_gap1;
     region_gap1->next = region_via;
     region_via->next = region_gap;
@@ -277,6 +327,11 @@ void initialize_machine(machine_state_t *machine) {
 
 // Clock devices (call this in your main emulation loop)
 void machine_clock_devices(machine_state_t *machine) {
+    // Clock ACIA at 0x7F80
+    if (g_acia_initialized) {
+        acia6551_clock(&g_acia, 1);
+    }
+    
     // PIA at 0x7FA0 doesn't need clocking (no timers)
     
     // Clock standalone VIA at 0x7FC0
@@ -344,6 +399,15 @@ pia6521_t* get_pia_instance(void) {
         g_pia_initialized = true;
     }
     return &g_pia;
+}
+
+// Get ACIA instance for direct access (e.g., setting callbacks)
+acia6551_t* get_acia_instance(void) {
+    if (!g_acia_initialized) {
+        acia6551_init(&g_acia);
+        g_acia_initialized = true;
+    }
+    return &g_acia;
 }
 
 void reset_machine(machine_state_t *machine) {

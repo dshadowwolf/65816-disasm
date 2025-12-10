@@ -319,11 +319,11 @@ void test_board_fifo_bidirectional(machine_state_t *machine) {
 void test_memory_regions(machine_state_t *machine) {
     print_test_header("Memory Region Boundaries");
     
-    // Test RAM region (now ends at 0x7F9F before PIA)
+    // Test RAM region (now ends at 0x7F7F before ACIA)
     write_byte_new(machine, 0x0000, 0x11);
-    write_byte_new(machine, 0x7F9F, 0x22);
+    write_byte_new(machine, 0x7F7F, 0x22);
     TEST_ASSERT(read_byte_new(machine, 0x0000) == 0x11, "RAM start (0x0000) accessible");
-    TEST_ASSERT(read_byte_new(machine, 0x7F9F) == 0x22, "RAM end (0x7F9F) accessible");
+    TEST_ASSERT(read_byte_new(machine, 0x7F7F) == 0x22, "RAM end (0x7F7F) accessible");
     
     // Test VIA region exists (writing to output port should work)
     write_byte_new(machine, 0x7FC2, 0xFF); // Set DDRB to outputs
