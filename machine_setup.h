@@ -5,6 +5,18 @@
 #include "pia6521.h"
 #include "acia6551.h"
 
+// Structure to hold single-step execution results
+typedef struct step_result_s {
+    uint32_t address;          // Address where instruction was executed (PBR:PC)
+    uint8_t opcode;            // Opcode byte
+    uint16_t operand;          // Operand bytes (if any)
+    uint8_t instruction_size;  // Total size of instruction (1-4 bytes)
+    char mnemonic[8];          // Instruction mnemonic (e.g., "LDA")
+    char operand_str[32];      // Formatted operand string
+    bool halted;               // True if processor halted (STP instruction)
+    bool waiting;              // True if processor waiting (WAI instruction)
+} step_result_t;
+
 void initialize_processor(processor_state_t *state);
 void reset_processor(processor_state_t *state);
 void initialize_machine(machine_state_t *machine);
@@ -27,4 +39,9 @@ uint8_t read_byte_from_region_dev(memory_region_t *region, uint16_t address);
 uint16_t read_word_from_region_dev(memory_region_t *region, uint16_t address);
 void write_byte_to_region_dev(memory_region_t *region, uint16_t address, uint8_t value);
 void write_word_to_region_dev(memory_region_t *region, uint16_t address, uint16_t value);
+
+// Single-step execution with disassembly
+step_result_t* machine_step(machine_state_t *machine);
+void free_step_result(step_result_t *result);
+
 #endif // __MACHINE_SETUP_H__

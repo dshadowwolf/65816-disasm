@@ -8,6 +8,9 @@
 #include "board_fifo.h"
 #include "pia6521.h"
 #include "acia6551.h"
+#include "ops.h"
+#include "state.h"
+#include "processor_helpers.h"
 
 // Global ACIA instance (at 0x7F80)
 static acia6551_t g_acia;
@@ -502,4 +505,176 @@ void destroy_machine(machine_state_t *machine) {
         }
     }
     free(machine);
+}
+
+// External opcode table from tbl.c
+extern const opcode_t opcodes[256];
+
+// Helper function to format operand based on addressing mode and size
+static void format_operand(step_result_t *result, const opcode_t *op, uint16_t operand, uint8_t size) {
+    if (size == 0) {
+        result->operand_str[0] = '\0';
+        return;
+    }
+    
+    // Format based on addressing mode flags
+    if (op->flags & Immediate) {
+        if (size == 1) {
+            snprintf(result->operand_str, sizeof(result->operand_str), "#$%02X", operand & 0xFF);
+        } else {
+            snprintf(result->operand_str, sizeof(result->operand_str), "#$%04X", operand);
+        }
+    } else if (op->flags & DirectPage) {
+        if (op->flags & Indirect) {
+            if (op->flags & IndexedX) {
+                snprintf(result->operand_str, sizeof(result->operand_str), "($%02X,X)", operand & 0xFF);
+            } else if (op->flags & IndexedY) {
+                snprintf(result->operand_str, sizeof(result->operand_str), "($%02X),Y", operand & 0xFF);
+            } else if (op->flags & IndirectLong) {
+                if (op->flags & IndexedY) {
+                    snprintf(result->operand_str, sizeof(result->operand_str), "[$%02X],Y", operand & 0xFF);
+                } else {
+                    snprintf(result->operand_str, sizeof(result->operand_str), "[$%02X]", operand & 0xFF);
+                }
+            } else {
+                snprintf(result->operand_str, sizeof(result->operand_str), "($%02X)", operand & 0xFF);
+            }
+        } else if (op->flags & IndexedX) {
+            snprintf(result->operand_str, sizeof(result->operand_str), "$%02X,X", operand & 0xFF);
+        } else if (op->flags & IndexedY) {
+            snprintf(result->operand_str, sizeof(result->operand_str), "$%02X,Y", operand & 0xFF);
+        } else {
+            snprintf(result->operand_str, sizeof(result->operand_str), "$%02X", operand & 0xFF);
+        }
+    } else if (op->flags & Absolute) {
+        if (op->flags & Indirect) {
+            if (op->flags & IndexedX) {
+                snprintf(result->operand_str, sizeof(result->operand_str), "($%04X,X)", operand);
+            } else if (op->flags & IndirectLong) {
+                snprintf(result->operand_str, sizeof(result->operand_str), "[$%04X]", operand);
+            } else {
+                snprintf(result->operand_str, sizeof(result->operand_str), "($%04X)", operand);
+            }
+        } else if (op->flags & IndexedX) {
+            snprintf(result->operand_str, sizeof(result->operand_str), "$%04X,X", operand);
+        } else if (op->flags & IndexedY) {
+            snprintf(result->operand_str, sizeof(result->operand_str), "$%04X,Y", operand);
+        } else {
+            snprintf(result->operand_str, sizeof(result->operand_str), "$%04X", operand);
+        }
+    } else if (op->flags & AbsoluteLong) {
+        if (op->flags & IndexedX) {
+            snprintf(result->operand_str, sizeof(result->operand_str), "$%06X,X", operand);
+        } else {
+            snprintf(result->operand_str, sizeof(result->operand_str), "$%06X", operand);
+        }
+    } else if (op->flags & PCRelative || op->flags & PCRelativeLong) {
+        // Sign-extend for relative addressing
+        int8_t offset = (int8_t)(operand & 0xFF);
+        snprintf(result->operand_str, sizeof(result->operand_str), "$%02X", offset);
+    } else if (op->flags & StackRelative) {
+        if (op->flags & Indirect && op->flags & IndexedY) {
+            snprintf(result->operand_str, sizeof(result->operand_str), "($%02X,S),Y", operand & 0xFF);
+        } else {
+            snprintf(result->operand_str, sizeof(result->operand_str), "$%02X,S", operand & 0xFF);
+        }
+    } else if (op->flags & BlockMoveAddress) {
+        snprintf(result->operand_str, sizeof(result->operand_str), "$%02X,$%02X", 
+                 (operand >> 8) & 0xFF, operand & 0xFF);
+    } else {
+        // Default hex format
+        if (size == 1) {
+            snprintf(result->operand_str, sizeof(result->operand_str), "$%02X", operand & 0xFF);
+        } else {
+            snprintf(result->operand_str, sizeof(result->operand_str), "$%04X", operand);
+        }
+    }
+}
+
+// Single-step execution with disassembly
+step_result_t* machine_step(machine_state_t *machine) {
+    if (!machine) {
+        return NULL;
+    }
+    
+    step_result_t *result = (step_result_t*)malloc(sizeof(step_result_t));
+    if (!result) {
+        return NULL;
+    }
+    
+    // Initialize result
+    memset(result, 0, sizeof(step_result_t));
+    
+    // Connect disassembler state to emulated processor
+    set_emulated_processor(&machine->processor);
+    
+    // Capture current PC and PBR
+    uint16_t pc = machine->processor.PC;
+    uint8_t pbr = machine->processor.PBR;
+    result->address = ((uint32_t)pbr << 16) | pc;
+    
+    // Fetch opcode
+    result->opcode = read_byte_new(machine, pc);
+    const opcode_t *op = &opcodes[result->opcode];
+    
+    // Copy mnemonic
+    strncpy(result->mnemonic, op->opcode, sizeof(result->mnemonic) - 1);
+    result->mnemonic[sizeof(result->mnemonic) - 1] = '\0';
+    
+    // Calculate instruction size based on addressing mode and processor flags
+    uint8_t operand_size = op->psize;
+    if (op->munge != NULL) {
+        operand_size = op->munge(operand_size);
+    }
+    result->instruction_size = 1 + operand_size; // opcode + operand bytes
+    
+    // Fetch operands - must match what the instruction handler expects
+    uint16_t arg1 = 0, arg2 = 0;
+    if (operand_size == 1) {
+        arg1 = read_byte_new(machine, pc + 1);
+        result->operand = arg1;
+    } else if (operand_size == 2) {
+        // Read as 16-bit word (low byte, high byte)
+        uint8_t low = read_byte_new(machine, pc + 1);
+        uint8_t high = read_byte_new(machine, pc + 2);
+        arg1 = low | (high << 8);
+        result->operand = arg1;
+        //fprintf(stderr, "DEBUG: PC=$%04X, operand_size=2, low=$%02X, high=$%02X, arg1=$%04X\n", 
+        //        pc, low, high, arg1);
+    } else if (operand_size == 3) {
+        // For 24-bit addressing: arg1 is 16-bit address, arg2 is bank
+        uint8_t low = read_byte_new(machine, pc + 1);
+        uint8_t high = read_byte_new(machine, pc + 2);
+        uint8_t bank = read_byte_new(machine, pc + 3);
+        arg1 = low | (high << 8);
+        arg2 = bank;
+        result->operand = arg1 | (bank << 16);
+    }
+    
+    // Format operand string
+    format_operand(result, op, result->operand, operand_size);
+    
+    // Update PC before execution (instruction might modify it)
+    machine->processor.PC += result->instruction_size;
+    
+    // Execute the instruction
+    if (op->op != NULL) {
+        machine = op->op(machine, arg1, arg2);
+    }
+    
+    // Check for special states
+    if (result->opcode == 0xDB) { // STP
+        result->halted = true;
+    }
+    if (result->opcode == 0xCB) { // WAI
+        result->waiting = true;
+    }
+    
+    return result;
+}
+
+void free_step_result(step_result_t *result) {
+    if (result) {
+        free(result);
+    }
 }

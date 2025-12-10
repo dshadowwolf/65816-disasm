@@ -11,11 +11,15 @@
 extern void make_label(uint32_t, uint32_t, const char*);
 
 int m_set(int sz) {
-    return isMSet()?sz+1:sz;
+    // When M flag is SET (1), accumulator is 8-bit, so immediate operand is sz bytes
+    // When M flag is CLEAR (0), accumulator is 16-bit, so immediate operand is sz+1 bytes
+    return isMSet() ? sz : sz+1;
 }
 
 int x_set(int sz) {
-    return isXSet()?sz+1:sz;
+    // When X flag is SET (1), index registers are 8-bit, so immediate operand is sz bytes
+    // When X flag is CLEAR (0), index registers are 16-bit, so immediate operand is sz+1 bytes
+    return isXSet() ? sz : sz+1;
 }
 
 int base(int sz) {
