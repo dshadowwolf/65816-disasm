@@ -480,6 +480,96 @@ int load_rom_from_file(machine_state_t *machine, const char *filename) {
     return 0;
 }
 
+// Load a hex file with format "address:byte byte byte..."
+// Example: "8000:A9 12 34 85 10"
+// Returns: 0 on success, -1 on error, or number of lines loaded
+int load_hex_file(machine_state_t *machine, const char *filename) {
+    FILE *fp = fopen(filename, "r");
+    if (!fp) {
+        fprintf(stderr, "Error: Cannot open hex file '%s'\n", filename);
+        return -1;
+    }
+    
+    char line[1024];
+    int line_num = 0;
+    int total_bytes = 0;
+    
+    while (fgets(line, sizeof(line), fp)) {
+        line_num++;
+        
+        // Skip empty lines and comments
+        char *p = line;
+        while (*p == ' ' || *p == '\t') p++;
+        if (*p == '\n' || *p == '\r' || *p == '\0' || *p == '#' || *p == ';') {
+            continue;
+        }
+        
+        // Parse address (before colon)
+        uint32_t address;
+        char *colon = strchr(p, ':');
+        if (!colon) {
+            fprintf(stderr, "Warning: Line %d: No colon found, skipping\n", line_num);
+            continue;
+        }
+        
+        *colon = '\0';  // Terminate address string
+        if (sscanf(p, "%x", &address) != 1) {
+            fprintf(stderr, "Warning: Line %d: Invalid address format\n", line_num);
+            continue;
+        }
+        
+        // Parse bytes (after colon)
+        p = colon + 1;
+        int bytes_on_line = 0;
+        
+        while (*p) {
+            // Skip whitespace
+            while (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r') p++;
+            if (*p == '\0') break;
+            
+            // Stop at comment
+            if (*p == '#' || *p == ';') break;
+            
+            // Parse hex byte
+            unsigned int byte_val;
+            if (sscanf(p, "%2x", &byte_val) != 1) {
+                fprintf(stderr, "Warning: Line %d: Invalid hex byte at position %ld\n", 
+                        line_num, p - line);
+                break;
+            }
+            
+            // Write byte to memory using region system
+            uint16_t addr16 = address & 0xFFFF;
+            memory_region_t *region = find_current_memory_region(machine, addr16);
+            
+            if (region && region->data) {
+                // Write directly to region data (bypassing readonly check for loading)
+                region->data[addr16 - region->start_offset] = (uint8_t)byte_val;
+                bytes_on_line++;
+                address++;
+            } else if (region) {
+                fprintf(stderr, "Warning: Address 0x%04X is a device region, cannot write\n", addr16);
+            } else {
+                fprintf(stderr, "Warning: Address 0x%04X not mapped to any region\n", addr16);
+            }
+            
+            // Skip the two hex digits we just read
+            p += 2;
+            
+            // Skip optional separators (space, comma, etc.)
+            while (*p == ' ' || *p == '\t' || *p == ',' || *p == '-') p++;
+        }
+        
+        if (bytes_on_line > 0) {
+            total_bytes += bytes_on_line;
+        }
+    }
+    
+    fclose(fp);
+    printf("Loaded %d bytes from %d lines in '%s'\n", total_bytes, line_num, filename);
+    return total_bytes;
+}
+
 void reset_machine(machine_state_t *machine) {
     reset_processor(&machine->processor);
     
