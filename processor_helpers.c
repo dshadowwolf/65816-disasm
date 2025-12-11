@@ -387,7 +387,10 @@ long_address_t get_long_address(machine_state_t *machine, uint16_t offset, uint1
 }
 
 uint16_t get_dp_address(machine_state_t *machine, uint16_t dp_offset) {
-    return (machine->processor.DP + dp_offset) & 0xFFFF;
+    fprintf(stderr, "%s: DP=0x%04X, dp_offset=0x%04X\n", __func__, machine->processor.DP, dp_offset);
+    uint16_t dp_address = (machine->processor.DP + dp_offset) & 0xFFFF;
+    fprintf(stderr, "%s: dp_address=0x%04X\n", __func__, dp_address);
+    return dp_address;
 }
 
 uint16_t get_dp_address_indirect(machine_state_t *machine, uint16_t dp_offset) {
