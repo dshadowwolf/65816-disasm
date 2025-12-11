@@ -234,6 +234,8 @@ machine_state_t* ASL           (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* PHD           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (is_flag_set(machine, M_FLAG)) {
         push_byte_new(machine, machine->processor.DP & 0xFF);
+        printf("M_FLAG\n");
+        fflush(stdout);
     } else {
         push_word_new(machine, machine->processor.DP);
     }
@@ -756,16 +758,22 @@ machine_state_t* BIT_ABS       (machine_state_t* machine, uint16_t arg_one, uint
     // Sets Z based on A & M, N from bit 7 of M, V from bit 6 of M
     processor_state_t *state = &machine->processor;
     uint16_t address = get_absolute_address(machine, arg_one);
-    if (is_flag_set(machine, M_FLAG)) {
+    if (is_flag_set(machine, M_FLAG) || state->emulation_mode) {
         uint8_t value = read_byte_new(machine, address);
         uint8_t result = state->A.low & value;
-        set_flags_nz_8(machine, result);
+        // Z flag from result, N and V from memory value
+        check_and_set_zero_8(machine, result);
+        if (value & 0x80) set_flag(machine, NEGATIVE);
+        else clear_flag(machine, NEGATIVE);
         if (value & 0x40) set_flag(machine, OVERFLOW);
         else clear_flag(machine, OVERFLOW);
     } else {
         uint16_t value = read_word_new(machine, address);
         uint16_t result = state->A.full & value;
-        set_flags_nz_16(machine, result);
+        // Z flag from result, N and V from memory value
+        check_and_set_zero_16(machine, result);
+        if (value & 0x8000) set_flag(machine, NEGATIVE);
+        else clear_flag(machine, NEGATIVE);
         if (value & 0x4000) set_flag(machine, OVERFLOW);
         else clear_flag(machine, OVERFLOW);
     }
@@ -792,7 +800,7 @@ machine_state_t* ROL_ABS       (machine_state_t* machine, uint16_t arg_one, uint
     uint16_t address = get_absolute_address(machine, arg_one);
     uint8_t value = read_byte_new(machine, address);
     if (is_flag_set(machine, M_FLAG)) {
-        uint16_t result = (uint16_t)(value << 1);
+        uint16_t result = ((uint16_t)value << 1);
         if (is_flag_set(machine, CARRY)) {
             result |= 0x01;
         } else {
@@ -801,7 +809,7 @@ machine_state_t* ROL_ABS       (machine_state_t* machine, uint16_t arg_one, uint
         set_flags_nzc_8(machine, result);
         write_byte_new(machine, address, (uint8_t)(result & 0xFF));
     } else {
-        uint32_t result = (uint32_t)(state->A.full << 1);
+        uint32_t result = ((uint32_t)value << 1);
         if (is_flag_set(machine, CARRY)) {
             result |= 0x01;
         } else {
@@ -1033,7 +1041,7 @@ machine_state_t* ROL_ABS_IX    (machine_state_t* machine, uint16_t arg_one, uint
     uint16_t address = get_absolute_address_indexed_x(machine, arg_one);
     if (is_flag_set(machine, M_FLAG)) {
         uint8_t value = read_byte_new(machine, address);
-        uint16_t result = (uint16_t)(value << 1);
+        uint16_t result = ((uint16_t)value << 1);
         if (is_flag_set(machine, CARRY)) {
             result |= 0x01;
         }
@@ -1043,7 +1051,7 @@ machine_state_t* ROL_ABS_IX    (machine_state_t* machine, uint16_t arg_one, uint
     } else {
         // Handle 16-bit mode - read and write 16 bits
         uint16_t value = read_word_new(machine, address);
-        uint32_t result = (uint32_t)(value << 1);
+        uint32_t result = ((uint32_t)value << 1);
         if (is_flag_set(machine, CARRY)) {
             result |= 0x0001;
         }
@@ -1370,7 +1378,7 @@ machine_state_t* EOR_DP_I      (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* EOR_SR_I_IY   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Exclusive OR Accumulator with Memory (Stack Relative Indirect Indexed with Y)
     processor_state_t *state = &machine->processor;
-    uint16_t address = get_stack_relative_address_indirect_indexed_y(machine, arg_one);
+    uint16_t address = get_stack_relative_address_indirect_indexed_y_new(machine, arg_one);
     uint8_t value = read_byte_new(machine, address);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low ^= value;
@@ -1538,7 +1546,7 @@ machine_state_t* LSR_ABS_IX    (machine_state_t* machine, uint16_t arg_one, uint
         clear_flag(machine, NEGATIVE);
         set_flags_nz_8(machine, result);
     } else {
-        uint16_t result = read_word_new(machine, address);
+        uint16_t result = value >> 1;
         check_and_set_carry_16(machine, result);
         write_word_new(machine, address, result);
         clear_flag(machine, NEGATIVE);
@@ -1766,7 +1774,7 @@ machine_state_t* RTL           (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* JMP_ABS_I     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Jump, Absolute Indirect
     processor_state_t *state = &machine->processor;
-    uint16_t address = get_absolute_address_indirect(machine, arg_one);
+    uint16_t address = get_absolute_address_indirect_new(machine, arg_one);
     state->PC = address;
     return machine;
 }
@@ -3397,7 +3405,7 @@ machine_state_t* STP           (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* JMP_ABS_IL    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // JuMP to Absolute Indirect Long address
     processor_state_t *state = &machine->processor;
-    long_address_t addr = get_absolute_address_long_indirect(machine, arg_one, arg_two);
+    long_address_t addr = get_absolute_address_long_indirect_new(machine, arg_one, arg_two);
     uint16_t effective_address = addr.address;
     state->PC = effective_address;
     state->PBR = addr.bank;

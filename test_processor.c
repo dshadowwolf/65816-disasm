@@ -987,8 +987,7 @@ TEST(JMP_ABS_I_indirect) {
     machine_state_t *machine = setup_machine();
     
     // Set up indirect address at 0x1000
-    write_byte_new(machine, 0x1000, 0x00);
-    write_byte_new(machine, 0x1001, 0x80);
+    write_word_new(machine, 0x1000, 0x8000);
     
     JMP_ABS_I(machine, 0x1000, 0);
     ASSERT_EQ(machine->processor.PC, 0x8000, "JMP indirect should jump to address in memory");
@@ -1036,7 +1035,9 @@ TEST(PHD_and_PLD) {
     machine->processor.DP = 0x42;
     
     PHD(machine, 0, 0);
-    ASSERT_EQ(machine->processor.SP, 0x1FE, "PHD should decrement SP");
+    // machine is in _native_ mode, SP decrements on each write...
+    // this should be 0x1FD tested for
+    ASSERT_EQ(machine->processor.SP, 0x1FD, "PHD should decrement SP");
 
     machine->processor.DP = 0x00;
     PLD(machine, 0, 0);
@@ -1210,6 +1211,9 @@ TEST(BIT_DP_direct_page) {
 TEST(BIT_ABS_sets_flags_from_memory) {
     machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0xFF;
+    
+    set_flag(machine, M_FLAG); // this test expects A to be 8-bits
+
     write_byte_new(machine, 0x3000, 0xC0);  // Bits 7 and 6 set
     
     BIT_ABS(machine, 0x3000, 0);
@@ -1879,7 +1883,7 @@ TEST(CPY_DP_direct_page) {
 TEST(CPY_ABS_absolute) {
     machine_state_t *machine = setup_machine();
     machine->processor.Y = 0x50;
-
+    set_flag(machine, X_FLAG); // This test expects X/Y to be 8-bit
     write_byte_new(machine, 0x4000, 0x30);
     
     CPY_ABS(machine, 0x4000, 0);
@@ -1949,6 +1953,7 @@ TEST(ROL_DP_direct_page) {
 TEST(ROL_ABS_absolute) {
     machine_state_t *machine = setup_machine();
     machine->processor.P |= CARRY;
+
     write_byte_new(machine, 0x3000, 0x40);
     
     ROL_ABS(machine, 0x3000, 0);
@@ -1961,6 +1966,8 @@ TEST(ROR_DP_direct_page) {
     machine_state_t *machine = setup_machine();
     machine->processor.P |= CARRY;
     machine->processor.DP = 0x00;
+    set_flag(machine, M_FLAG); // test expects accumulator to be 8-bit
+
     write_byte_new(machine, 0x10, 0x02);
     
     ROR_DP(machine, 0x10, 0);
@@ -1972,6 +1979,7 @@ TEST(ROR_DP_direct_page) {
 TEST(ROR_ABS_absolute) {
     machine_state_t *machine = setup_machine();
     machine->processor.P |= CARRY;
+    set_flag(machine, M_FLAG); // test expects accumulator to be 8-bit
 
     write_byte_new(machine, 0x7000, 0x02);
     
@@ -3263,10 +3271,8 @@ TEST(EOR_SR_I_IY_sr_indirect_indexed) {
     machine->processor.SP = 0x160;
     set_flag(machine, M_FLAG);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x166] = 0x00;
-    bank[0x167] = 0x10;
-    bank[0x1019] = 0x55;
+    write_word_new(machine, 0x0166, 0x1000);
+    write_byte_new(machine, 0x1019, 0x55);
     
     EOR_SR_I_IY(machine, 0x06, 0);
     ASSERT_EQ(machine->processor.A.low, 0xFF, "EOR (SR,S),Y should XOR SR indirect indexed memory with A");
@@ -4022,6 +4028,7 @@ TEST(ROL_DP_IX_indexed) {
 TEST(ROL_ABS_IX_indexed) {
     machine_state_t *machine = setup_machine();
     machine->processor.X = 0x18;
+    set_flag(machine, M_FLAG); // expects 8-bit accumulator ?
     clear_flag(machine, CARRY);
     
     write_byte_new(machine, 0x4018, 0x80);
@@ -4357,10 +4364,26 @@ TEST(ORA_DP_I_IX_dp_indexed_indirect) {
 
 TEST(JMP_ABS_IL_absolute_indirect_long) {
     machine_state_t *machine = setup_machine();
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x2000] = 0x00;
-    bank[0x2001] = 0x80;
-    bank[0x2002] = 0x01;
+
+    
+    machine->memory_banks[1] = (memory_bank_t*)malloc(sizeof(memory_bank_t));
+    memory_region_t *region0 = (memory_region_t*)malloc(sizeof(memory_region_t));
+    memory_bank_t *bank1 = machine->memory_banks[1];
+
+    region0->start_offset = 0x0000;
+    region0->end_offset = 0xFFFF;
+    region0->data = (uint8_t *)malloc(65536 * sizeof(uint8_t));
+    region0->read_byte = read_byte_from_region_nodev;  // Default read/write functions can be set later
+    region0->write_byte = write_byte_to_region_nodev;
+    region0->read_word = read_word_from_region_nodev;
+    region0->write_word = write_word_to_region_nodev;
+    region0->flags = MEM_READWRITE;
+    region0->next = NULL;
+    bank1->regions = region0;
+
+    write_word_new(machine, 0x2000, 0x8000);
+    write_byte_new(machine, 0x2002, 0x01);
+
     JMP_ABS_IL(machine, 0x2000, 0);
     ASSERT_EQ(machine->processor.PC, 0x8000, "JMP [ABS] should jump indirect long");
     ASSERT_EQ(machine->processor.PBR, 0x01, "JMP [ABS] should set bank");

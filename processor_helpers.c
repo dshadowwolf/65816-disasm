@@ -131,17 +131,15 @@ void push_byte_new(machine_state_t *machine, uint8_t value) {
     
     if (region != NULL) {
         WRITE_BYTE(region, sp_address, value);
+        if (state->emulation_mode) {
+            state->SP = (state->SP - 1) & 0x1FF;
+        } else {
+            state->SP = (state->SP - 1) & 0xFFFF;
+        }
     } else {
-        // Fallback to direct memory bank access when no region is configured
-        uint8_t *memory_bank = get_memory_bank(machine, state->emulation_mode ? 0 : state->DBR);
-        write_byte(memory_bank, sp_address, value);
+        fprintf(stderr, "Region not found for push_byte_new at SP=$%04X\n", sp_address);
     }
     
-    if (state->emulation_mode) {
-        state->SP = (state->SP - 1) & 0x1FF;
-    } else {
-        state->SP = (state->SP - 1) & 0xFFFF;
-    }
 }
 
 void push_word_new(machine_state_t *machine, uint16_t value) {
@@ -466,6 +464,7 @@ long_address_t get_absolute_address_long_indirect(machine_state_t *machine, uint
     uint8_t bank_byte = memory_bank[(address + 2) & 0xFFFF];
     return get_long_address(machine, (high_byte << 8) | low_byte, bank_byte);
 }
+
 uint16_t get_dp_address_indexed_x(machine_state_t *machine, uint16_t dp_offset) {
     uint16_t dp_address = get_dp_address(machine, dp_offset);
     return (dp_address + machine->processor.X) & 0xFFFF;
@@ -511,3 +510,14 @@ uint16_t get_stack_relative_address_indirect_indexed_y(machine_state_t *machine,
     uint16_t effective_address = read_word(memory_bank, pointer_address);
     return (effective_address + machine->processor.Y) & 0xFFFF;
 }
+
+uint16_t get_absolute_address_indirect_new(machine_state_t *machine, uint16_t address) {
+    return read_word_new(machine, address);
+}
+
+long_address_t get_absolute_address_long_indirect_new(machine_state_t *machine, uint16_t address, uint8_t bank) {
+    uint16_t addr = read_word_long(machine, get_long_address(machine, address, bank));
+    uint8_t bank_b = read_byte_long(machine, get_long_address(machine, address+2, bank));
+    return get_long_address(machine, addr, bank_b);
+}
+

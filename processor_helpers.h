@@ -105,4 +105,5 @@ uint16_t get_stack_relative_address_indirect_new(machine_state_t *machine, uint8
 uint16_t get_stack_relative_address_indirect_indexed_y_new(machine_state_t *machine, uint8_t offset);
 long_address_t get_absolute_long_indexed_x_new(machine_state_t *machine, uint16_t address, uint8_t bank);
 uint16_t get_dp_address_indexed_y(machine_state_t *machine, uint16_t dp_offset);
+long_address_t get_absolute_address_long_indirect_new(machine_state_t *machine, uint16_t address, uint8_t bank);
 #endif // PROCESSOR_HELPERS_H
