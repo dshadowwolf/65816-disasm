@@ -59,6 +59,41 @@ lib65816disasm.a: list.o map.o codetable.o outs.o map.o tbl.o state.o disasm.o p
 test: test_processor lib65816disasm.a
 	./test_processor
 
+test_all: test_processor test_via test_pia test_acia test_ft245 test_board_fifo test_integration test_pia_integration test_acia_integration test_mvn lib65816disasm.a
+	@echo "Running all tests..."
+	@echo ""
+	@echo "=== Running test_processor ==="
+	./test_processor
+	@echo ""
+	@echo "=== Running test_via ==="
+	./test_via
+	@echo ""
+	@echo "=== Running test_pia ==="
+	./test_pia
+	@echo ""
+	@echo "=== Running test_acia ==="
+	./test_acia
+	@echo ""
+	@echo "=== Running test_ft245 ==="
+	./test_ft245
+	@echo ""
+	@echo "=== Running test_board_fifo ==="
+	./test_board_fifo
+	@echo ""
+	@echo "=== Running test_integration ==="
+	./test_integration
+	@echo ""
+	@echo "=== Running test_pia_integration ==="
+	./test_pia_integration
+	@echo ""
+	@echo "=== Running test_acia_integration ==="
+	./test_acia_integration
+	@echo ""
+	@echo "=== Running test_mvn ==="
+	./test_mvn
+	@echo ""
+	@echo "=== All tests completed successfully ==="
+
 clean:
 	rm -f *.o tester test_processor test_via test_pia test_acia test_ft245 test_board_fifo test_integration test_pia_integration test_acia_integration test_rom_load test_single_step test_hex_load intel_hex_loader srec_loader example_emulated_state test_mvn lib65816disasm.a test_rom.bin test_program.hex
 

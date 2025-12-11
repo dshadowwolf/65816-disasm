@@ -234,8 +234,6 @@ machine_state_t* ASL           (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* PHD           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     if (is_flag_set(machine, M_FLAG)) {
         push_byte_new(machine, machine->processor.DP & 0xFF);
-        printf("M_FLAG\n");
-        fflush(stdout);
     } else {
         push_word_new(machine, machine->processor.DP);
     }
@@ -822,7 +820,6 @@ machine_state_t* ROL_ABS       (machine_state_t* machine, uint16_t arg_one, uint
 }
 
 machine_state_t* AND_ABL       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
-    printf("%s:%d: %s(%p, %04X, %04X)\n", __FILE__, __LINE__, __func__, machine, arg_one, arg_two);
     // AND Accumulator with Memory (Absolute Long Addressing)
     processor_state_t *state = &machine->processor;
     long_address_t addr = get_absolute_address_long(machine, arg_one, (uint8_t)(arg_two & 0xFF));
@@ -2222,7 +2219,6 @@ machine_state_t* STA_DP_IL     (machine_state_t* machine, uint16_t arg_one, uint
     // STore A register, Direct Page Indirect Long
     processor_state_t *state = &machine->processor;
     long_address_t addr = get_dp_address_indirect_long_new(machine, arg_one);
-    printf("STA_DP_IL to bank %02X addr %04X\n", addr.bank, addr.address);
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         write_byte_long(machine, addr, state->A.low);
     } else {
@@ -2370,7 +2366,6 @@ machine_state_t* STA_SR_I_IY   (machine_state_t* machine, uint16_t arg_one, uint
     // STore A, Stack-relative, Indirect, Indexed by Y
     processor_state_t *state = &machine->processor;
     uint16_t address = get_stack_relative_address_indirect_indexed_y_new(machine, arg_one);
-    printf("STA_SR_I_IY address: %04X\n", address);
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         write_byte_new(machine, address, (uint8_t)(state->A.low & 0xFF));
     } else {
