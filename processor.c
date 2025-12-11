@@ -564,26 +564,8 @@ machine_state_t* JSR_CB        (machine_state_t* machine, uint16_t arg_one, uint
     // Jump to Subroutine
     processor_state_t *state = &machine->processor;
     uint16_t return_address = (state->PC - 1) & 0xFFFF;
-    fprintf(stderr, "DEBUG JSR: PC=$%04X, SP=$%04X, pushing return=$%04X\n", 
-            state->PC, state->SP, return_address);
     // Push return address onto stack FIRST
     push_word_new(machine, return_address);
-    fprintf(stderr, "DEBUG JSR: After push, SP=$%04X\n", state->SP);
-    
-    // Dump stack memory after second JSR
-    if (arg_one == 0x2034) {
-        // Try reading via region
-        memory_region_t *region = find_stack_memory_region(machine);
-        fprintf(stderr, "STACK MEMORY DUMP after JSR $2034 (via region %p):\n", (void*)region);
-        for (int i = 0x1FA; i <= 0x1FF; i++) {
-            uint8_t val = 0;
-            if (region != NULL) {
-                val = READ_BYTE(region, i);
-            }
-            fprintf(stderr, "  $%04X: $%02X\n", i, val);
-        }
-    }
-    
     // THEN set PC to target address  
     state->PC = arg_one & 0xFFFF;
     return machine;
@@ -1620,11 +1602,8 @@ machine_state_t* EOR_AL_IX     (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* RTS           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Return from Subroutine
     processor_state_t *state = &machine->processor;
-    fprintf(stderr, "\nDEBUG RTS: Before pop, SP=$%04X\n", state->SP);
     // RTS pulls the return address and increments it by 1
     uint16_t popped = pop_word_new(machine);
-    fprintf(stderr, "\nDEBUG RTS: Popped=$%04X, returning to PC=$%04X, SP now=$%04X\n", 
-            popped, (popped + 1) & 0xFFFF, state->SP);
     state->PC = (popped + 1) & 0xFFFF;
     return machine;
 }
