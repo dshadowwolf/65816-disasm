@@ -471,6 +471,31 @@ int main(int argc, char *argv[]) {
 
     printf("\nTotal steps executed: %d\n", step_count);
 
+    // Dump stack contents
+    printf("\nStack dump (page 1: $0100-$01FF):\n");
+    printf("SP=$%04X points to next free location\n", machine->processor.SP);
+    printf("Stack contents from $01FF (bottom) to SP (top):\n");
+    
+    for (int addr = 0x01FF; addr >= 0x0100; addr--) {
+        uint8_t value = read_byte_new(machine, addr);
+        
+        // Mark current SP position
+        if (addr == (machine->processor.SP & 0x1FF)) {
+            printf("  $%04X: $%02X  <-- SP (next push goes here)\n", addr, value);
+        } else if (addr > (machine->processor.SP & 0x1FF)) {
+            // This is data on the stack
+            printf("  $%04X: $%02X\n", addr, value);
+        } else {
+            // Below SP - unused stack space (only show first few)
+            if (addr >= 0x01F0 || addr < 0x0108) {
+                printf("  $%04X: $%02X  (unused)\n", addr, value);
+            } else if (addr == 0x0107) {
+                printf("  ... (unused stack space) ...\n");
+            }
+        }
+    }
+    printf("\n");
+
     destroy_machine(machine);
     return 0;
 }
