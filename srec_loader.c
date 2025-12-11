@@ -333,9 +333,18 @@ int main(int argc, char *argv[]) {
     printf("Starting execution at PC=$%04X\n\n", machine->processor.PC);
     
     // Print initial state
-    printf("Initial state: PC=$%04X A=$%04X X=$%04X Y=$%04X P=$%02X\n\n",
+    printf("Initial state: PC=$%04X A=$%04X X=$%04X Y=$%04X SP=$%04X P=%c%c%c%c%c%c%c%c %s\n\n",
            machine->processor.PC, machine->processor.A.full, machine->processor.X, 
-           machine->processor.Y, machine->processor.P);
+           machine->processor.Y, machine->processor.SP,
+           (machine->processor.P & 0x80) ? 'N' : '-',
+           (machine->processor.P & 0x40) ? 'V' : '-',
+           (machine->processor.P & 0x20) ? 'M' : '-',
+           (machine->processor.P & 0x10) ? 'X' : '-',
+           (machine->processor.P & 0x08) ? 'D' : '-',
+           (machine->processor.P & 0x04) ? 'I' : '-',
+           (machine->processor.P & 0x02) ? 'Z' : '-',
+           (machine->processor.P & 0x01) ? 'C' : '-',
+           machine->processor.emulation_mode ? "[E]" : "[N]");
 
     // Single-step through program
     int step_count = 0;
@@ -347,14 +356,23 @@ int main(int argc, char *argv[]) {
         step_result_t *result = machine_step(machine);
         
         // Print disassembly and state
-        printf("%5d. %04X: %-16s A=$%04X X=$%04X Y=$%04X P=$%02X",
+        printf("%5d. %04X: %-16s A=$%04X X=$%04X Y=$%04X SP=$%04X P=%c%c%c%c%c%c%c%c %s",
                step_count,
                (uint16_t)result->address,
                result->mnemonic,
                machine->processor.A.full,
                machine->processor.X,
                machine->processor.Y,
-               machine->processor.P);
+               machine->processor.SP,
+               (machine->processor.P & 0x80) ? 'N' : '-',
+               (machine->processor.P & 0x40) ? 'V' : '-',
+               (machine->processor.P & 0x20) ? 'M' : '-',
+               (machine->processor.P & 0x10) ? 'X' : '-',
+               (machine->processor.P & 0x08) ? 'D' : '-',
+               (machine->processor.P & 0x04) ? 'I' : '-',
+               (machine->processor.P & 0x02) ? 'Z' : '-',
+               (machine->processor.P & 0x01) ? 'C' : '-',
+               machine->processor.emulation_mode ? "[E]" : "[N]");
         
         // Print operand if present
         if (result->operand_str[0] != '\0') {
@@ -398,20 +416,45 @@ int main(int argc, char *argv[]) {
     }
 
     // Print final state
-    printf("\nFinal state after %d steps:\n", step_count);
-    printf("  PC=$%04X A=$%04X X=$%04X Y=$%04X P=$%02X SP=$%04X\n",
+    printf("\nFinal state: PC=$%04X A=$%04X X=$%04X Y=$%04X SP=$%04X P=%c%c%c%c%c%c%c%c %s\n",
            machine->processor.PC, machine->processor.A.full, machine->processor.X, 
-           machine->processor.Y, machine->processor.P, machine->processor.SP);
-    printf("  Flags: N=%d V=%d M=%d X=%d D=%d I=%d Z=%d C=%d E=%d\n",
-           !!(machine->processor.P & 0x80),
-           !!(machine->processor.P & 0x40),
-           !!(machine->processor.P & 0x20),
-           !!(machine->processor.P & 0x10),
-           !!(machine->processor.P & 0x08),
-           !!(machine->processor.P & 0x04),
-           !!(machine->processor.P & 0x02),
-           !!(machine->processor.P & 0x01),
-           machine->processor.emulation_mode);
+           machine->processor.Y, machine->processor.SP,
+           (machine->processor.P & 0x80) ? 'N' : '-',
+           (machine->processor.P & 0x40) ? 'V' : '-',
+           (machine->processor.P & 0x20) ? 'M' : '-',
+           (machine->processor.P & 0x10) ? 'X' : '-',
+           (machine->processor.P & 0x08) ? 'D' : '-',
+           (machine->processor.P & 0x04) ? 'I' : '-',
+           (machine->processor.P & 0x02) ? 'Z' : '-',
+           (machine->processor.P & 0x01) ? 'C' : '-',
+           machine->processor.emulation_mode ? "[E]" : "[N]");
+
+    printf("\nTotal steps executed: %d\n", step_count);
+
+    // Dump stack contents
+    printf("\nStack dump (page 1: $0100-$01FF):\n");
+    printf("SP=$%04X points to next free location\n", machine->processor.SP);
+    printf("Stack contents from $01FF (bottom) to SP (top):\n");
+    
+    for (int addr = 0x01FF; addr >= 0x0100; addr--) {
+        uint8_t value = read_byte_new(machine, addr);
+        
+        // Mark current SP position
+        if (addr == (machine->processor.SP & 0x1FF)) {
+            printf("  $%04X: $%02X  <-- SP (next push goes here)\n", addr, value);
+        } else if (addr > (machine->processor.SP & 0x1FF)) {
+            // This is data on the stack
+            printf("  $%04X: $%02X\n", addr, value);
+        } else {
+            // Below SP - unused stack space (only show first few)
+            if (addr >= 0x01F0 || addr < 0x0108) {
+                printf("  $%04X: $%02X  (unused)\n", addr, value);
+            } else if (addr == 0x0107) {
+                printf("  ... (unused stack space) ...\n");
+            }
+        }
+    }
+    printf("\n");
 
     destroy_machine(machine);
     return 0;
