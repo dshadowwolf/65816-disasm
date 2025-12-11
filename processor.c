@@ -675,7 +675,7 @@ machine_state_t* AND_DP_IL     (machine_state_t* machine, uint16_t arg_one, uint
     // AND Direct Page Indirect Long
     processor_state_t *state = &machine->processor;
     long_address_t effective_address = get_dp_address_indirect_long_new(machine, arg_one);
-    uint8_t value = read_byte_new(machine, effective_address.address);
+    uint8_t value = read_byte_long(machine, effective_address);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low &= value;
         set_flags_nz_8(machine, state->A.low);
@@ -814,10 +814,11 @@ machine_state_t* ROL_ABS       (machine_state_t* machine, uint16_t arg_one, uint
 }
 
 machine_state_t* AND_ABL       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+    printf("%s:%d: %s(%p, %04X, %04X)\n", __FILE__, __LINE__, __func__, machine, arg_one, arg_two);
     // AND Accumulator with Memory (Absolute Long Addressing)
     processor_state_t *state = &machine->processor;
     long_address_t addr = get_absolute_address_long(machine, arg_one, (uint8_t)(arg_two & 0xFF));
-    uint8_t value = read_word_new(machine, addr.address);
+    uint8_t value = read_byte_long(machine, addr);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low &= value;
         set_flags_nz_8(machine, state->A.low);
@@ -841,7 +842,7 @@ machine_state_t* BMI_CB        (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* AND_DP_I_IY   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // AND Accumulator with Memory (Direct Page Indirect Indexed with Y)
     processor_state_t *state = &machine->processor;
-    uint16_t effective_address = get_dp_address_indirect_indexed_y(machine, arg_one);
+    uint16_t effective_address = get_dp_address_indirect_indexed_y_new(machine, arg_one);
     uint8_t value = read_byte_new(machine, effective_address);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low &= value;
@@ -856,7 +857,7 @@ machine_state_t* AND_DP_I_IY   (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* AND_DP_I      (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // AND Accumulator with Memory (Direct Page Indirect)
     processor_state_t *state = &machine->processor;
-    uint16_t effective_address = get_dp_address_indirect(machine, arg_one);
+    uint16_t effective_address = get_dp_address_indirect_new(machine, arg_one);
     uint8_t value = read_byte_new(machine, effective_address);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low &= value;
@@ -871,7 +872,7 @@ machine_state_t* AND_DP_I      (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* AND_SR_I_IY   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // AND Accumulator with Memory (Stack Relative Indirect Indexed with Y)
     processor_state_t *state = &machine->processor;
-    uint16_t address = get_stack_relative_address_indirect_indexed_y(machine, arg_one);
+    uint16_t address = get_stack_relative_address_indirect_indexed_y_new(machine, arg_one);
     uint8_t value = read_byte_new(machine, address);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low &= value;
@@ -941,8 +942,8 @@ machine_state_t* ROL_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* AND_DP_IL_IY  (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // AND Accumulator with Memory (Direct Page Indirect Long Indexed with Y)
     processor_state_t *state = &machine->processor;
-    long_address_t effective_address = get_dp_address_indirect_long_indexed_y(machine, arg_one);
-     uint8_t value = read_byte_new(machine, effective_address.address);
+    long_address_t effective_address = get_dp_address_indirect_long_indexed_y_new(machine, arg_one);
+     uint8_t value = read_byte_long(machine, effective_address);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low &= value;
         set_flags_nz_8(machine, state->A.low);
@@ -1057,7 +1058,7 @@ machine_state_t* AND_ABL_IX    (machine_state_t* machine, uint16_t arg_one, uint
     // AND Accumulator with Memory (Absolute Long Indexed with X)
     processor_state_t *state = &machine->processor;
     long_address_t address = get_absolute_address_long_indexed_x(machine, arg_one, (uint8_t)(arg_two & 0xFF));
-    uint8_t value = read_byte_new(machine, address.address);
+    uint8_t value = read_byte_long(machine, address);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low &= value;
         set_flags_nz_8(machine, state->A.low);
@@ -1192,7 +1193,7 @@ machine_state_t* EOR_DP_IL     (machine_state_t* machine, uint16_t arg_one, uint
     // Exclusive OR Accumulator with Memory (Direct Page Indirect Long)
     processor_state_t *state = &machine->processor;
     long_address_t dp_address = get_dp_address_indirect_long_new(machine, arg_one);
-    uint8_t value = read_byte_new(machine, dp_address.address);
+    uint8_t value = read_byte_long(machine, dp_address);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low ^= value;
         set_flags_nz_8(machine, state->A.low);
@@ -1316,7 +1317,7 @@ machine_state_t* EOR_ABL       (machine_state_t* machine, uint16_t arg_one, uint
     // Exclusive OR Accumulator with Memory (Absolute Long Addressing)
     processor_state_t *state = &machine->processor;
     long_address_t addr = get_absolute_address_long(machine, arg_one, (uint8_t)(arg_two & 0xFF));
-    uint8_t value = read_byte_new(machine, addr.address);
+    uint8_t value = read_byte_long(machine, addr);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low ^= value;
         set_flags_nz_8(machine, state->A.low);
@@ -1354,7 +1355,7 @@ machine_state_t* EOR_DP_I_IY   (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* EOR_DP_I      (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Exclusive OR Accumulator with Memory (Direct Page Indirect)
     processor_state_t *state = &machine->processor;
-    uint16_t effective_address = get_dp_address_indirect(machine, arg_one);
+    uint16_t effective_address = get_dp_address_indirect_new(machine, arg_one);
     uint8_t value = read_byte_new(machine, effective_address);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low ^= value;
@@ -1444,8 +1445,8 @@ machine_state_t* LSR_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* EOR_DP_IL_IY  (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Exclusive OR Accumulator with Memory (Direct Page Indirect Long Indexed with Y)
     processor_state_t *state = &machine->processor;
-    long_address_t address = get_dp_address_indirect_long_indexed_y(machine, arg_one);
-    uint8_t value = read_byte_new(machine, address.address);
+    long_address_t address = get_dp_address_indirect_long_indexed_y_new(machine, arg_one);
+    uint8_t value = read_byte_long(machine, address);
     if (is_flag_set(machine, M_FLAG)) {
         state->A.low ^= value;
         set_flags_nz_8(machine, state->A.low);
@@ -1550,11 +1551,11 @@ machine_state_t* EOR_AL_IX     (machine_state_t* machine, uint16_t arg_one, uint
     processor_state_t *state = &machine->processor;
     long_address_t addr = get_absolute_address_long_indexed_x(machine, arg_one, (uint8_t)(arg_two & 0xFF));
     if (is_flag_set(machine, M_FLAG)) {
-        uint8_t value = read_byte_new(machine, addr.address);
+        uint8_t value = read_byte_long(machine, addr);
         state->A.low ^= value;
         set_flags_nz_8(machine, state->A.low);
     } else {
-        uint16_t value = read_word_new(machine, addr.address);
+        uint16_t value = read_word_long(machine, addr);
         state->A.full ^= value;
         set_flags_nz_16(machine, state->A.full);
     }
@@ -1573,7 +1574,7 @@ machine_state_t* RTS           (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* ADC_DP_I_IX   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry (Direct Page Indirect Indexed with X)
     processor_state_t *state = &machine->processor;
-    uint16_t effective_address = get_dp_address_indirect_indexed_x(machine, arg_one);
+    uint16_t effective_address = get_dp_address_indirect_indexed_x_new(machine, arg_one);
     uint8_t value = read_byte_new(machine, effective_address);
     uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
     if (is_flag_set(machine, M_FLAG)) {
@@ -1675,7 +1676,7 @@ machine_state_t* ADC_DP_IL     (machine_state_t* machine, uint16_t arg_one, uint
     // Add with Carry (Direct Page Indirect Long)
     processor_state_t *state = &machine->processor;
     long_address_t address = get_dp_address_indirect_long_new(machine, arg_one);
-    uint8_t value = read_byte_new(machine, address.address);
+    uint8_t value = read_byte_long(machine, address);
     uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
     if (is_flag_set(machine, M_FLAG)) {
         uint16_t result = (uint16_t)state->A.low + (uint16_t)(value) + carry;

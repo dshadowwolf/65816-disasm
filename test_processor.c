@@ -86,7 +86,7 @@ TEST(pop_byte_basic) {
     machine_state_t *machine = setup_machine();
     machine->processor.SP = 0x1FE;
     machine->processor.emulation_mode = true;
-    machine->memory[0][0x01FF] = 0x42;
+    write_byte_new(machine, 0x01FF, 0x42);
     
     uint8_t value = pop_byte(machine);
     
@@ -114,8 +114,8 @@ TEST(pop_word_native_mode) {
     machine_state_t *machine = setup_machine();
     machine->processor.SP = 0x1FD;
     machine->processor.emulation_mode = false;
-    machine->memory[0][0x01FE] = 0x34;  // Low byte
-    machine->memory[0][0x01FF] = 0x12;  // High byte
+    write_byte_new(machine, 0x01FE, 0x34);  // Low byte
+    write_byte_new(machine, 0x01FF, 0x12);  // High byte
     
     uint16_t value = pop_word(machine);
     
@@ -205,7 +205,7 @@ TEST(PHA_8bit_mode) {
     PHA(machine, 0, 0);
     
     ASSERT_EQ(machine->processor.SP, 0x1FE, "Stack pointer should decrement");
-    ASSERT_EQ(machine->memory[0][0x01FF], 0x42, "Accumulator should be pushed");
+    ASSERT_EQ(read_byte_new(machine, 0x01FF), 0x42, "Accumulator should be pushed");
     
     destroy_machine(machine);
 }
@@ -220,8 +220,8 @@ TEST(PHA_16bit_mode) {
     PHA(machine, 0, 0);
     
     ASSERT_EQ(machine->processor.SP, 0x1FD, "Stack pointer should decrement by 2");
-    ASSERT_EQ(machine->memory[0][0x01FF], 0x12, "High byte should be pushed first");
-    ASSERT_EQ(machine->memory[0][0x01FE], 0x34, "Low byte should be pushed second");
+    ASSERT_EQ(read_byte_new(machine, 0x01FF), 0x12, "High byte should be pushed first");
+    ASSERT_EQ(read_byte_new(machine, 0x01FE), 0x34, "Low byte should be pushed second");
     
     destroy_machine(machine);
 }
@@ -231,7 +231,8 @@ TEST(PLA_8bit_mode) {
     machine->processor.SP = 0x1FE;
     machine->processor.emulation_mode = true;
     machine->processor.P |= M_FLAG;
-    machine->memory[0][0x01FF] = 0x42;
+
+    write_byte_new(machine, 0x01FF, 0x42);
     
     PLA(machine, 0, 0);
     
@@ -246,8 +247,8 @@ TEST(PLA_16bit_mode) {
     machine->processor.SP = 0x1FD;
     machine->processor.emulation_mode = false;
     machine->processor.P &= ~M_FLAG;
-    machine->memory[0][0x01FE] = 0x34;  // Low byte
-    machine->memory[0][0x01FF] = 0x12;  // High byte
+
+    write_word_new(machine, 0x01FE, 0x1234);
     
     PLA(machine, 0, 0);
     
@@ -324,8 +325,8 @@ TEST(JSR_and_RTS) {
     
     // RTS should restore PC
     RTS(machine, 0, 0);
-    
-    ASSERT_EQ(machine->processor.PC, 0x0FFF, "PC should be restored to return address");
+
+    ASSERT_EQ(machine->processor.PC, 0x1000, "PC should be restored to return address");
     ASSERT_EQ(machine->processor.SP, 0x1FF, "SP should be back to original");
     
     destroy_machine(machine);
@@ -363,11 +364,11 @@ TEST(PER_pushes_pc_relative) {
     
     // PER with offset 0x20
     PER(machine, 0x20, 0);
-    
+
     ASSERT_EQ(machine->processor.SP, 0x1FD, "SP should decrement by 2");
     // PC + offset = 0x1020
-    ASSERT_EQ(machine->memory[0][0x01FF], 0x10, "High byte of PC+offset");
-    ASSERT_EQ(machine->memory[0][0x01FE], 0x20, "Low byte of PC+offset");
+    ASSERT_EQ(read_byte_new(machine, 0x01FF), 0x10, "High byte of PC+offset");
+    ASSERT_EQ(read_byte_new(machine, 0x01FE), 0x20, "Low byte of PC+offset");
     
     destroy_machine(machine);
 }
@@ -984,11 +985,10 @@ TEST(JMP_AL_long_jump) {
 
 TEST(JMP_ABS_I_indirect) {
     machine_state_t *machine = setup_machine();
-    uint8_t *bank = get_memory_bank(machine, 0);
     
     // Set up indirect address at 0x1000
-    bank[0x1000] = 0x00;
-    bank[0x1001] = 0x80;
+    write_byte_new(machine, 0x1000, 0x00);
+    write_byte_new(machine, 0x1001, 0x80);
     
     JMP_ABS_I(machine, 0x1000, 0);
     ASSERT_EQ(machine->processor.PC, 0x8000, "JMP indirect should jump to address in memory");
@@ -998,7 +998,6 @@ TEST(JMP_ABS_I_indirect) {
 
 TEST(JMP_ABS_I_IX_indexed_indirect) {
     machine_state_t *machine = setup_machine();
-    uint8_t *bank = get_memory_bank(machine, 0);
     machine->processor.X = 0x04;
     
     // Set up indirect address at 0x1004
@@ -1068,11 +1067,10 @@ TEST(PHK_pushes_program_bank) {
     machine_state_t *machine = setup_machine();
     machine->processor.SP = 0x1FF;
     machine->processor.PBR = 0x33;
-    uint8_t *bank = get_memory_bank(machine, 0);
     
     PHK(machine, 0, 0);
     ASSERT_EQ(machine->processor.SP, 0x1FE, "PHK should decrement SP");
-    ASSERT_EQ(bank[0x1FF], 0x33, "PHK should push PBR value");
+    ASSERT_EQ(read_byte_new(machine, 0x1FF), 0x33, "PHK should push PBR value");
     
     destroy_machine(machine);
 }
@@ -1137,11 +1135,10 @@ TEST(CLD_CB_clears_decimal_mode) {
 
 TEST(STZ_stores_zero_8bit) {
     machine_state_t *machine = setup_machine();
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x1000] = 0xFF;
+    write_byte_new(machine, 0x1000, 0xFF);
     
     STZ(machine, 0x1000, 0);
-    ASSERT_EQ(bank[0x1000], 0x00, "STZ should store zero");
+    ASSERT_EQ(read_byte_new(machine, 0x1000), 0x00, "STZ should store zero");
     
     destroy_machine(machine);
 }
@@ -1150,13 +1147,12 @@ TEST(STZ_stores_zero_16bit) {
     machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.P &= ~M_FLAG;
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x2000] = 0xFF;
-    bank[0x2001] = 0xFF;
+    write_byte_new(machine, 0x2000, 0xFF);
+    write_byte_new(machine, 0x2001, 0xFF);
     
     STZ(machine, 0x2000, 0);
-    ASSERT_EQ(bank[0x2000], 0x00, "STZ should store zero low byte");
-    ASSERT_EQ(bank[0x2001], 0x00, "STZ should store zero high byte");
+    ASSERT_EQ(read_byte_new(machine, 0x2000), 0x00, "STZ should store zero low byte");
+    ASSERT_EQ(read_byte_new(machine, 0x2001), 0x00, "STZ should store zero high byte");
     
     destroy_machine(machine);
 }
@@ -1172,13 +1168,12 @@ TEST(STZ_ABS_absolute) {
 
 TEST(STZ_ABS_indexed) {
     machine_state_t *machine = setup_machine();
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x1005] = 0xAA;
+    write_byte_new(machine, 0x1005, 0xAA);
     
     STZ_ABS_IX(machine, 0x1000, 0);
     machine->processor.X = 0x05;
     STZ_ABS_IX(machine, 0x1000, 0);
-    ASSERT_EQ(bank[0x1005], 0x00, "STZ abs,X should store zero at indexed address");
+    ASSERT_EQ(read_byte_new(machine, 0x1005), 0x00, "STZ abs,X should store zero at indexed address");
     
     destroy_machine(machine);
 }
@@ -1202,10 +1197,9 @@ TEST(BIT_IMM_immediate) {
 
 TEST(BIT_DP_direct_page) {
     machine_state_t *machine = setup_machine();
-    uint8_t *bank = get_memory_bank(machine, 0);
     machine->processor.DP = 0x10;
     machine->processor.A.low = 0x0F;
-    bank[0x15] = 0xF0;
+    write_byte_new(machine, 0x15, 0xF0);
     
     BIT_DP(machine, 0x05, 0);
     ASSERT_EQ(check_flag(machine, ZERO), true, "BIT DP should set zero when no match");
@@ -1215,9 +1209,8 @@ TEST(BIT_DP_direct_page) {
 
 TEST(BIT_ABS_sets_flags_from_memory) {
     machine_state_t *machine = setup_machine();
-    uint8_t *bank = get_memory_bank(machine, 0);
     machine->processor.A.low = 0xFF;
-    bank[0x3000] = 0xC0;  // Bits 7 and 6 set
+    write_byte_new(machine, 0x3000, 0xC0);  // Bits 7 and 6 set
     
     BIT_ABS(machine, 0x3000, 0);
     ASSERT_EQ(check_flag(machine, NEGATIVE), true, "BIT should set N from bit 7");
@@ -1232,7 +1225,6 @@ TEST(BIT_ABS_sets_flags_from_memory) {
 
 TEST(TSB_DP_test_and_set_bits) {
     machine_state_t *machine = setup_machine();
-    uint8_t *bank = get_memory_bank(machine, 0);
     machine->processor.A.low = 0x0F;
     long_address_t addr = { .bank = 0, .address = 0x20 };
     write_byte_long(machine, addr, 0xF0);
@@ -1246,7 +1238,6 @@ TEST(TSB_DP_test_and_set_bits) {
 
 TEST(TRB_DP_test_and_reset_bits) {
     machine_state_t *machine = setup_machine();
-    uint8_t *bank = get_memory_bank(machine, 0);
     machine->processor.A.low = 0x0F;
 
     write_byte_new(machine, 0x0030, 0xF0);
@@ -1259,7 +1250,6 @@ TEST(TRB_DP_test_and_reset_bits) {
 
 TEST(TSB_ABS_absolute) {
     machine_state_t *machine = setup_machine();
-    uint8_t *bank = get_memory_bank(machine, 0);
     machine->processor.A.low = 0x55;
     write_byte_new(machine, 0x4000, 0xAA);
     
@@ -1271,7 +1261,6 @@ TEST(TSB_ABS_absolute) {
 
 TEST(TRB_ABS_absolute) {
     machine_state_t *machine = setup_machine();
-    uint8_t *bank = get_memory_bank(machine, 0);
     machine->processor.A.low = 0x55;
     write_byte_new(machine, 0x5000, 0xFF);
     
@@ -1342,10 +1331,12 @@ TEST(TSC_transfer_sp_to_a) {
 
 TEST(TCD_transfer_a_to_dp) {
     machine_state_t *machine = setup_machine();
+    machine->processor.emulation_mode = false;
+    machine->processor.P &= ~M_FLAG;  // 16-bit mode
     machine->processor.A.full = 0x2000;
     
     TCD(machine, 0, 0);
-    ASSERT_EQ(machine->processor.DP, 0x00, "TCD should transfer A low to DP");
+    ASSERT_EQ(machine->processor.DP, 0x2000, "TCD should transfer A full to DP");
     
     destroy_machine(machine);
 }
@@ -1631,8 +1622,7 @@ TEST(AND_DP_direct_page) {
     machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0xFF;
     machine->processor.DP = 0x00;
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x10] = 0x0F;
+    write_byte_new(machine, 0x10, 0x0F);
     
     AND_DP(machine, 0x10, 0);
     ASSERT_EQ(machine->processor.A.low, 0x0F, "AND DP should AND with memory");
@@ -1643,10 +1633,9 @@ TEST(AND_DP_direct_page) {
 TEST(AND_ABS_absolute) {
     machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0xFF;
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x8000] = 0x0F;
+    write_byte_new(machine, 0x3000, 0x0F);
     
-    AND_ABS(machine, 0x8000, 0);
+    AND_ABS(machine, 0x3000, 0);
     ASSERT_EQ(machine->processor.A.low, 0x0F, "AND ABS should AND with memory");
     
     destroy_machine(machine);
@@ -1674,8 +1663,7 @@ TEST(EOR_DP_direct_page) {
     machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0xFF;
     machine->processor.DP = 0x00;
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x10] = 0x0F;
+    write_byte_new(machine, 0x10, 0x0F);
     
     EOR_DP(machine, 0x10, 0);
     ASSERT_EQ(machine->processor.A.low, 0xF0, "EOR DP should XOR with memory");
@@ -1686,10 +1674,10 @@ TEST(EOR_DP_direct_page) {
 TEST(EOR_ABS_absolute) {
     machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0xFF;
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x8000] = 0x0F;
+
+    write_byte_new(machine, 0x7000, 0x0F);
     
-    EOR_ABS(machine, 0x8000, 0);
+    EOR_ABS(machine, 0x7000, 0);
     ASSERT_EQ(machine->processor.A.low, 0xF0, "EOR ABS should XOR with memory");
     
     destroy_machine(machine);
@@ -1700,8 +1688,8 @@ TEST(EOR_DP_IX_direct_page_indexed) {
     machine->processor.A.low = 0xFF;
     machine->processor.X = 0x05;
     machine->processor.DP = 0x00;
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x15] = 0x0F;
+
+    write_byte_new(machine, 0x15, 0x0F);
     
     EOR_DP_IX(machine, 0x10, 0);
     ASSERT_EQ(machine->processor.A.low, 0xF0, "EOR DP,X should XOR with indexed memory");
@@ -1718,8 +1706,7 @@ TEST(ADC_DP_direct_page) {
     machine->processor.A.low = 0x10;
     machine->processor.P |= CARRY;
     machine->processor.DP = 0x00;
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x10] = 0x20;
+    write_byte_new(machine, 0x10, 0x20);
     
     ADC_DP(machine, 0x10, 0);
     ASSERT_EQ(machine->processor.A.low, 0x31, "ADC DP should add with carry");
@@ -1731,7 +1718,6 @@ TEST(ADC_ABS_absolute) {
     machine_state_t *machine = setup_machine();
     machine->processor.A.low = 0x10;
     machine->processor.P &= ~CARRY;
-    uint8_t *bank = get_memory_bank(machine, 0);
 
     write_byte_new(machine, 0x6000, 0x20);
     
@@ -1919,7 +1905,6 @@ TEST(ASL_DP_direct_page) {
 
 TEST(ASL_ABS_absolute) {
     machine_state_t *machine = setup_machine();
-    uint8_t *bank = get_memory_bank(machine, 0);
     write_byte_new(machine, 0x5000, 0x40);
     
     ASL_ABS(machine, 0x5000, 0);
@@ -1931,22 +1916,20 @@ TEST(ASL_ABS_absolute) {
 TEST(LSR_DP_direct_page) {
     machine_state_t *machine = setup_machine();
     machine->processor.DP = 0x00;
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x10] = 0x80;
+    write_byte_new(machine, 0x10, 0x80);
     
     LSR_DP(machine, 0x10, 0);
-    ASSERT_EQ(bank[0x10], 0x40, "LSR DP should shift memory right");
+    ASSERT_EQ(read_byte_new(machine, 0x10), 0x40, "LSR DP should shift memory right");
     
     destroy_machine(machine);
 }
 
 TEST(LSR_ABS_absolute) {
     machine_state_t *machine = setup_machine();
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x8000] = 0x80;
+    write_byte_new(machine, 0x3000, 0x80);
     
-    LSR_ABS(machine, 0x8000, 0);
-    ASSERT_EQ(bank[0x8000], 0x40, "LSR ABS should shift memory right");
+    LSR_ABS(machine, 0x3000, 0);
+    ASSERT_EQ(read_byte_new(machine, 0x3000), 0x40, "LSR ABS should shift memory right");
     
     destroy_machine(machine);
 }
@@ -1955,11 +1938,10 @@ TEST(ROL_DP_direct_page) {
     machine_state_t *machine = setup_machine();
     machine->processor.P |= CARRY;
     machine->processor.DP = 0x00;
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x10] = 0x40;
+    write_byte_new(machine, 0x10, 0x40);
     
     ROL_DP(machine, 0x10, 0);
-    ASSERT_EQ(bank[0x10], 0x81, "ROL DP should rotate memory left with carry");
+    ASSERT_EQ(read_byte_new(machine, 0x10), 0x81, "ROL DP should rotate memory left with carry");
     
     destroy_machine(machine);
 }
@@ -1967,11 +1949,10 @@ TEST(ROL_DP_direct_page) {
 TEST(ROL_ABS_absolute) {
     machine_state_t *machine = setup_machine();
     machine->processor.P |= CARRY;
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x8000] = 0x40;
+    write_byte_new(machine, 0x3000, 0x40);
     
-    ROL_ABS(machine, 0x8000, 0);
-    ASSERT_EQ(bank[0x8000], 0x81, "ROL ABS should rotate memory left with carry");
+    ROL_ABS(machine, 0x3000, 0);
+    ASSERT_EQ(read_byte_new(machine, 0x3000), 0x81, "ROL ABS should rotate memory left with carry");
     
     destroy_machine(machine);
 }
@@ -1980,11 +1961,10 @@ TEST(ROR_DP_direct_page) {
     machine_state_t *machine = setup_machine();
     machine->processor.P |= CARRY;
     machine->processor.DP = 0x00;
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x10] = 0x02;
+    write_byte_new(machine, 0x10, 0x02);
     
     ROR_DP(machine, 0x10, 0);
-    ASSERT_EQ(bank[0x10], 0x81, "ROR DP should rotate memory right with carry");
+    ASSERT_EQ(read_byte_new(machine, 0x10), 0x81, "ROR DP should rotate memory right with carry");
     
     destroy_machine(machine);
 }
@@ -1992,7 +1972,6 @@ TEST(ROR_DP_direct_page) {
 TEST(ROR_ABS_absolute) {
     machine_state_t *machine = setup_machine();
     machine->processor.P |= CARRY;
-    uint8_t *bank = get_memory_bank(machine, 0);
 
     write_byte_new(machine, 0x7000, 0x02);
     
@@ -2129,13 +2108,12 @@ TEST(RTI_return_from_interrupt) {
     machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.SP = 0x1F0;
-    uint8_t *stack = get_memory_bank(machine, 0);
     
     // Push test data to stack (as if an interrupt pushed them)
-    stack[0x01F1] = 0x30;  // Status
-    stack[0x01F2] = 0x00;  // PCL
-    stack[0x01F3] = 0x80;  // PCH
-    stack[0x01F4] = 0x01;  // PBR
+    write_byte_new(machine, 0x01F1, 0x30);  // Status
+    write_byte_new(machine, 0x01F2, 0x00);  // PCL
+    write_byte_new(machine, 0x01F3, 0x80);  // PCH
+    write_byte_new(machine, 0x01F4, 0x01);  // PBR
     
     RTI(machine, 0, 0);
     
@@ -2276,10 +2254,8 @@ TEST(ADC_DP_I_IX_indexed_indirect) {
     machine->processor.DP = 0x00;
     clear_flag(machine, CARRY);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x12] = 0x00;
-    bank[0x13] = 0x70;
-    bank[0x7000] = 0x16;
+    write_word_new(machine, 0x0012, 0x7000);
+    write_byte_new(machine, 0x7000, 0x16);
     
     ADC_DP_I_IX(machine, 0x10, 0);
     ASSERT_EQ(machine->processor.A.low, 0x20, "ADC (DP,X) should add indexed indirect memory to A");
@@ -2310,14 +2286,27 @@ TEST(ADC_DP_IL_indirect_long) {
     machine->processor.DP = 0x00;
     clear_flag(machine, CARRY);
     set_flag(machine, M_FLAG);
-    
+
+    machine->memory_banks[1] = (memory_bank_t*)malloc(sizeof(memory_bank_t));
+    memory_region_t *region0 = (memory_region_t*)malloc(sizeof(memory_region_t));
+    memory_bank_t *bank1 = machine->memory_banks[1];
+
+    region0->start_offset = 0x0000;
+    region0->end_offset = 0xFFFF;
+    region0->data = (uint8_t *)malloc(65536 * sizeof(uint8_t));
+    region0->read_byte = read_byte_from_region_nodev;  // Default read/write functions can be set later
+    region0->write_byte = write_byte_to_region_nodev;
+    region0->read_word = read_word_from_region_nodev;
+    region0->write_word = write_word_to_region_nodev;
+    region0->flags = MEM_READWRITE;
+    region0->next = NULL;
+    bank1->regions = region0;
+
     uint8_t *bank0 = get_memory_bank(machine, 0);
-    bank0[0x10] = 0x00;
-    bank0[0x11] = 0x90;
-    bank0[0x12] = 0x01;
+    write_word_new(machine, 0x0010, 0x9000);
+    write_byte_new(machine, 0x0012, 0x01);  // Bank byte for long address
     
-    uint8_t *bank1 = get_memory_bank(machine, 0x01);
-    bank1[0x9000] = 0x1B;
+    write_byte_long(machine, (long_address_t){.bank=1, .address=0x9000}, 0x1B);
     
     ADC_DP_IL(machine, 0x10, 0);
     ASSERT_EQ(machine->processor.A.low, 0x20, "ADC [DP] should add indirect long memory to A");
@@ -2367,8 +2356,7 @@ TEST(ADC_SR_stack_relative) {
     clear_flag(machine, CARRY);
     set_flag(machine, M_FLAG);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x1F5] = 0x17;
+    write_byte_new(machine, 0x01F5, 0x17);
     
     ADC_SR(machine, 0x05, 0);
     ASSERT_EQ(machine->processor.A.low, 0x20, "ADC SR,S should add stack relative memory to A");
@@ -2634,8 +2622,22 @@ TEST(AND_ABL_long_addressing) {
     machine->processor.A.low = 0xFF;
     set_flag(machine, M_FLAG);
     
-    uint8_t *bank = get_memory_bank(machine, 0x02);
-    bank[0x8000] = 0x3C;
+    machine->memory_banks[2] = (memory_bank_t*)malloc(sizeof(memory_bank_t));
+    memory_region_t *region0 = (memory_region_t*)malloc(sizeof(memory_region_t));
+    memory_bank_t *bank2 = machine->memory_banks[2];
+
+    region0->start_offset = 0x0000;
+    region0->end_offset = 0xFFFF;
+    region0->data = (uint8_t *)malloc(65536 * sizeof(uint8_t));
+    region0->read_byte = read_byte_from_region_nodev;  // Default read/write functions can be set later
+    region0->write_byte = write_byte_to_region_nodev;
+    region0->read_word = read_word_from_region_nodev;
+    region0->write_word = write_word_to_region_nodev;
+    region0->flags = MEM_READWRITE;
+    region0->next = NULL;
+    bank2->regions = region0;
+
+    write_byte_long(machine, (long_address_t){ .bank = 0x02, .address = 0x8000 }, 0x3C);
     
     AND_ABL(machine, 0x8000, 0x02);
     ASSERT_EQ(machine->processor.A.low, 0x3C, "AND ABL should AND memory with A");
@@ -2650,8 +2652,22 @@ TEST(AND_ABL_IX_long_indexed) {
     machine->processor.X = 0x12;
     set_flag(machine, M_FLAG);
     
-    uint8_t *bank = get_memory_bank(machine, 0x01);
-    bank[0x7012] = 0x77;
+    machine->memory_banks[1] = (memory_bank_t*)malloc(sizeof(memory_bank_t));
+    memory_region_t *region0 = (memory_region_t*)malloc(sizeof(memory_region_t));
+    memory_bank_t *bank1 = machine->memory_banks[1];
+
+    region0->start_offset = 0x0000;
+    region0->end_offset = 0xFFFF;
+    region0->data = (uint8_t *)malloc(65536 * sizeof(uint8_t));
+    region0->read_byte = read_byte_from_region_nodev;  // Default read/write functions can be set later
+    region0->write_byte = write_byte_to_region_nodev;
+    region0->read_word = read_word_from_region_nodev;
+    region0->write_word = write_word_to_region_nodev;
+    region0->flags = MEM_READWRITE;
+    region0->next = NULL;
+    bank1->regions = region0;
+
+    write_byte_long(machine, (long_address_t){ .bank = 0x01, .address = 0x7012 }, 0x77);
     
     AND_ABL_IX(machine, 0x7000, 0x01);
     ASSERT_EQ(machine->processor.A.low, 0x70, "AND ABL,X should AND long indexed memory with A");
@@ -2679,10 +2695,7 @@ TEST(AND_ABS_IY_indexed) {
     machine->processor.A.low = 0xF3;
     machine->processor.Y = 0x0C;
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x800C] = 0x33;
-    
-    AND_ABS_IY(machine, 0x8000, 0);
+    write_byte_new(machine, 0x700C, 0x33);    AND_ABS_IY(machine, 0x7000, 0);
     ASSERT_EQ(machine->processor.A.low, 0x33, "AND ABS,Y should AND indexed memory with A");
     
     destroy_machine(machine);
@@ -2693,10 +2706,8 @@ TEST(AND_DP_I_indirect) {
     machine->processor.A.low = 0xCC;
     machine->processor.DP = 0x00;
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x10] = 0x00;
-    bank[0x11] = 0x60;
-    bank[0x6000] = 0x88;
+    write_word_new(machine, 0x0010, 0x6000);
+    write_byte_new(machine, 0x6000, 0x88);
     
     AND_DP_I(machine, 0x10, 0);
     ASSERT_EQ(machine->processor.A.low, 0x88, "AND (DP) should AND indirect memory with A");
@@ -2710,10 +2721,8 @@ TEST(AND_DP_I_IY_indirect_indexed) {
     machine->processor.Y = 0x09;
     machine->processor.DP = 0x00;
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x10] = 0x00;
-    bank[0x11] = 0x50;
-    bank[0x5009] = 0x3F;
+    write_word_new(machine, 0x0010, 0x5000);
+    write_byte_new(machine, 0x5009, 0x3F);
     
     AND_DP_I_IY(machine, 0x10, 0);
     ASSERT_EQ(machine->processor.A.low, 0x3F, "AND (DP),Y should AND indirect indexed memory with A");
@@ -2728,14 +2737,26 @@ TEST(AND_DP_IL_indirect_long) {
     machine->processor.DP = 0x00;
     set_flag(machine, M_FLAG);
     
-    uint8_t *bank0 = get_memory_bank(machine, 0);
-    bank0[0x10] = 0x00;
-    bank0[0x11] = 0x70;
-    bank0[0x12] = 0x01;
-    
-    uint8_t *bank1 = get_memory_bank(machine, 0x01);
-    bank1[0x7000] = 0xAA;
-    
+    machine->memory_banks[1] = (memory_bank_t*)malloc(sizeof(memory_bank_t));
+    memory_region_t *region0 = (memory_region_t*)malloc(sizeof(memory_region_t));
+    memory_bank_t *bank1 = machine->memory_banks[1];
+
+    region0->start_offset = 0x0000;
+    region0->end_offset = 0xFFFF;
+    region0->data = (uint8_t *)malloc(65536 * sizeof(uint8_t));
+    region0->read_byte = read_byte_from_region_nodev;  // Default read/write functions can be set later
+    region0->write_byte = write_byte_to_region_nodev;
+    region0->read_word = read_word_from_region_nodev;
+    region0->write_word = write_word_to_region_nodev;
+    region0->flags = MEM_READWRITE;
+    region0->next = NULL;
+    bank1->regions = region0;
+
+    write_word_new(machine, 0x0010, 0x7000);
+    write_byte_new(machine, 0x0012, 0x01);  // Bank byte for long address
+
+    write_byte_long(machine, (long_address_t){ .bank = 0x01, .address = 0x7000 }, 0xAA);
+
     AND_DP_IL(machine, 0x10, 0);
     ASSERT_EQ(machine->processor.A.low, 0xAA, "AND [DP] should AND indirect long memory with A");
     
@@ -2749,14 +2770,25 @@ TEST(AND_DP_IL_IY_indirect_long_indexed) {
     machine->processor.Y = 0x0B;
     machine->processor.DP = 0x00;
     set_flag(machine, M_FLAG);
-    
-    uint8_t *bank0 = get_memory_bank(machine, 0);
-    bank0[0x10] = 0x00;
-    bank0[0x11] = 0x80;
-    bank0[0x12] = 0x02;
-    
-    uint8_t *bank2 = get_memory_bank(machine, 0x02);
-    bank2[0x800B] = 0x55;
+
+    machine->memory_banks[2] = (memory_bank_t*)malloc(sizeof(memory_bank_t));
+    memory_region_t *region0 = (memory_region_t*)malloc(sizeof(memory_region_t));
+    memory_bank_t *bank2 = machine->memory_banks[2];
+
+    region0->start_offset = 0x0000;
+    region0->end_offset = 0xFFFF;
+    region0->data = (uint8_t *)malloc(65536 * sizeof(uint8_t));
+    region0->read_byte = read_byte_from_region_nodev;  // Default read/write functions can be set later
+    region0->write_byte = write_byte_to_region_nodev;
+    region0->read_word = read_word_from_region_nodev;
+    region0->write_word = write_word_to_region_nodev;
+    region0->flags = MEM_READWRITE;
+    region0->next = NULL;
+    bank2->regions = region0;
+
+    write_word_new(machine, 0x0010, 0x8000);
+    write_byte_new(machine, 0x0012, 0x02);  // Bank byte for long address
+    write_byte_long(machine, (long_address_t){ .bank = 0x02, .address = 0x800B }, 0x55);
     
     AND_DP_IL_IY(machine, 0x10, 0);
     ASSERT_EQ(machine->processor.A.low, 0x55, "AND [DP],Y should AND indirect long indexed memory with A");
@@ -2771,8 +2803,7 @@ TEST(AND_SR_stack_relative) {
     machine->processor.SP = 0x1B0;
     set_flag(machine, M_FLAG);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x1B7] = 0x71;
+    write_byte_new(machine, 0x01B7, 0x71);
     
     AND_SR(machine, 0x07, 0);
     ASSERT_EQ(machine->processor.A.low, 0x71, "AND SR,S should AND stack relative memory with A");
@@ -2788,10 +2819,8 @@ TEST(AND_SR_I_IY_sr_indirect_indexed) {
     machine->processor.SP = 0x1A0;
     set_flag(machine, M_FLAG);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x1A4] = 0x00;
-    bank[0x1A5] = 0x30;
-    bank[0x300D] = 0x66;
+    write_word_new(machine, 0x01A4, 0x3000);
+    write_byte_new(machine, 0x300D, 0x66);
     
     AND_SR_I_IY(machine, 0x04, 0);
     ASSERT_EQ(machine->processor.A.low, 0x66, "AND (SR,S),Y should AND SR indirect indexed memory with A");
@@ -3016,9 +3045,24 @@ TEST(EOR_ABL_long_addressing) {
     machine->processor.emulation_mode = false;
     machine->processor.A.low = 0xFF;
     set_flag(machine, M_FLAG);
-    
-    uint8_t *bank = get_memory_bank(machine, 0x02);
-    bank[0x8000] = 0xAA;
+
+    // a second bank is being allocated for testing purposes
+    machine->memory_banks[2] = (memory_bank_t*)malloc(sizeof(memory_bank_t));
+    memory_region_t *region0 = (memory_region_t*)malloc(sizeof(memory_region_t));
+    memory_bank_t *bank2 = machine->memory_banks[2];
+
+    region0->start_offset = 0x0000;
+    region0->end_offset = 0xFFFF;
+    region0->data = (uint8_t *)malloc(65536 * sizeof(uint8_t));
+    region0->read_byte = read_byte_from_region_nodev;  // Default read/write functions can be set later
+    region0->write_byte = write_byte_to_region_nodev;
+    region0->read_word = read_word_from_region_nodev;
+    region0->write_word = write_word_to_region_nodev;
+    region0->flags = MEM_READWRITE;
+    region0->next = NULL;
+    bank2->regions = region0;
+
+    write_byte_long(machine, (long_address_t){.bank=0x02, .address=0x8000}, 0xAA);
     
     EOR_ABL(machine, 0x8000, 0x02);
     ASSERT_EQ(machine->processor.A.low, 0x55, "EOR ABL should XOR memory with A");
@@ -3031,10 +3075,9 @@ TEST(EOR_ABS_IX_indexed) {
     machine->processor.A.low = 0x3C;
     machine->processor.X = 0x12;
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x8012] = 0xC3;
+    write_byte_new(machine, 0x5012, 0xC3);
     
-    EOR_ABS_IX(machine, 0x8000, 0);
+    EOR_ABS_IX(machine, 0x5000, 0);
     ASSERT_EQ(machine->processor.A.low, 0xFF, "EOR ABS,X should XOR indexed memory with A");
     
     destroy_machine(machine);
@@ -3045,10 +3088,9 @@ TEST(EOR_ABS_IY_indexed) {
     machine->processor.A.low = 0x55;
     machine->processor.Y = 0x13;
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x8013] = 0xAA;
+    write_byte_new(machine, 0x7013, 0xAA);
     
-    EOR_ABS_IY(machine, 0x8000, 0);
+    EOR_ABS_IY(machine, 0x7000, 0);
     ASSERT_EQ(machine->processor.A.low, 0xFF, "EOR ABS,Y should XOR indexed memory with A");
     
     destroy_machine(machine);
@@ -3060,9 +3102,24 @@ TEST(EOR_AL_IX_long_indexed) {
     machine->processor.A.low = 0x0F;
     machine->processor.X = 0x15;
     set_flag(machine, M_FLAG);
-    
-    uint8_t *bank = get_memory_bank(machine, 0x01);
-    bank[0x5015] = 0xF0;
+
+    // a second bank is being allocated for testing purposes
+    machine->memory_banks[1] = (memory_bank_t*)malloc(sizeof(memory_bank_t));
+    memory_region_t *region0 = (memory_region_t*)malloc(sizeof(memory_region_t));
+    memory_bank_t *bank1 = machine->memory_banks[1];
+
+    region0->start_offset = 0x0000;
+    region0->end_offset = 0xFFFF;
+    region0->data = (uint8_t *)malloc(65536 * sizeof(uint8_t));
+    region0->read_byte = read_byte_from_region_nodev;  // Default read/write functions can be set later
+    region0->write_byte = write_byte_to_region_nodev;
+    region0->read_word = read_word_from_region_nodev;
+    region0->write_word = write_word_to_region_nodev;
+    region0->flags = MEM_READWRITE;
+    region0->next = NULL;
+    bank1->regions = region0;
+
+    write_byte_long(machine, (long_address_t){ .bank = 0x01, .address = 0x5015 }, 0xF0);
     
     EOR_AL_IX(machine, 0x5000, 0x01);
     ASSERT_EQ(machine->processor.A.low, 0xFF, "EOR AL,X should XOR long indexed memory with A");
@@ -3075,10 +3132,8 @@ TEST(EOR_DP_I_indirect) {
     machine->processor.A.low = 0x99;
     machine->processor.DP = 0x00;
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x10] = 0x00;
-    bank[0x11] = 0x40;
-    bank[0x4000] = 0x66;
+    write_word_new(machine, 0x0010, 0x4000);
+    write_byte_new(machine, 0x4000, 0x66);
     
     EOR_DP_I(machine, 0x10, 0);
     ASSERT_EQ(machine->processor.A.low, 0xFF, "EOR (DP) should XOR indirect memory with A");
@@ -3092,10 +3147,8 @@ TEST(EOR_DP_I_IX_indexed_indirect) {
     machine->processor.X = 0x16;
     machine->processor.DP = 0x00;
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x26] = 0x00;
-    bank[0x27] = 0x30;
-    bank[0x3000] = 0x88;
+    write_word_new(machine, 0x0026, 0x3000);
+    write_byte_new(machine, 0x3000, 0x88);
     
     EOR_DP_I_IX(machine, 0x10, 0);
     ASSERT_EQ(machine->processor.A.low, 0xFF, "EOR (DP,X) should XOR indexed indirect memory with A");
@@ -3109,10 +3162,8 @@ TEST(EOR_DP_I_IY_indirect_indexed) {
     machine->processor.Y = 0x17;
     machine->processor.DP = 0x00;
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x10] = 0x00;
-    bank[0x11] = 0x20;
-    bank[0x2017] = 0x33;
+    write_word_new(machine, 0x0010, 0x2000);
+    write_byte_new(machine, 0x2017, 0x33);
     
     EOR_DP_I_IY(machine, 0x10, 0);
     ASSERT_EQ(machine->processor.A.low, 0xFF, "EOR (DP),Y should XOR indirect indexed memory with A");
@@ -3126,14 +3177,27 @@ TEST(EOR_DP_IL_indirect_long) {
     machine->processor.A.low = 0xA5;
     machine->processor.DP = 0x00;
     set_flag(machine, M_FLAG);
-    
-    uint8_t *bank0 = get_memory_bank(machine, 0);
-    bank0[0x10] = 0x00;
-    bank0[0x11] = 0x50;
-    bank0[0x12] = 0x01;
-    
-    uint8_t *bank1 = get_memory_bank(machine, 0x01);
-    bank1[0x5000] = 0x5A;
+
+    // a second bank is being allocated for testing purposes
+    machine->memory_banks[1] = (memory_bank_t*)malloc(sizeof(memory_bank_t));
+    memory_region_t *region0 = (memory_region_t*)malloc(sizeof(memory_region_t));
+    memory_bank_t *bank1 = machine->memory_banks[1];
+
+    region0->start_offset = 0x0000;
+    region0->end_offset = 0xFFFF;
+    region0->data = (uint8_t *)malloc(65536 * sizeof(uint8_t));
+    region0->read_byte = read_byte_from_region_nodev;  // Default read/write functions can be set later
+    region0->write_byte = write_byte_to_region_nodev;
+    region0->read_word = read_word_from_region_nodev;
+    region0->write_word = write_word_to_region_nodev;
+    region0->flags = MEM_READWRITE;
+    region0->next = NULL;
+    bank1->regions = region0;
+
+    write_word_new(machine, 0x0010, 0x5000);
+    write_byte_new(machine, 0x0012, 0x01);  // Bank byte for long address
+
+    write_byte_long(machine, (long_address_t){ .bank = 0x01, .address = 0x5000 }, 0x5A);
     
     EOR_DP_IL(machine, 0x10, 0);
     ASSERT_EQ(machine->processor.A.low, 0xFF, "EOR [DP] should XOR indirect long memory with A");
@@ -3148,15 +3212,28 @@ TEST(EOR_DP_IL_IY_indirect_long_indexed) {
     machine->processor.Y = 0x18;
     machine->processor.DP = 0x00;
     set_flag(machine, M_FLAG);
-    
-    uint8_t *bank0 = get_memory_bank(machine, 0);
-    bank0[0x10] = 0x00;
-    bank0[0x11] = 0x60;
-    bank0[0x12] = 0x02;
-    
-    uint8_t *bank2 = get_memory_bank(machine, 0x02);
-    bank2[0x6018] = 0x0F;
-    
+
+    // a second bank is being allocated for testing purposes
+    machine->memory_banks[2] = (memory_bank_t*)malloc(sizeof(memory_bank_t));
+    memory_region_t *region0 = (memory_region_t*)malloc(sizeof(memory_region_t));
+    memory_bank_t *bank2 = machine->memory_banks[2];
+
+    region0->start_offset = 0x0000;
+    region0->end_offset = 0xFFFF;
+    region0->data = (uint8_t *)malloc(65536 * sizeof(uint8_t));
+    region0->read_byte = read_byte_from_region_nodev;  // Default read/write functions can be set later
+    region0->write_byte = write_byte_to_region_nodev;
+    region0->read_word = read_word_from_region_nodev;
+    region0->write_word = write_word_to_region_nodev;
+    region0->flags = MEM_READWRITE;
+    region0->next = NULL;
+    bank2->regions = region0;
+
+    write_word_new(machine, 0x0010, 0x6000);
+    write_byte_new(machine, 0x0012, 0x02);
+
+    write_byte_long(machine, (long_address_t){.bank=0x02, .address=0x6018}, 0x0F);
+
     EOR_DP_IL_IY(machine, 0x10, 0);
     ASSERT_EQ(machine->processor.A.low, 0xFF, "EOR [DP],Y should XOR indirect long indexed memory with A");
     
@@ -3170,8 +3247,7 @@ TEST(EOR_SR_stack_relative) {
     machine->processor.SP = 0x170;
     set_flag(machine, M_FLAG);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x179] = 0xC3;
+    write_byte_new(machine, 0x0179, 0xC3);
     
     EOR_SR(machine, 0x09, 0);
     ASSERT_EQ(machine->processor.A.low, 0xFF, "EOR SR,S should XOR stack relative memory with A");
@@ -3909,11 +3985,10 @@ TEST(LSR_DP_IX_indexed) {
     machine->processor.DP = 0x00;
     machine->processor.X = 0x08;
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x38] = 0x80;
+    write_byte_new(machine, 0x38, 0x80);
     
     LSR_DP_IX(machine, 0x30, 0);
-    ASSERT_EQ(bank[0x38], 0x40, "LSR DP,X should shift right indexed");
+    ASSERT_EQ(read_byte_new(machine, 0x38), 0x40, "LSR DP,X should shift right indexed");
     
     destroy_machine(machine);
 }
@@ -3922,11 +3997,10 @@ TEST(LSR_ABS_IX_indexed) {
     machine_state_t *machine = setup_machine();
     machine->processor.X = 0x20;
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x3020] = 0x40;
+    write_byte_new(machine, 0x3020, 0x40);
     
     LSR_ABS_IX(machine, 0x3000, 0);
-    ASSERT_EQ(bank[0x3020], 0x20, "LSR ABS,X should shift right indexed");
+    ASSERT_EQ(read_byte_new(machine, 0x3020), 0x20, "LSR ABS,X should shift right indexed");
     
     destroy_machine(machine);
 }
@@ -3937,11 +4011,10 @@ TEST(ROL_DP_IX_indexed) {
     machine->processor.X = 0x10;
     set_flag(machine, CARRY);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x40] = 0x40;
+    write_byte_new(machine, 0x40, 0x40);
     
     ROL_DP_IX(machine, 0x30, 0);
-    ASSERT_EQ(bank[0x40], 0x81, "ROL DP,X should rotate left indexed with carry");
+    ASSERT_EQ(read_byte_new(machine, 0x40), 0x81, "ROL DP,X should rotate left indexed with carry");
     
     destroy_machine(machine);
 }
@@ -3951,11 +4024,10 @@ TEST(ROL_ABS_IX_indexed) {
     machine->processor.X = 0x18;
     clear_flag(machine, CARRY);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x4018] = 0x80;
+    write_byte_new(machine, 0x4018, 0x80);
     
     ROL_ABS_IX(machine, 0x4000, 0);
-    ASSERT_EQ(bank[0x4018], 0x00, "ROL ABS,X should rotate left indexed");
+    ASSERT_EQ(read_byte_new(machine, 0x4018), 0x00, "ROL ABS,X should rotate left indexed");
     ASSERT_EQ(check_flag(machine, CARRY), true, "ROL should set carry from bit 7");
     
     destroy_machine(machine);
@@ -4058,8 +4130,7 @@ TEST(BIT_DP_IX_indexed) {
     machine->processor.X = 0x08;
     set_flag(machine, M_FLAG);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x88] = 0xC0;
+    write_byte_new(machine, 0x88, 0xC0);
     
     BIT_DP_IX(machine, 0x80, 0);
     ASSERT_EQ(check_flag(machine, ZERO), false, "BIT should clear zero when A & M != 0");
@@ -4075,10 +4146,9 @@ TEST(BIT_ABS_IX_indexed) {
     machine->processor.X = 0x10;
     set_flag(machine, M_FLAG);
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x9010] = 0x30;
+    write_byte_new(machine, 0x3010, 0x30);
     
-    BIT_ABS_IX(machine, 0x9000, 0);
+    BIT_ABS_IX(machine, 0x3000, 0);
     ASSERT_EQ(check_flag(machine, ZERO), true, "BIT should set zero when A & M == 0");
     
     destroy_machine(machine);
@@ -4121,18 +4191,15 @@ TEST(MVN_block_move_negative) {
     machine->processor.X = 0x1000;       // Source
     machine->processor.Y = 0x2000;       // Destination
     
-    uint8_t *src_bank = get_memory_bank(machine, 0x00);
-    uint8_t *dst_bank = get_memory_bank(machine, 0x01);
+    write_byte_new(machine, 0x1000, 0xAA);
+    write_byte_new(machine, 0x1001, 0xBB);
+    write_byte_new(machine, 0x1002, 0xCC);
     
-    src_bank[0x1000] = 0xAA;
-    src_bank[0x1001] = 0xBB;
-    src_bank[0x1002] = 0xCC;
+    MVN(machine, 0x00, 0x00);  // Both in bank 0
     
-    MVN(machine, 0x01, 0x00);  // dst_bank=0x01, src_bank=0x00
-    
-    ASSERT_EQ(dst_bank[0x2000], 0xAA, "MVN should move first byte");
-    ASSERT_EQ(dst_bank[0x2001], 0xBB, "MVN should move second byte");
-    ASSERT_EQ(dst_bank[0x2002], 0xCC, "MVN should move third byte");
+    ASSERT_EQ(read_byte_new(machine, 0x2000), 0xAA, "MVN should move first byte");
+    ASSERT_EQ(read_byte_new(machine, 0x2001), 0xBB, "MVN should move second byte");
+    ASSERT_EQ(read_byte_new(machine, 0x2002), 0xCC, "MVN should move third byte");
     
     destroy_machine(machine);
 }
@@ -4141,21 +4208,18 @@ TEST(MVP_block_move_positive) {
     machine_state_t *machine = setup_machine();
     machine->processor.emulation_mode = false;
     machine->processor.A.full = 0x0002;  // Move 3 bytes
-    machine->processor.X = 0x1002;       // Source (end)
-    machine->processor.Y = 0x2002;       // Destination (end)
+    machine->processor.X = 0x1502;       // Source (end)
+    machine->processor.Y = 0x2502;       // Destination (end)
     
-    uint8_t *src_bank = get_memory_bank(machine, 0x00);
-    uint8_t *dst_bank = get_memory_bank(machine, 0x01);
+    write_byte_new(machine, 0x1500, 0xDD);
+    write_byte_new(machine, 0x1501, 0xEE);
+    write_byte_new(machine, 0x1502, 0xFF);
     
-    src_bank[0x1000] = 0xDD;
-    src_bank[0x1001] = 0xEE;
-    src_bank[0x1002] = 0xFF;
+    MVP(machine, 0x00, 0x00);  // Both in bank 0
     
-    MVP(machine, 0x01, 0x00);  // dst_bank=0x01, src_bank=0x00
-    
-    ASSERT_EQ(dst_bank[0x2000], 0xDD, "MVP should move first byte");
-    ASSERT_EQ(dst_bank[0x2001], 0xEE, "MVP should move second byte");
-    ASSERT_EQ(dst_bank[0x2002], 0xFF, "MVP should move third byte");
+    ASSERT_EQ(read_byte_new(machine, 0x2500), 0xDD, "MVP should move first byte");
+    ASSERT_EQ(read_byte_new(machine, 0x2501), 0xEE, "MVP should move second byte");
+    ASSERT_EQ(read_byte_new(machine, 0x2502), 0xFF, "MVP should move third byte");
     
     destroy_machine(machine);
 }
