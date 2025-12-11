@@ -130,13 +130,17 @@ void push_byte_new(machine_state_t *machine, uint8_t value) {
     
     if (region != NULL) {
         WRITE_BYTE(region, sp_address, value);
+    } else {
+        // Fallback to direct memory bank access when no region is configured
+        uint8_t *memory_bank = get_memory_bank(machine, state->emulation_mode ? 0 : state->DBR);
+        write_byte(memory_bank, sp_address, value);
     }
     
     if (state->emulation_mode) {
         state->SP = (state->SP - 1) & 0x1FF;
     } else {
         state->SP = (state->SP - 1) & 0xFFFF;
-    }    
+    }
 }
 
 void push_word_new(machine_state_t *machine, uint16_t value) {
@@ -158,9 +162,11 @@ uint8_t pop_byte_new(machine_state_t *machine) {
     
     if (region != NULL) {
         return READ_BYTE(region, sp_address);
+    } else {
+        // Fallback to direct memory bank access when no region is configured
+        uint8_t *memory_bank = get_memory_bank(machine, state->emulation_mode ? 0 : state->DBR);
+        return read_byte(memory_bank, sp_address);
     }
-    
-    return 0; // Default return if region not found
 }
 
 uint16_t pop_word_new(machine_state_t *machine) {

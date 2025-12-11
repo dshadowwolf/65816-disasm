@@ -340,6 +340,8 @@ int main(int argc, char *argv[]) {
     // Single-step through program
     int step_count = 0;
     const int max_steps = 10000; // Safety limit
+    uint16_t last_pc = 0xFFFF;
+    int same_pc_count = 0;
     
     while (step_count < max_steps) {
         step_result_t *result = machine_step(machine);
@@ -376,6 +378,18 @@ int main(int argc, char *argv[]) {
             // BRK that doesn't change PC (infinite loop)
             printf("\nProgram halted (BRK loop detected)\n");
             break;
+        }
+        
+        // Detect infinite loops - same PC executed many times
+        if (machine->processor.PC == last_pc) {
+            same_pc_count++;
+            if (same_pc_count >= 10) {
+                printf("\nProgram stuck in loop at PC=$%04X\n", machine->processor.PC);
+                break;
+            }
+        } else {
+            same_pc_count = 0;
+            last_pc = machine->processor.PC;
         }
     }
 

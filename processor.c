@@ -198,9 +198,6 @@ machine_state_t* ORA_DP_IL     (machine_state_t* machine, uint16_t arg_one, uint
 
 machine_state_t* PHP           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
-    uint16_t sp_address;
-    if(state->emulation_mode) sp_address = 0x0100 | (state->SP & 0xFF);
-    else sp_address = state->SP;
     push_byte_new(machine, state->P);
     return machine;
 }
@@ -569,7 +566,7 @@ machine_state_t* JSR_CB        (machine_state_t* machine, uint16_t arg_one, uint
     uint16_t return_address = (state->PC - 1) & 0xFFFF;
     state->PC = arg_one & 0xFFFF; // Set PC to target address
     // Push return address onto stack
-    push_word(machine, return_address);
+    push_word_new(machine, return_address);
     return machine;
 }
 
@@ -695,9 +692,8 @@ machine_state_t* AND_DP_IL     (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* PLP           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Pull Processor Status from Stack
     processor_state_t *state = &machine->processor;
-    uint16_t sp_address;
-
-    state->P = pop_byte_new(machine);
+    uint8_t popped_p = pop_byte_new(machine);
+    state->P = popped_p;
     if (state->emulation_mode) {
         set_flag(machine, M_FLAG);
         set_flag(machine, X_FLAG);
@@ -1092,14 +1088,14 @@ machine_state_t* RTI           (machine_state_t* machine, uint16_t arg_one, uint
     processor_state_t *state = &machine->processor;
     
     // Pop status register
-    state->P = pop_byte(machine);
+    state->P = pop_byte_new(machine);
     
     // Pop program counter (16-bit)
-    state->PC = pop_word(machine);
+    state->PC = pop_word_new(machine);
     
     // In native mode, also restore PBR
     if (!state->emulation_mode) {
-        state->PBR = pop_byte(machine);
+        state->PBR = pop_byte_new(machine);
     }
     return machine;
 }
@@ -1232,9 +1228,9 @@ machine_state_t* EOR_DP_IL     (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* PHA           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Push Accumulator onto Stack
     if (machine->processor.emulation_mode || is_flag_set(machine, M_FLAG)) {
-        push_byte(machine, machine->processor.A.low);
+        push_byte_new(machine, machine->processor.A.low);
     } else {
-        push_word(machine, machine->processor.A.full);
+        push_word_new(machine, machine->processor.A.full);
     }
     return machine;
 }
@@ -1287,7 +1283,7 @@ machine_state_t* PHK           (machine_state_t* machine, uint16_t arg_one, uint
     uint8_t *memory_bank = get_memory_bank(machine, state->DBR);  // Stack is always in bank 0
     uint16_t sp_address;
 
-    push_byte(machine, state->PBR);
+    push_byte_new(machine, state->PBR);
     return machine;
 }
 
@@ -1605,7 +1601,9 @@ machine_state_t* EOR_AL_IX     (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* RTS           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Return from Subroutine
     processor_state_t *state = &machine->processor;
-    state->PC = pop_word(machine);
+    // RTS pulls the return address and increments it by 1
+    uint16_t popped = pop_word_new(machine);
+    state->PC = (popped + 1) & 0xFFFF;
     return machine;
 }
 
@@ -1634,7 +1632,7 @@ machine_state_t* PER           (machine_state_t* machine, uint16_t arg_one, uint
     // Push Program Counter Relative
     processor_state_t *state = &machine->processor;
     uint16_t pc_relative = (state->PC + (int8_t)arg_one) & 0xFFFF;
-    push_word(machine, pc_relative);
+    push_word_new(machine, pc_relative);
     return machine;
 }
 
@@ -1741,10 +1739,10 @@ machine_state_t* PLA           (machine_state_t* machine, uint16_t arg_one, uint
     // Pull Accumulator from Stack
     processor_state_t *state = &machine->processor;
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        state->A.low = pop_byte(machine);
+        state->A.low = pop_byte_new(machine);
         set_flags_nz_8(machine, state->A.low);
     } else {
-        state->A.full = pop_word(machine);
+        state->A.full = pop_word_new(machine);
         set_flags_nz_16(machine, state->A.full);
     }
     return machine;
@@ -2376,9 +2374,11 @@ machine_state_t* STA_ABL       (machine_state_t* machine, uint16_t arg_one, uint
 }
 
 machine_state_t* BCC_CB        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
+    // Branch if Carry Clear
     processor_state_t *state = &machine->processor;
     if (!is_flag_set(machine, CARRY)) {
-        state->PC = arg_one & 0xFFFF;
+        int8_t offset = (int8_t)(arg_one & 0xFF);
+        state->PC = (state->PC + offset) & 0xFFFF;
     }
     return machine;
 }
@@ -2793,10 +2793,11 @@ machine_state_t* LDA_ABL       (machine_state_t* machine, uint16_t arg_one, uint
 }
 
 machine_state_t* BCS_CB        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
-    // Branch if Carry Set, Callback
+    // Branch if Carry Set
     processor_state_t *state = &machine->processor;
     if (is_flag_set(machine, CARRY)) {
-        state->PC = arg_one & 0xFFFF;
+        int8_t offset = (int8_t)(arg_one & 0xFF);
+        state->PC = (state->PC + offset) & 0xFFFF;
     }
     return machine;
 }

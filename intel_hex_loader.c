@@ -371,13 +371,23 @@ int main(int argc, char *argv[]) {
     printf("Starting execution at PC=$%04X\n\n", machine->processor.PC);
 
     // Print initial state
-    printf("Initial state: PC=$%04X A=$%04X X=$%04X Y=$%04X P=$%02X\n\n",
+    printf("Initial state: PC=$%04X A=$%04X X=$%04X Y=$%04X P=%c%c%c%c%c%c%c%c\n\n",
            machine->processor.PC, machine->processor.A.full, machine->processor.X, 
-           machine->processor.Y, machine->processor.P);
+           machine->processor.Y,
+           (machine->processor.P & 0x80) ? '1' : '0',
+           (machine->processor.P & 0x40) ? '1' : '0',
+           (machine->processor.P & 0x20) ? '1' : '0',
+           (machine->processor.P & 0x10) ? '1' : '0',
+           (machine->processor.P & 0x08) ? '1' : '0',
+           (machine->processor.P & 0x04) ? '1' : '0',
+           (machine->processor.P & 0x02) ? '1' : '0',
+           (machine->processor.P & 0x01) ? '1' : '0');
 
     // Single-step through program
     int step_count = 0;
     int max_steps = 10000; // Safety limit
+    uint16_t last_pc = 0xFFFF;
+    int same_pc_count = 0;
 
     while (step_count < max_steps) {
         step_result_t *result = machine_step(machine);
@@ -387,38 +397,73 @@ int main(int argc, char *argv[]) {
         }
 
         // Print disassembly and state
-        printf("%5d. %04X: %-16s A=$%04X X=$%04X Y=$%04X P=$%02X",
+        printf("%5d. %04X: %-16s A=$%04X X=$%04X Y=$%04X P=%c%c%c%c%c%c%c%c",
                step_count,
                result->address,
                result->mnemonic,
                machine->processor.A.full,
                machine->processor.X,
                machine->processor.Y,
-               machine->processor.P);
+               (machine->processor.P & 0x80) ? '1' : '0',
+               (machine->processor.P & 0x40) ? '1' : '0',
+               (machine->processor.P & 0x20) ? '1' : '0',
+               (machine->processor.P & 0x10) ? '1' : '0',
+               (machine->processor.P & 0x08) ? '1' : '0',
+               (machine->processor.P & 0x04) ? '1' : '0',
+               (machine->processor.P & 0x02) ? '1' : '0',
+               (machine->processor.P & 0x01) ? '1' : '0');
 
         if (result->operand_str[0] != '\0') {
             printf(" [%s]", result->operand_str);
         }
         printf("\n");
 
-        int should_stop = result->halted || result->waiting;
+        uint8_t opcode = result->opcode;
+        bool halted = result->halted;
+        bool waiting = result->waiting;
+        uint32_t result_addr = result->address;
         free_step_result(result);
 
-        if (should_stop) {
-            printf("\nProcessor halted or waiting\n");
+        step_count++;
+
+        // Check for halt conditions
+        if (opcode == 0xDB || halted) { // STP instruction
+            printf("\nProgram stopped (STP instruction)\n");
             break;
         }
-
-        step_count++;
+        if (waiting) {
+            printf("\nProcessor waiting (WAI instruction)\n");
+            break;
+        }
+        
+        // Detect infinite loops - same PC executed many times
+        if (machine->processor.PC == last_pc) {
+            same_pc_count++;
+            if (same_pc_count >= 10) {
+                printf("\nProgram stuck in loop at PC=$%04X\n", machine->processor.PC);
+                break;
+            }
+        } else {
+            same_pc_count = 0;
+            last_pc = machine->processor.PC;
+        }
     }
 
     if (step_count >= max_steps) {
         printf("\nReached maximum step limit (%d steps)\n", max_steps);
     }
 
-    printf("\nFinal state: PC=$%04X A=$%04X X=$%04X Y=$%04X P=$%02X\n",
+    printf("\nFinal state: PC=$%04X A=$%04X X=$%04X Y=$%04X P=%c%c%c%c%c%c%c%c\n",
            machine->processor.PC, machine->processor.A.full, machine->processor.X, 
-           machine->processor.Y, machine->processor.P);
+           machine->processor.Y,
+           (machine->processor.P & 0x80) ? '1' : '0',
+           (machine->processor.P & 0x40) ? '1' : '0',
+           (machine->processor.P & 0x20) ? '1' : '0',
+           (machine->processor.P & 0x10) ? '1' : '0',
+           (machine->processor.P & 0x08) ? '1' : '0',
+           (machine->processor.P & 0x04) ? '1' : '0',
+           (machine->processor.P & 0x02) ? '1' : '0',
+           (machine->processor.P & 0x01) ? '1' : '0');
 
     printf("\nTotal steps executed: %d\n", step_count);
 
