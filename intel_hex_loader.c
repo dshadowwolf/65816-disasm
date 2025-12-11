@@ -371,9 +371,9 @@ int main(int argc, char *argv[]) {
     printf("Starting execution at PC=$%04X\n\n", machine->processor.PC);
 
     // Print initial state
-    printf("Initial state: PC=$%04X A=$%04X X=$%04X Y=$%04X P=%c%c%c%c%c%c%c%c %s\n\n",
+    printf("Initial state: PC=$%04X A=$%04X X=$%04X Y=$%04X SP=$%04X P=%c%c%c%c%c%c%c%c %s\n\n",
            machine->processor.PC, machine->processor.A.full, machine->processor.X, 
-           machine->processor.Y,
+           machine->processor.Y, machine->processor.SP,
            (machine->processor.P & 0x80) ? 'N' : '-',
            (machine->processor.P & 0x40) ? 'V' : '-',
            (machine->processor.P & 0x20) ? 'M' : '-',
@@ -398,13 +398,14 @@ int main(int argc, char *argv[]) {
         }
 
         // Print disassembly and state
-        printf("%5d. %04X: %-16s A=$%04X X=$%04X Y=$%04X P=%c%c%c%c%c%c%c%c %s",
+        printf("%5d. %04X: %-16s A=$%04X X=$%04X Y=$%04X SP=$%04X P=%c%c%c%c%c%c%c%c %s",
                step_count,
                result->address,
                result->mnemonic,
                machine->processor.A.full,
                machine->processor.X,
                machine->processor.Y,
+               machine->processor.SP,
                (machine->processor.P & 0x80) ? 'N' : '-',
                (machine->processor.P & 0x40) ? 'V' : '-',
                (machine->processor.P & 0x20) ? 'M' : '-',
@@ -455,9 +456,9 @@ int main(int argc, char *argv[]) {
         printf("\nReached maximum step limit (%d steps)\n", max_steps);
     }
 
-    printf("\nFinal state: PC=$%04X A=$%04X X=$%04X Y=$%04X P=%c%c%c%c%c%c%c%c %s\n",
+    printf("\nFinal state: PC=$%04X A=$%04X X=$%04X Y=$%04X SP=$%04X P=%c%c%c%c%c%c%c%c %s\n",
            machine->processor.PC, machine->processor.A.full, machine->processor.X, 
-           machine->processor.Y,
+           machine->processor.Y, machine->processor.SP,
            (machine->processor.P & 0x80) ? 'N' : '-',
            (machine->processor.P & 0x40) ? 'V' : '-',
            (machine->processor.P & 0x20) ? 'M' : '-',
