@@ -1122,17 +1122,15 @@ machine_state_t* EOR_SR        (machine_state_t* machine, uint16_t arg_one, uint
     return machine;
 }
 
-// TODO: Convert this
 machine_state_t* MVP           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // MVP - Block Move Positive (MVP srcbank, dstbank) - actually decrements addresses!
     processor_state_t *state = &machine->processor;
-    uint8_t *source_bank = get_memory_bank(machine, arg_two & 0xFF);
-    uint8_t *dest_bank = get_memory_bank(machine, arg_one & 0xFF);
     uint16_t count = state->A.full + 1;
     uint16_t source_index = state->X;
     uint16_t dest_index = state->Y;
     for (uint16_t i = 0; i < count; i++) {
-        write_byte(dest_bank, dest_index & 0xFFFF, read_byte(source_bank, source_index & 0xFFFF));
+        write_byte_long(machine, (long_address_t) { .bank = (arg_one & 0xFF), .address = dest_index & 0xFFFF }, 
+                        read_byte_long(machine, (long_address_t) { .bank = (arg_two & 0xFF), .address = source_index & 0xFFFF }));
         source_index = (source_index - 1) & 0xFFFF;
         dest_index = (dest_index - 1) & 0xFFFF;
     }
@@ -1383,17 +1381,15 @@ machine_state_t* EOR_SR_I_IY   (machine_state_t* machine, uint16_t arg_one, uint
     return machine;
 }
 
-// TODO: Convert this
 machine_state_t* MVN           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Move Block Negative (MVN srcbank, dstbank) - actually increments addresses!
     processor_state_t *state = &machine->processor;
-    uint8_t *source_bank = get_memory_bank(machine, arg_two & 0xFF);
-    uint8_t *dest_bank = get_memory_bank(machine, arg_one & 0xFF);
     uint16_t count = state->A.full + 1;
     uint16_t source_index = state->X;
     uint16_t dest_index = state->Y;
     for (uint16_t i = 0; i < count; i++) {
-        write_byte(dest_bank, dest_index & 0xFFFF, read_byte(source_bank, source_index & 0xFFFF));
+        write_byte_long(machine, (long_address_t) { .bank = (arg_one & 0xFF), .address = dest_index & 0xFFFF }, 
+                        read_byte_long(machine, (long_address_t) { .bank = (arg_two & 0xFF), .address = source_index & 0xFFFF }));
         source_index = (source_index + 1) & 0xFFFF;
         dest_index = (dest_index + 1) & 0xFFFF;
     }
