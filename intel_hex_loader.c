@@ -371,17 +371,18 @@ int main(int argc, char *argv[]) {
     printf("Starting execution at PC=$%04X\n\n", machine->processor.PC);
 
     // Print initial state
-    printf("Initial state: PC=$%04X A=$%04X X=$%04X Y=$%04X P=%c%c%c%c%c%c%c%c\n\n",
+    printf("Initial state: PC=$%04X A=$%04X X=$%04X Y=$%04X P=%c%c%c%c%c%c%c%c %s\n\n",
            machine->processor.PC, machine->processor.A.full, machine->processor.X, 
            machine->processor.Y,
-           (machine->processor.P & 0x80) ? '1' : '0',
-           (machine->processor.P & 0x40) ? '1' : '0',
-           (machine->processor.P & 0x20) ? '1' : '0',
-           (machine->processor.P & 0x10) ? '1' : '0',
-           (machine->processor.P & 0x08) ? '1' : '0',
-           (machine->processor.P & 0x04) ? '1' : '0',
-           (machine->processor.P & 0x02) ? '1' : '0',
-           (machine->processor.P & 0x01) ? '1' : '0');
+           (machine->processor.P & 0x80) ? 'N' : '-',
+           (machine->processor.P & 0x40) ? 'V' : '-',
+           (machine->processor.P & 0x20) ? 'M' : '-',
+           (machine->processor.P & 0x10) ? 'X' : '-',
+           (machine->processor.P & 0x08) ? 'D' : '-',
+           (machine->processor.P & 0x04) ? 'I' : '-',
+           (machine->processor.P & 0x02) ? 'Z' : '-',
+           (machine->processor.P & 0x01) ? 'C' : '-',
+           machine->processor.emulation_mode ? "[E]" : "[N]");
 
     // Single-step through program
     int step_count = 0;
@@ -397,21 +398,22 @@ int main(int argc, char *argv[]) {
         }
 
         // Print disassembly and state
-        printf("%5d. %04X: %-16s A=$%04X X=$%04X Y=$%04X P=%c%c%c%c%c%c%c%c",
+        printf("%5d. %04X: %-16s A=$%04X X=$%04X Y=$%04X P=%c%c%c%c%c%c%c%c %s",
                step_count,
                result->address,
                result->mnemonic,
                machine->processor.A.full,
                machine->processor.X,
                machine->processor.Y,
-               (machine->processor.P & 0x80) ? '1' : '0',
-               (machine->processor.P & 0x40) ? '1' : '0',
-               (machine->processor.P & 0x20) ? '1' : '0',
-               (machine->processor.P & 0x10) ? '1' : '0',
-               (machine->processor.P & 0x08) ? '1' : '0',
-               (machine->processor.P & 0x04) ? '1' : '0',
-               (machine->processor.P & 0x02) ? '1' : '0',
-               (machine->processor.P & 0x01) ? '1' : '0');
+               (machine->processor.P & 0x80) ? 'N' : '-',
+               (machine->processor.P & 0x40) ? 'V' : '-',
+               (machine->processor.P & 0x20) ? 'M' : '-',
+               (machine->processor.P & 0x10) ? 'X' : '-',
+               (machine->processor.P & 0x08) ? 'D' : '-',
+               (machine->processor.P & 0x04) ? 'I' : '-',
+               (machine->processor.P & 0x02) ? 'Z' : '-',
+               (machine->processor.P & 0x01) ? 'C' : '-',
+               machine->processor.emulation_mode ? "[E]" : "[N]");
 
         if (result->operand_str[0] != '\0') {
             printf(" [%s]", result->operand_str);
@@ -453,17 +455,18 @@ int main(int argc, char *argv[]) {
         printf("\nReached maximum step limit (%d steps)\n", max_steps);
     }
 
-    printf("\nFinal state: PC=$%04X A=$%04X X=$%04X Y=$%04X P=%c%c%c%c%c%c%c%c\n",
+    printf("\nFinal state: PC=$%04X A=$%04X X=$%04X Y=$%04X P=%c%c%c%c%c%c%c%c %s\n",
            machine->processor.PC, machine->processor.A.full, machine->processor.X, 
            machine->processor.Y,
-           (machine->processor.P & 0x80) ? '1' : '0',
-           (machine->processor.P & 0x40) ? '1' : '0',
-           (machine->processor.P & 0x20) ? '1' : '0',
-           (machine->processor.P & 0x10) ? '1' : '0',
-           (machine->processor.P & 0x08) ? '1' : '0',
-           (machine->processor.P & 0x04) ? '1' : '0',
-           (machine->processor.P & 0x02) ? '1' : '0',
-           (machine->processor.P & 0x01) ? '1' : '0');
+           (machine->processor.P & 0x80) ? 'N' : '-',
+           (machine->processor.P & 0x40) ? 'V' : '-',
+           (machine->processor.P & 0x20) ? 'M' : '-',
+           (machine->processor.P & 0x10) ? 'X' : '-',
+           (machine->processor.P & 0x08) ? 'D' : '-',
+           (machine->processor.P & 0x04) ? 'I' : '-',
+           (machine->processor.P & 0x02) ? 'Z' : '-',
+           (machine->processor.P & 0x01) ? 'C' : '-',
+           machine->processor.emulation_mode ? "[E]" : "[N]");
 
     printf("\nTotal steps executed: %d\n", step_count);
 

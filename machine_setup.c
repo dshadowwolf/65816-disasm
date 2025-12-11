@@ -34,10 +34,10 @@ void initialize_processor(processor_state_t *state) {
     state->PC = 0;
     state->SP = 0x1FF;            // Stack Pointer starts at 0x1FF in emulation mode
     state->DP = 0;
-    state->P = 0x34;              // Default status register value -- this is kinda arbitrary
+    state->P = 0x00;              // Default status register value -- this is kinda arbitrary
     state->PBR = 0;               // Start in bank 0
     state->DBR = 0;               // Start in bank 0
-    state->emulation_mode = true; // Start in emulation mode
+    state->emulation_mode = false; // Start in native mode
 }
 
 void reset_processor(processor_state_t *state) {
@@ -47,10 +47,10 @@ void reset_processor(processor_state_t *state) {
     state->PC = 0x0000;           // Reset Program Counter to 0
     state->SP = 0x1FF;             // Stack Pointer reset value
     state->DP = 0;
-    state->P = 0x34;              // Reset status register value
+    state->P = 0x00;              // Reset status register value
     state->PBR = 0;               // Start in bank 0
     state->DBR = 0;               // Start in bank 0
-    state->emulation_mode = true; // Reset to emulation mode
+    state->emulation_mode = false; // Reset to native mode
 }
 
 uint8_t read_byte_from_region_nodev(memory_region_t *region, uint16_t address) {
@@ -659,9 +659,8 @@ static void format_operand(step_result_t *result, const opcode_t *op, uint16_t o
             snprintf(result->operand_str, sizeof(result->operand_str), "$%06X", operand);
         }
     } else if (op->flags & PCRelative || op->flags & PCRelativeLong) {
-        // Sign-extend for relative addressing
-        int8_t offset = (int8_t)(operand & 0xFF);
-        snprintf(result->operand_str, sizeof(result->operand_str), "$%02X", offset);
+        // Display relative offset as unsigned byte
+        snprintf(result->operand_str, sizeof(result->operand_str), "$%02X", operand & 0xFF);
     } else if (op->flags & StackRelative) {
         if (op->flags & Indirect && op->flags & IndexedY) {
             snprintf(result->operand_str, sizeof(result->operand_str), "($%02X,S),Y", operand & 0xFF);

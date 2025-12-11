@@ -126,14 +126,21 @@ memory_region_t *find_current_memory_region(machine_state_t *machine, uint16_t a
 void push_byte_new(machine_state_t *machine, uint8_t value) {
     processor_state_t *state = &machine->processor;
     memory_region_t *region = find_stack_memory_region(machine);
+    
     uint16_t sp_address = state->emulation_mode ? (0x0100 | (state->SP & 0xFF)) : (state->SP & 0xFFFF);
+    
+    fprintf(stderr, "PUSH_BYTE: val=$%02X to addr=$%04X (SP=$%04X before), region=%p\n", 
+            value, sp_address, state->SP, (void*)region);
     
     if (region != NULL) {
         WRITE_BYTE(region, sp_address, value);
+        fprintf(stderr, "PUSH_BYTE: wrote via region\n");
     } else {
         // Fallback to direct memory bank access when no region is configured
         uint8_t *memory_bank = get_memory_bank(machine, state->emulation_mode ? 0 : state->DBR);
+        fprintf(stderr, "PUSH_BYTE: using fallback, memory_bank=%p\n", (void*)memory_bank);
         write_byte(memory_bank, sp_address, value);
+        fprintf(stderr, "PUSH_BYTE: wrote via fallback\n");
     }
     
     if (state->emulation_mode) {
@@ -141,6 +148,8 @@ void push_byte_new(machine_state_t *machine, uint8_t value) {
     } else {
         state->SP = (state->SP - 1) & 0xFFFF;
     }
+    
+    fprintf(stderr, "PUSH_BYTE: SP after=$%04X\n", state->SP);
 }
 
 void push_word_new(machine_state_t *machine, uint16_t value) {
@@ -152,6 +161,8 @@ uint8_t pop_byte_new(machine_state_t *machine) {
     processor_state_t *state = &machine->processor;
     memory_region_t *region = find_stack_memory_region(machine);
     
+    fprintf(stderr, "POP_BYTE: SP before=$%04X\n", state->SP);
+    
     if (state->emulation_mode) {
         state->SP = (state->SP + 1) & 0x1FF;
     } else {
@@ -160,13 +171,17 @@ uint8_t pop_byte_new(machine_state_t *machine) {
     
     uint16_t sp_address = state->emulation_mode ? (0x0100 | (state->SP & 0xFF)) : (state->SP & 0xFFFF);
     
+    uint8_t result;
     if (region != NULL) {
-        return READ_BYTE(region, sp_address);
+        result = READ_BYTE(region, sp_address);
     } else {
         // Fallback to direct memory bank access when no region is configured
         uint8_t *memory_bank = get_memory_bank(machine, state->emulation_mode ? 0 : state->DBR);
-        return read_byte(memory_bank, sp_address);
+        result = read_byte(memory_bank, sp_address);
     }
+    
+    fprintf(stderr, "POP_BYTE: val=$%02X from addr=$%04X (SP after=$%04X)\n", result, sp_address, state->SP);
+    return result;
 }
 
 uint16_t pop_word_new(machine_state_t *machine) {
