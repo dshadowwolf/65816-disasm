@@ -189,11 +189,6 @@ void write_word_to_region_dev(memory_region_t *region, uint16_t address, uint16_
 
 void initialize_machine(machine_state_t *machine) {
     initialize_processor(&machine->processor);
-    for (int i = 0; i < 64; i++) {
-        machine->memory[i] = NULL; // Initialize memory pointers to NULL
-    }
-
-    machine->memory[0] = (uint8_t*)malloc(65536 * sizeof(uint8_t)); // Allocate 64KB for bank 0
 
     g_board_fifo = init_board_fifo();
     
@@ -572,14 +567,8 @@ int load_hex_file(machine_state_t *machine, const char *filename) {
 
 void reset_machine(machine_state_t *machine) {
     reset_processor(&machine->processor);
-    
-    for (int i = 0; i < 64; i++) {
-        if (machine->memory[i] != NULL) {
-            free(machine->memory[i]);
-            machine->memory[i] = NULL;
-        }
-    }
-    machine->memory[0] = (uint8_t*)malloc(65536 * sizeof(uint8_t)); // Reallocate 64KB for bank 0
+
+    // redefine banks here at some point in the future
 }
 
 machine_state_t* create_machine() {
@@ -589,9 +578,19 @@ machine_state_t* create_machine() {
 }
 
 void destroy_machine(machine_state_t *machine) {
-    for (int i = 0; i < 64; i++) {
-        if (machine->memory[i] != NULL) {
-            free(machine->memory[i]);
+    for (int i = 0; i < 256; i++) {
+        if (machine->memory_banks[i] != NULL) {
+            // Free memory regions in the bank
+            memory_region_t *region = machine->memory_banks[i]->regions;
+            while (region) {
+                memory_region_t *next = region->next;
+                if (region->data) {
+                    free(region->data);
+                }
+                free(region);
+                region = next;
+            }
+            free(machine->memory_banks[i]);
         }
     }
     free(machine);

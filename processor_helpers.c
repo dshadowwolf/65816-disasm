@@ -66,13 +66,6 @@ void check_and_set_negative_16(machine_state_t *machine, uint32_t result) {
     }
 }
 
-uint8_t *get_memory_bank(machine_state_t *machine, uint8_t bank) {
-    if (machine->memory[bank] == NULL) {
-        machine->memory[bank] = (uint8_t*)malloc(65536 * sizeof(uint8_t));
-    }
-    return machine->memory[bank];
-}
-
 void set_flags_nz_8(machine_state_t *machine, uint16_t result) {
     check_and_set_zero_8(machine, result);
     check_and_set_negative_8(machine, result);
@@ -315,66 +308,6 @@ uint16_t get_dp_address_indexed_y(machine_state_t *machine, uint16_t dp_offset) 
 
 /* End experimental design work */
 
-void push_byte(machine_state_t *machine, uint8_t value) {
-    processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->emulation_mode?0:state->DBR);
-    
-    if (state->emulation_mode) {
-        // Emulation mode: stack is in page 1 (0x0100-0x01FF)
-        write_byte(memory_bank, 0x0100 | (state->SP & 0xFF), value);
-        state->SP = (state->SP - 1) & 0x1FF;
-    } else {
-        // Native mode: stack can be anywhere in bank 0
-        write_byte(memory_bank, state->SP & 0xFFFF, value);
-        state->SP = (state->SP - 1) & 0xFFFF;
-    }
-}
-
-uint8_t pop_byte(machine_state_t *machine) {
-    processor_state_t *state = &machine->processor;
-    uint8_t *memory_bank = get_memory_bank(machine, state->emulation_mode?0:state->DBR);
-    
-    if (state->emulation_mode) {
-        // Emulation mode: stack is in page 1 (0x0100-0x01FF)
-        state->SP = (state->SP + 1) & 0x1FF;
-        return read_byte(memory_bank, 0x0100 | (state->SP & 0xFF));
-    } else {
-        // Native mode: stack can be anywhere in bank 0
-        state->SP = (state->SP + 1) & 0xFFFF;
-        return read_byte(memory_bank, state->SP & 0xFFFF);
-    }
-}
-
-void push_word(machine_state_t *machine, uint16_t value) {
-    push_byte(machine, (value >> 8) & 0xFF);  // Push high byte first
-    push_byte(machine, value & 0xFF);         // Push low byte second
-}
-
-uint16_t pop_word(machine_state_t *machine) {
-    uint8_t low_byte = pop_byte(machine);     // Pop low byte first
-    uint8_t high_byte = pop_byte(machine);    // Pop high byte second
-    return (high_byte << 8) | low_byte;
-}
-
-uint16_t read_word(uint8_t *memory, uint16_t address) {
-    uint8_t low_byte = memory[address];
-    uint8_t high_byte = memory[(address + 1) & 0xFFFF];
-    return (high_byte << 8) | low_byte;
-}
-
-uint8_t read_byte(uint8_t *memory, uint16_t address) {
-    return memory[address];
-}
-
-void write_byte(uint8_t *memory, uint16_t address, uint8_t value) {
-    memory[address] = value;
-}
-
-void write_word(uint8_t *memory, uint16_t address, uint16_t value) {
-    memory[address] = value & 0xFF;               // Low byte
-    memory[(address + 1) & 0xFFFF] = (value >> 8) & 0xFF; // High byte
-}
-
 long_address_t get_long_address(machine_state_t *machine, uint16_t offset, uint16_t bank) {
     long_address_t long_addr;
     long_addr.bank = bank & 0xFF;
@@ -387,35 +320,10 @@ uint16_t get_dp_address(machine_state_t *machine, uint16_t dp_offset) {
     return dp_address;
 }
 
-uint16_t get_dp_address_indirect(machine_state_t *machine, uint16_t dp_offset) {
-    uint16_t dp_address = get_dp_address(machine, dp_offset);
-    uint8_t *memory_bank = get_memory_bank(machine, machine->processor.emulation_mode?0:machine->processor.DBR);
-    return read_word(memory_bank, dp_address);
-}
-
-uint16_t get_dp_address_indirect_indexed_x(machine_state_t *machine, uint16_t dp_offset) {
-    // (DP,X) - Indexed Indirect: add X to DP offset, then read pointer
-    uint16_t dp_address = get_dp_address(machine, (dp_offset + machine->processor.X) & 0xFF);
-    uint8_t *memory_bank = get_memory_bank(machine, machine->processor.emulation_mode?0:machine->processor.DBR);
-    return read_word(memory_bank, dp_address);
-}
-
-uint16_t get_dp_address_indirect_indexed_y(machine_state_t *machine, uint16_t dp_offset) {
-    uint16_t effective_address = get_dp_address_indirect(machine, dp_offset);
-    return (effective_address + machine->processor.Y) & 0xFFFF;
-}
-
-long_address_t get_dp_address_indirect_long(machine_state_t *machine, uint16_t dp_offset) {
-    uint16_t dp_address = get_dp_address(machine, dp_offset);
-    uint8_t *memory_bank = get_memory_bank(machine, 0); // Direct page always in bank 0
-    uint16_t addr = read_word(memory_bank, dp_address);
-    uint8_t bank = read_byte(memory_bank, (dp_address + 2) & 0xFFFF);
-    return get_long_address(machine, addr, bank);
-}
-
 uint16_t get_absolute_address(machine_state_t *machine, uint16_t address) {
     return address & 0xFFFF;
 }
+
 uint16_t get_absolute_address_indexed_x(machine_state_t *machine, uint16_t address) {
     return (address + machine->processor.X) & 0xFFFF;
 
@@ -440,44 +348,19 @@ long_address_t get_absolute_address_long_indexed_y(machine_state_t *machine, uin
     return long_addr;
 }
 
-uint16_t get_absolute_address_indirect(machine_state_t *machine, uint16_t address) {
-    uint8_t *memory_bank = get_memory_bank(machine, machine->processor.DBR);
-    return read_word(memory_bank, address);
-
-}
-
-uint16_t get_absolute_address_indirect_indexed_y(machine_state_t *machine, uint16_t address) {
-    uint16_t effective_address = get_absolute_address_indirect(machine, address);
-    return (effective_address + machine->processor.Y) & 0xFFFF;
-
-}
-
-uint16_t get_absolute_address_indirect_indexed_x(machine_state_t *machine, uint16_t address) {
-    uint16_t effective_address = get_absolute_address_indirect(machine, address);
-    return (effective_address + machine->processor.X) & 0xFFFF;
-}
-
-long_address_t get_absolute_address_long_indirect(machine_state_t *machine, uint16_t address, uint8_t bank) {
-    uint8_t *memory_bank = get_memory_bank(machine, bank);
-    uint8_t low_byte = memory_bank[address];
-    uint8_t high_byte = memory_bank[(address + 1) & 0xFFFF];
-    uint8_t bank_byte = memory_bank[(address + 2) & 0xFFFF];
-    return get_long_address(machine, (high_byte << 8) | low_byte, bank_byte);
-}
-
 uint16_t get_dp_address_indexed_x(machine_state_t *machine, uint16_t dp_offset) {
     uint16_t dp_address = get_dp_address(machine, dp_offset);
     return (dp_address + machine->processor.X) & 0xFFFF;
 }
 
 long_address_t get_dp_address_indirect_long_indexed_x(machine_state_t *machine, uint16_t dp_offset) {
-    long_address_t long_addr = get_dp_address_indirect_long(machine, dp_offset);
+    long_address_t long_addr = get_dp_address_indirect_long_new(machine, dp_offset);
     long_addr.address = (long_addr.address + machine->processor.X) & 0xFFFF;
     return long_addr;
 }
 
 long_address_t get_dp_address_indirect_long_indexed_y(machine_state_t *machine, uint16_t dp_offset) {
-    long_address_t long_addr = get_dp_address_indirect_long(machine, dp_offset);
+    long_address_t long_addr = get_dp_address_indirect_long_new(machine, dp_offset);
     long_addr.address = (long_addr.address + machine->processor.Y) & 0xFFFF;
     return long_addr;
 }
@@ -496,19 +379,6 @@ uint16_t get_stack_relative_address(machine_state_t *machine, uint8_t offset) {
 uint16_t get_stack_relative_address_indexed_y(machine_state_t *machine, uint8_t offset) {
     uint16_t base_address = get_stack_relative_address(machine, offset);
     return (base_address + machine->processor.Y) & 0xFFFF;
-}
-
-uint16_t get_stack_relative_address_indirect(machine_state_t *machine, uint8_t offset) {
-    uint16_t base_address = get_stack_relative_address(machine, offset);
-    uint8_t *memory_bank = get_memory_bank(machine, 0); // Stack relative always in bank 0
-    return read_word(memory_bank, base_address);
-}
-
-uint16_t get_stack_relative_address_indirect_indexed_y(machine_state_t *machine, uint8_t offset) {
-    uint16_t pointer_address = get_stack_relative_address(machine, offset);
-    uint8_t *memory_bank = get_memory_bank(machine, 0); // Stack relative always in bank 0
-    uint16_t effective_address = read_word(memory_bank, pointer_address);
-    return (effective_address + machine->processor.Y) & 0xFFFF;
 }
 
 uint16_t get_absolute_address_indirect_new(machine_state_t *machine, uint16_t address) {

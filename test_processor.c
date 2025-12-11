@@ -74,10 +74,10 @@ TEST(push_byte_basic) {
     machine->processor.SP = 0x1FF;  // Top of stack in emulation mode
     machine->processor.emulation_mode = true;
     
-    push_byte(machine, 0x42);
+    push_byte_new(machine, 0x42);
     
     ASSERT_EQ(machine->processor.SP, 0x1FE, "Stack pointer should decrement");
-    ASSERT_EQ(machine->memory[0][0x01FF], 0x42, "Byte should be pushed to stack");
+    ASSERT_EQ(read_byte_new(machine, 0x01FF), 0x42, "Byte should be pushed to stack");
     
     destroy_machine(machine);
 }
@@ -88,7 +88,7 @@ TEST(pop_byte_basic) {
     machine->processor.emulation_mode = true;
     write_byte_new(machine, 0x01FF, 0x42);
     
-    uint8_t value = pop_byte(machine);
+    uint8_t value = pop_byte_new(machine);
     
     ASSERT_EQ(value, 0x42, "Should pop correct value");
     ASSERT_EQ(machine->processor.SP, 0x1FF, "Stack pointer should increment");
@@ -101,11 +101,11 @@ TEST(push_word_native_mode) {
     machine->processor.SP = 0x1FF;
     machine->processor.emulation_mode = false;
     
-    push_word(machine, 0x1234);
+    push_word_new(machine, 0x1234);
     
     ASSERT_EQ(machine->processor.SP, 0x1FD, "Stack pointer should decrement by 2");
-    ASSERT_EQ(machine->memory[0][0x01FF], 0x12, "High byte should be pushed first");
-    ASSERT_EQ(machine->memory[0][0x01FE], 0x34, "Low byte should be pushed second");
+    ASSERT_EQ(read_byte_new(machine, 0x01FF), 0x12, "High byte should be pushed first");
+    ASSERT_EQ(read_byte_new(machine, 0x01FE), 0x34, "Low byte should be pushed second");
     
     destroy_machine(machine);
 }
@@ -117,7 +117,7 @@ TEST(pop_word_native_mode) {
     write_byte_new(machine, 0x01FE, 0x34);  // Low byte
     write_byte_new(machine, 0x01FF, 0x12);  // High byte
     
-    uint16_t value = pop_word(machine);
+    uint16_t value = pop_word_new(machine);
     
     ASSERT_EQ(value, 0x1234, "Should pop correct 16-bit value");
     ASSERT_EQ(machine->processor.SP, 0x1FF, "Stack pointer should increment by 2");
@@ -130,11 +130,11 @@ TEST(stack_wrap_emulation_mode) {
     machine->processor.SP = 0x100;  // Bottom of page 1
     machine->processor.emulation_mode = true;
     
-    push_byte(machine, 0xAB);
+    push_byte_new(machine, 0xAB);
     
     // In emulation mode, SP wraps within page 1, so 0x100 - 1 = 0xFF (not 0x1FF)
     ASSERT_EQ(machine->processor.SP, 0xFF, "Stack should wrap to 0xFF");
-    ASSERT_EQ(machine->memory[0][0x0100], 0xAB, "Byte should be at wrap location");
+    ASSERT_EQ(read_byte_new(machine, 0x0100), 0xAB, "Byte should be at wrap location");
     
     destroy_machine(machine);
 }
@@ -2310,7 +2310,6 @@ TEST(ADC_DP_IL_indirect_long) {
     region0->next = NULL;
     bank1->regions = region0;
 
-    uint8_t *bank0 = get_memory_bank(machine, 0);
     write_word_new(machine, 0x0010, 0x9000);
     write_byte_new(machine, 0x0012, 0x01);  // Bank byte for long address
     
@@ -2688,8 +2687,7 @@ TEST(AND_ABS_IX_indexed) {
     machine->processor.A.low = 0xAA;
     machine->processor.X = 0x0A;
     
-    uint8_t *bank = get_memory_bank(machine, 0);
-    bank[0x800A] = 0x55;
+    write_byte_new(machine, 0x800A, 0x55);
     
     AND_ABS_IX(machine, 0x8000, 0);
     ASSERT_EQ(machine->processor.A.low, 0x00, "AND ABS,X should AND indexed memory with A");
@@ -3306,8 +3304,6 @@ TEST(CMP_ABL_long_addressing) {
     bank1->regions = region0;
 
     write_byte_long(machine, (long_address_t) { .bank=0x02, .address=0x8000 }, 0x30);
-    uint8_t *bank = get_memory_bank(machine, 0x02);
-    bank[0x8000] = 0x30;
     
     CMP_ABL(machine, 0x8000, 0x02);
     ASSERT_EQ(check_flag(machine, CARRY), true, "CMP ABL should set carry when A >= M");

@@ -58,7 +58,6 @@ typedef struct memory_bank_s {
 typedef struct machine_state_s {
     processor_state_t processor;
     memory_bank_t *memory_banks[256]; // Array of memory banks
-    uint8_t *memory[64]; // Array of pointers to memory banks
 } machine_state_t;
 
 typedef machine_state_t* (operation)(machine_state_t*, uint16_t, uint16_t);

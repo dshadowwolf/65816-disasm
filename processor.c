@@ -329,7 +329,7 @@ machine_state_t* BPL_CB        (machine_state_t* machine, uint16_t arg_one, uint
 
 machine_state_t* ORA_DP_I_IY      (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     processor_state_t *state = &machine->processor;
-    uint16_t effective_address = get_dp_address_indirect_indexed_y(machine, arg_one);
+    uint16_t effective_address = get_dp_address_indirect_indexed_y_new(machine, arg_one);
     if (is_flag_set(machine, M_FLAG)) {
         uint8_t value = read_byte_new(machine, effective_address);
         uint8_t result = state->A.low | value;
@@ -617,7 +617,7 @@ machine_state_t* BIT_DP        (machine_state_t* machine, uint16_t arg_one, uint
     // test bits in memory with accumulator, Direct Page
     processor_state_t *state = &machine->processor;
     uint16_t dp_address = get_dp_address(machine, arg_one);
-    uint8_t value = machine->memory[state->PBR][dp_address];
+    uint8_t value = read_byte_new(machine, dp_address);
     if (is_flag_set(machine, M_FLAG)) {
         uint8_t result = state->A.low & value;
         set_flags_nz_8(machine, result);
@@ -3083,7 +3083,7 @@ machine_state_t* DEC_DP        (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* CMP_DP_IL     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // CoMPare A, Direct Page Indirect Long
     processor_state_t *state = &machine->processor;
-    long_address_t address = get_dp_address_indirect_long(machine, arg_one);
+    long_address_t address = get_dp_address_indirect_long_new(machine, arg_one);
     uint16_t value_to_compare;
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         value_to_compare = read_byte_new(machine, address.address);

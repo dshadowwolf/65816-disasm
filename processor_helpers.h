@@ -26,19 +26,8 @@ void set_flags_nzc_8(machine_state_t *machine, uint16_t result);
 void set_flags_nzc_16(machine_state_t *machine, uint32_t result);
 
 // Memory bank management
-uint8_t *get_memory_bank(machine_state_t *machine, uint8_t bank);
-
-// Stack operations
-void push_byte(machine_state_t *machine, uint8_t value);
-uint8_t pop_byte(machine_state_t *machine);
-void push_word(machine_state_t *machine, uint16_t value);
-uint16_t pop_word(machine_state_t *machine);
-
-// Memory read helpers
-uint16_t read_word(uint8_t *memory, uint16_t address);
-uint8_t read_byte(uint8_t *memory, uint16_t address);
-void write_byte(uint8_t *memory, uint16_t address, uint8_t value);
-void write_word(uint8_t *memory, uint16_t address, uint16_t value);
+// deprecated, delete
+// uint8_t *get_memory_bank(machine_state_t *machine, uint8_t bank);
 
 // Long address structure and helper
 typedef struct long_address_s {
@@ -50,19 +39,11 @@ long_address_t get_long_address(machine_state_t *machine, uint16_t offset, uint1
 
 // Direct page addressing helpers
 uint16_t get_dp_address(machine_state_t *machine, uint16_t dp_offset);
-uint16_t get_dp_address_indirect(machine_state_t *machine, uint16_t dp_offset);
-uint16_t get_dp_address_indirect_indexed_x(machine_state_t *machine, uint16_t dp_offset);
-uint16_t get_dp_address_indirect_indexed_y(machine_state_t *machine, uint16_t dp_offset);
 uint16_t get_dp_address_indexed_x(machine_state_t *machine, uint16_t dp_offset);
-long_address_t get_dp_address_indirect_long(machine_state_t *machine, uint16_t dp_offset);
-long_address_t get_dp_address_indirect_long_indexed_x(machine_state_t *machine, uint16_t dp_offset);
-long_address_t get_dp_address_indirect_long_indexed_y(machine_state_t *machine, uint16_t dp_offset);
 
 // Stack relative addressing helpers
 uint16_t get_stack_relative_address(machine_state_t *machine, uint8_t offset);
 uint16_t get_stack_relative_address_indexed_y(machine_state_t *machine, uint8_t offset);
-uint16_t get_stack_relative_address_indirect(machine_state_t *machine, uint8_t offset);
-uint16_t get_stack_relative_address_indirect_indexed_y(machine_state_t *machine, uint8_t offset);
 
 // Absolute addressing helper
 uint16_t get_absolute_address(machine_state_t *machine, uint16_t address);
@@ -71,10 +52,6 @@ uint16_t get_absolute_address_indexed_y(machine_state_t *machine, uint16_t addre
 long_address_t get_absolute_address_long(machine_state_t *machine, uint16_t address, uint8_t bank);
 long_address_t get_absolute_address_long_indexed_x(machine_state_t *machine, uint16_t address, uint8_t bank);
 long_address_t get_absolute_address_long_indexed_y(machine_state_t *machine, uint16_t address, uint8_t bank);
-long_address_t get_absolute_address_long_indirect(machine_state_t *machine, uint16_t address, uint8_t bank);
-uint16_t get_absolute_address_indirect(machine_state_t *machine, uint16_t address);
-uint16_t get_absolute_address_indirect_indexed_y(machine_state_t *machine, uint16_t address);
-uint16_t get_absolute_address_indirect_indexed_x(machine_state_t *machine, uint16_t address);
 
 // experimental/future features
 memory_region_t *find_memory_region(machine_state_t *machine, uint8_t bank, uint16_t address);
@@ -101,9 +78,10 @@ uint16_t get_dp_address_indirect_indexed_x_new(machine_state_t *machine, uint16_
 uint16_t get_dp_address_indirect_indexed_y_new(machine_state_t *machine, uint16_t dp_offset);
 long_address_t get_dp_address_indirect_long_new(machine_state_t *machine, uint16_t dp_offset);
 long_address_t get_dp_address_indirect_long_indexed_y_new(machine_state_t *machine, uint16_t dp_offset);
-uint16_t get_stack_relative_address_indirect_new(machine_state_t *machine, uint8_t offset);
 uint16_t get_stack_relative_address_indirect_indexed_y_new(machine_state_t *machine, uint8_t offset);
 long_address_t get_absolute_long_indexed_x_new(machine_state_t *machine, uint16_t address, uint8_t bank);
 uint16_t get_dp_address_indexed_y(machine_state_t *machine, uint16_t dp_offset);
 long_address_t get_absolute_address_long_indirect_new(machine_state_t *machine, uint16_t address, uint8_t bank);
+uint16_t get_absolute_address_indirect_new(machine_state_t *machine, uint16_t address);
+
 #endif // PROCESSOR_HELPERS_H
