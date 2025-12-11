@@ -111,14 +111,17 @@ void test_mvn_wraparound() {
     state->emulation_mode = 1;
     state->P |= 0x30;
     
-    // Set up source data near end of 64K address space
-    uint16_t source_addr = 0xFFFD;
+    // Set up source data near end of writable region
+    // Region 0 is 0x0000-0x7F7F, so we'll use 0x7F7D-0x7F80 which wraps
+    // Actually, 0x7F80+ is device region, so let's use addresses that truly wrap
+    // within bank 0 from 0x00FD to 0x0000 (wraps in the writable region)
+    uint16_t source_addr = 0x00FD;
     uint8_t source_data[] = {0xAA, 0xBB, 0xCC, 0xDD};
     for (int i = 0; i < 4; i++) {
         write_byte_new(machine, (source_addr + i) & 0xFFFF, source_data[i]);
     }
     
-    // Move 4 bytes starting at $FFFD (wraps to $0000)
+    // Move 4 bytes starting at $00FD (wraps to $0100)
     state->A.full = 3;  // 4 bytes
     state->X = source_addr;
     state->Y = 0x3000;
