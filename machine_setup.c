@@ -568,7 +568,148 @@ int load_hex_file(machine_state_t *machine, const char *filename) {
 void reset_machine(machine_state_t *machine) {
     reset_processor(&machine->processor);
 
+    // free memory banks and regions
+    for (int i = 0; i < 256; i++) {
+        if (machine->memory_banks[i] != NULL) {
+            // Free memory regions in the bank
+            memory_region_t *region = machine->memory_banks[i]->regions;
+            while (region) {
+                memory_region_t *next = region->next;
+                if (region->data) {
+                    free(region->data);
+                }
+                free(region);
+                region = next;
+            }
+            free(machine->memory_banks[i]);
+        }
+    }
+
     // redefine banks here at some point in the future
+    /*
+     * what follows is all experimental design work for memory regions and banks
+     */
+    memory_bank_t *bank0 = machine->memory_banks[0];
+    memory_region_t *region0 = (memory_region_t*)malloc(sizeof(memory_region_t));
+    memory_region_t *region1 = (memory_region_t*)malloc(sizeof(memory_region_t));
+    memory_region_t *region2 = (memory_region_t*)malloc(sizeof(memory_region_t));
+
+    region0->start_offset = 0x0000;
+    region0->end_offset = 0x7F7F;
+    region0->data = (uint8_t *)malloc(0x7F80 * sizeof(uint8_t));
+    region0->read_byte = read_byte_from_region_nodev;
+    region0->write_byte = write_byte_to_region_nodev;
+    region0->read_word = read_word_from_region_nodev;
+    region0->write_word = write_word_to_region_nodev;
+    region0->flags = MEM_READWRITE;
+
+    // Region: ACIA at 0x7F80-0x7F83 (4 bytes)
+    memory_region_t *region_acia = (memory_region_t*)malloc(sizeof(memory_region_t));
+    region_acia->start_offset = 0x7F80;
+    region_acia->end_offset = 0x7F83;
+    region_acia->data = NULL; // No backing storage for devices
+    region_acia->read_byte = read_byte_from_region_dev;
+    region_acia->write_byte = write_byte_to_region_dev;
+    region_acia->read_word = read_word_from_region_dev;
+    region_acia->write_word = write_word_to_region_dev;
+    region_acia->flags = MEM_DEVICE;
+
+    // Region: Gap between ACIA and PIA (0x7F84-0x7F9F)
+    memory_region_t *region_gap_acia_pia = (memory_region_t*)malloc(sizeof(memory_region_t));
+    region_gap_acia_pia->start_offset = 0x7F84;
+    region_gap_acia_pia->end_offset = 0x7F9F;
+    region_gap_acia_pia->data = NULL;
+    region_gap_acia_pia->read_byte = read_byte_from_region_dev;
+    region_gap_acia_pia->write_byte = write_byte_to_region_dev;
+    region_gap_acia_pia->read_word = read_word_from_region_dev;
+    region_gap_acia_pia->write_word = write_word_to_region_dev;
+    region_gap_acia_pia->flags = MEM_DEVICE;
+
+    // Region: PIA at 0x7FA0-0x7FA3 (4 bytes)
+    memory_region_t *region_pia = (memory_region_t*)malloc(sizeof(memory_region_t));
+    region_pia->start_offset = 0x7FA0;
+    region_pia->end_offset = 0x7FA3;
+    region_pia->data = NULL; // No backing storage for devices
+    region_pia->read_byte = read_byte_from_region_dev;
+    region_pia->write_byte = write_byte_to_region_dev;
+    region_pia->read_word = read_word_from_region_dev;
+    region_pia->write_word = write_word_to_region_dev;
+    region_pia->flags = MEM_DEVICE;
+
+    // Region: Gap between PIA and VIA (0x7FA4-0x7FBF)
+    memory_region_t *region_gap1 = (memory_region_t*)malloc(sizeof(memory_region_t));
+    region_gap1->start_offset = 0x7FA4;
+    region_gap1->end_offset = 0x7FBF;
+    region_gap1->data = NULL;
+    region_gap1->read_byte = read_byte_from_region_dev;
+    region_gap1->write_byte = write_byte_to_region_dev;
+    region_gap1->read_word = read_word_from_region_dev;
+    region_gap1->write_word = write_word_to_region_dev;
+    region_gap1->flags = MEM_DEVICE;
+
+    // Region: Standalone VIA at 0x7FC0-0x7FCF (16 bytes)
+    memory_region_t *region_via = (memory_region_t*)malloc(sizeof(memory_region_t));
+    region_via->start_offset = 0x7FC0;
+    region_via->end_offset = 0x7FCF;
+    region_via->data = NULL; // No backing storage for devices
+    region_via->read_byte = read_byte_from_region_dev;
+    region_via->write_byte = write_byte_to_region_dev;
+    region_via->read_word = read_word_from_region_dev;
+    region_via->write_word = write_word_to_region_dev;
+    region_via->flags = MEM_DEVICE;
+
+    // Region: Device gap 0x7FD0-0x7FDF
+    memory_region_t *region_gap = (memory_region_t*)malloc(sizeof(memory_region_t));
+    region_gap->start_offset = 0x7FD0;
+    region_gap->end_offset = 0x7FDF;
+    region_gap->data = NULL;
+    region_gap->read_byte = read_byte_from_region_dev;
+    region_gap->write_byte = write_byte_to_region_dev;
+    region_gap->read_word = read_word_from_region_dev;
+    region_gap->write_word = write_word_to_region_dev;
+    region_gap->flags = MEM_DEVICE;
+
+    // Region: Board FIFO (VIA+FT245) at 0x7FE0-0x7FEF (16 bytes)
+    memory_region_t *region_board_fifo = (memory_region_t*)malloc(sizeof(memory_region_t));
+    region_board_fifo->start_offset = 0x7FE0;
+    region_board_fifo->end_offset = 0x7FEF;
+    region_board_fifo->data = NULL; // No backing storage for devices
+    region_board_fifo->read_byte = read_byte_from_region_dev;
+    region_board_fifo->write_byte = write_byte_to_region_dev;
+    region_board_fifo->read_word = read_word_from_region_dev;
+    region_board_fifo->write_word = write_word_to_region_dev;
+    region_board_fifo->flags = MEM_DEVICE;
+
+    region1->start_offset = 0x7FF0;
+    region1->end_offset = 0x7FFF;
+    region1->data = (uint8_t *)malloc(16 * sizeof(uint8_t));
+    region1->read_byte = read_byte_from_region_dev;  // Default read/write functions can be set later
+    region1->write_byte = write_byte_to_region_dev;
+    region1->read_word = read_word_from_region_dev;
+    region1->write_word = write_word_to_region_dev;
+    region1->flags = MEM_DEVICE;
+
+    region2->start_offset = 0x8000;
+    region2->end_offset = 0xFFFF;
+    region2->data = (uint8_t *)malloc(32768 * sizeof(uint8_t));
+    region2->read_byte = read_byte_from_region_nodev;  // Default read/write functions can be set later
+    region2->write_byte = write_byte_to_region_nodev;
+    region2->read_word = read_word_from_region_nodev;
+    region2->write_word = write_word_to_region_nodev;
+    region2->flags = MEM_READONLY;
+    
+    // Link all regions together
+    region0->next = region_acia;
+    region_acia->next = region_gap_acia_pia;
+    region_gap_acia_pia->next = region_pia;
+    region_pia->next = region_gap1;
+    region_gap1->next = region_via;
+    region_via->next = region_gap;
+    region_gap->next = region_board_fifo;
+    region_board_fifo->next = region1;
+    region1->next = region2;
+    region2->next = NULL;
+    bank0->regions = region0;
 }
 
 machine_state_t* create_machine() {
@@ -590,7 +731,9 @@ void destroy_machine(machine_state_t *machine) {
                 free(region);
                 region = next;
             }
-            free(machine->memory_banks[i]);
+            if (machine->memory_banks[i] != NULL) {
+            //    free(machine->memory_banks[i]);
+            }
         }
     }
     free(machine);
