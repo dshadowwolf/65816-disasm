@@ -3488,8 +3488,8 @@ machine_state_t* SBC_DP_I_IX   (machine_state_t* machine, uint16_t arg_one, uint
     uint16_t value_to_subtract;
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         value_to_subtract = read_byte_new(machine, effective_address);
-        uint16_t borrow = is_flag_set(machine, CARRY) ? 0 : 1;
-        uint16_t result = (uint16_t)state->A.low - (uint16_t)value_to_subtract - borrow;
+        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
+        uint16_t result = (uint16_t)state->A.low - (uint16_t)value_to_subtract + carry - 1;
         state->A.low = result & 0xFF;
         // Carry is set if no borrow occurred
         if (result & 0x8000) clear_flag(machine, CARRY);  // Borrow occurred
@@ -3497,8 +3497,8 @@ machine_state_t* SBC_DP_I_IX   (machine_state_t* machine, uint16_t arg_one, uint
         set_flags_nz_8(machine, state->A.low);
     } else {
         value_to_subtract = read_word_new(machine, effective_address);
-        uint32_t borrow = is_flag_set(machine, CARRY) ? 0 : 1;
-        uint32_t result = (uint32_t)state->A.full - (uint32_t)value_to_subtract - borrow;
+        uint32_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
+        uint32_t result = (uint32_t)state->A.full - (uint32_t)value_to_subtract + carry - 1;
         state->A.full = result & 0xFFFF;
         // Carry is set if no borrow occurred
         if (result & 0x80000000) clear_flag(machine, CARRY);  // Borrow occurred
@@ -3515,8 +3515,8 @@ machine_state_t* SBC_SR        (machine_state_t* machine, uint16_t arg_one, uint
     uint16_t value_to_subtract;
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         value_to_subtract = read_byte_dp_sr(machine, address);
-        uint16_t borrow = is_flag_set(machine, CARRY) ? 0 : 1;
-        uint16_t result = (uint16_t)state->A.low - (uint16_t)value_to_subtract - borrow;
+        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
+        uint16_t result = (uint16_t)state->A.low - (uint16_t)value_to_subtract + carry - 1;
         state->A.low = result & 0xFF;
         // Carry is set if no borrow occurred
         if (result & 0x8000) clear_flag(machine, CARRY);  // Borrow occurred
@@ -3524,8 +3524,8 @@ machine_state_t* SBC_SR        (machine_state_t* machine, uint16_t arg_one, uint
         set_flags_nz_8(machine, state->A.low);
     } else {
         value_to_subtract = read_word_dp_sr(machine, address);
-        uint32_t borrow = is_flag_set(machine, CARRY) ? 0 : 1;
-        uint32_t result = (uint32_t)state->A.full - (uint32_t)value_to_subtract - borrow;
+        uint32_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
+        uint32_t result = (uint32_t)state->A.full - (uint32_t)value_to_subtract + carry - 1;
         state->A.full = result & 0xFFFF;
         // Carry is set if no borrow occurred
         if (result & 0x80000000) clear_flag(machine, CARRY);  // Borrow occurred
@@ -3559,14 +3559,14 @@ machine_state_t* SBC_DP        (machine_state_t* machine, uint16_t arg_one, uint
     uint16_t value_to_subtract;
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         value_to_subtract = read_byte_dp_sr(machine, address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
-        uint16_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) - carry;
+        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
+        uint16_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) + carry - 1;
         if (result & 0x8000) clear_flag(machine, CARRY); else set_flag(machine, CARRY); set_flags_nz_8(machine, state->A.low);
         state->A.low = result & 0xFF;
     } else {
         value_to_subtract = read_word_dp_sr(machine, address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
-        uint32_t result = (state->A.full & 0xFFFF) - (value_to_subtract & 0xFFFF) - carry;
+        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
+        uint32_t result = (state->A.full & 0xFFFF) - (value_to_subtract & 0xFFFF) + carry - 1;
         if (result & 0x80000000) clear_flag(machine, CARRY); else set_flag(machine, CARRY); set_flags_nz_16(machine, state->A.full);
         state->A.full = result & 0xFFFF;
     }
@@ -3598,8 +3598,8 @@ machine_state_t* SBC_DP_IL     (machine_state_t* machine, uint16_t arg_one, uint
     uint16_t value_to_subtract;
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         value_to_subtract = read_byte_long(machine, address);
-        uint16_t borrow = is_flag_set(machine, CARRY) ? 0 : 1;
-        uint16_t result = (uint16_t)state->A.low - (uint16_t)value_to_subtract - borrow;
+        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
+        uint16_t result = (uint16_t)state->A.low - (uint16_t)value_to_subtract + carry - 1;
         state->A.low = result & 0xFF;
         // Carry is set if no borrow occurred
         if (result & 0x8000) clear_flag(machine, CARRY);  // Borrow occurred
@@ -3607,8 +3607,8 @@ machine_state_t* SBC_DP_IL     (machine_state_t* machine, uint16_t arg_one, uint
         set_flags_nz_8(machine, state->A.low);
     } else {
         value_to_subtract = read_word_long(machine, address);
-        uint32_t borrow = is_flag_set(machine, CARRY) ? 0 : 1;
-        uint32_t result = (uint32_t)state->A.full - (uint32_t)value_to_subtract - borrow;
+        uint32_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
+        uint32_t result = (uint32_t)state->A.full - (uint32_t)value_to_subtract + carry - 1;
         state->A.full = result & 0xFFFF;
         // Carry is set if no borrow occurred
         if (result & 0x80000000) clear_flag(machine, CARRY);  // Borrow occurred
@@ -3637,8 +3637,8 @@ machine_state_t* SBC_IMM       (machine_state_t* machine, uint16_t arg_one, uint
     uint16_t value_to_subtract;
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         value_to_subtract = (uint8_t)(arg_one & 0xFF);
-        uint16_t borrow = is_flag_set(machine, CARRY) ? 0 : 1;
-        uint16_t result = (uint16_t)state->A.low - (uint16_t)value_to_subtract - borrow;
+        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
+        uint16_t result = (uint16_t)state->A.low - (uint16_t)value_to_subtract + carry - 1;
         state->A.low = result & 0xFF;
         // Carry is set if no borrow occurred (result >= 0)
         if (result & 0x8000) clear_flag(machine, CARRY);  // Borrow occurred
@@ -3646,8 +3646,8 @@ machine_state_t* SBC_IMM       (machine_state_t* machine, uint16_t arg_one, uint
         set_flags_nz_8(machine, state->A.low);
     } else {
         value_to_subtract = arg_one & 0xFFFF;
-        uint32_t borrow = is_flag_set(machine, CARRY) ? 0 : 1;
-        uint32_t result = (uint32_t)state->A.full - (uint32_t)value_to_subtract - borrow;
+        uint32_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
+        uint32_t result = (uint32_t)state->A.full - (uint32_t)value_to_subtract + carry - 1;
         state->A.full = result & 0xFFFF;
         // Carry is set if no borrow occurred
         if (result & 0x80000000) clear_flag(machine, CARRY);  // Borrow occurred
@@ -3704,14 +3704,14 @@ machine_state_t* SBC_ABS       (machine_state_t* machine, uint16_t arg_one, uint
     uint16_t value_to_subtract;
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         value_to_subtract = read_byte_new(machine, address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
-        uint16_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) - carry;
+        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
+        uint16_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) + carry - 1;
         if (result & 0x8000) clear_flag(machine, CARRY); else set_flag(machine, CARRY); set_flags_nz_8(machine, state->A.low);
         state->A.low = result & 0xFF;
     } else {
         value_to_subtract = read_word_new(machine, address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
-        uint32_t result = (state->A.full & 0xFFFF) - (value_to_subtract & 0xFFFF) - carry;
+        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
+        uint32_t result = (state->A.full & 0xFFFF) - (value_to_subtract & 0xFFFF) + carry - 1;
         if (result & 0x80000000) clear_flag(machine, CARRY); else set_flag(machine, CARRY); set_flags_nz_16(machine, state->A.full);
         state->A.full = result & 0xFFFF;
     }
@@ -3743,14 +3743,14 @@ machine_state_t* SBC_ABL       (machine_state_t* machine, uint16_t arg_one, uint
     uint16_t value_to_subtract;
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         value_to_subtract = read_byte_long(machine, addr);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
-        uint16_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) - carry;
+        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
+        uint16_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) + carry - 1;
         if (result & 0x8000) clear_flag(machine, CARRY); else set_flag(machine, CARRY); set_flags_nz_8(machine, state->A.low);
         state->A.low = result & 0xFF;
     } else {
         value_to_subtract = read_word_long(machine, addr);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
-        uint32_t result = (state->A.full & 0xFFFF) - (value_to_subtract & 0xFFFF) - carry;
+        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
+        uint32_t result = (state->A.full & 0xFFFF) - (value_to_subtract & 0xFFFF) + carry - 1;
         if (result & 0x80000000) clear_flag(machine, CARRY); else set_flag(machine, CARRY); set_flags_nz_16(machine, state->A.full);
         state->A.full = result & 0xFFFF;
     }
@@ -3774,14 +3774,14 @@ machine_state_t* SBC_DP_I_IY   (machine_state_t* machine, uint16_t arg_one, uint
     uint16_t value_to_subtract;
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         value_to_subtract = read_byte_new(machine, address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
-        uint16_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) - carry;
+        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
+        uint16_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) + carry - 1;
         if (result & 0x8000) clear_flag(machine, CARRY); else set_flag(machine, CARRY); set_flags_nz_8(machine, state->A.low);
         state->A.low = result & 0xFF;
     } else {
         value_to_subtract = read_word_new(machine, address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
-        uint32_t result = (state->A.full & 0xFFFF) - (value_to_subtract & 0xFFFF) - carry;
+        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
+        uint32_t result = (state->A.full & 0xFFFF) - (value_to_subtract & 0xFFFF) + carry - 1;
         if (result & 0x80000000) clear_flag(machine, CARRY); else set_flag(machine, CARRY); set_flags_nz_16(machine, state->A.full);
         state->A.full = result & 0xFFFF;
     }
@@ -3795,14 +3795,14 @@ machine_state_t* SBC_DP_I      (machine_state_t* machine, uint16_t arg_one, uint
     uint16_t value_to_subtract;
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         value_to_subtract = read_byte_new(machine, address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
-        uint16_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) - carry;
+        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
+        uint16_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) + carry - 1;
         if (result & 0x8000) clear_flag(machine, CARRY); else set_flag(machine, CARRY); set_flags_nz_8(machine, state->A.low);
         state->A.low = result & 0xFF;
     } else {
         value_to_subtract = read_word_new(machine, address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
-        uint32_t result = (state->A.full & 0xFFFF) - (value_to_subtract & 0xFFFF) - carry;
+        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
+        uint32_t result = (state->A.full & 0xFFFF) - (value_to_subtract & 0xFFFF) + carry - 1;
         if (result & 0x80000000) clear_flag(machine, CARRY); else set_flag(machine, CARRY); set_flags_nz_16(machine, state->A.full);
         state->A.full = result & 0xFFFF;
     }
@@ -3816,14 +3816,14 @@ machine_state_t* SBC_SR_I_IY   (machine_state_t* machine, uint16_t arg_one, uint
     uint16_t value_to_subtract;
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         value_to_subtract = read_byte_new(machine, address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
-        uint16_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) - carry;
+        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
+        uint16_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) + carry - 1;
         if (result & 0x8000) clear_flag(machine, CARRY); else set_flag(machine, CARRY); set_flags_nz_8(machine, state->A.low);
         state->A.low = result & 0xFF;
     } else {
         value_to_subtract = read_word_new(machine, address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
-        uint32_t result = (state->A.full & 0xFFFF) - (value_to_subtract & 0xFFFF) - carry;
+        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
+        uint32_t result = (state->A.full & 0xFFFF) - (value_to_subtract & 0xFFFF) + carry - 1;
         if (result & 0x80000000) clear_flag(machine, CARRY); else set_flag(machine, CARRY); set_flags_nz_16(machine, state->A.full);
         state->A.full = result & 0xFFFF;
     }
@@ -3844,14 +3844,14 @@ machine_state_t* SBC_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint
     uint16_t value_to_subtract;
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         value_to_subtract = read_byte_new(machine, address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
-        uint16_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) - carry;
+        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
+        uint16_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) + carry - 1;
         if (result & 0x8000) clear_flag(machine, CARRY); else set_flag(machine, CARRY); set_flags_nz_8(machine, state->A.low);
         state->A.low = result & 0xFF;
     } else {
         value_to_subtract = read_word_new(machine, address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
-        uint32_t result = (state->A.full & 0xFFFF) - (value_to_subtract & 0xFFFF) - carry;
+        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
+        uint32_t result = (state->A.full & 0xFFFF) - (value_to_subtract & 0xFFFF) + carry - 1;
         if (result & 0x80000000) clear_flag(machine, CARRY); else set_flag(machine, CARRY); set_flags_nz_16(machine, state->A.full);
         state->A.full = result & 0xFFFF;
     }
@@ -3883,14 +3883,14 @@ machine_state_t* SBC_DP_IL_IY  (machine_state_t* machine, uint16_t arg_one, uint
     uint16_t value_to_subtract;
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         value_to_subtract = read_byte_long(machine, addr);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
-        uint16_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) - carry;
+        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
+        uint16_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) + carry - 1;
         if (result & 0x8000) clear_flag(machine, CARRY); else set_flag(machine, CARRY); set_flags_nz_8(machine, state->A.low);
         state->A.low = result & 0xFF;
     } else {
         value_to_subtract = read_word_long(machine, addr);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
-        uint32_t result = (state->A.full & 0xFFFF) - (value_to_subtract & 0xFFFF) - carry;
+        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
+        uint32_t result = (state->A.full & 0xFFFF) - (value_to_subtract & 0xFFFF) + carry - 1;
         if (result & 0x80000000) clear_flag(machine, CARRY); else set_flag(machine, CARRY); set_flags_nz_16(machine, state->A.full);
         state->A.full = result & 0xFFFF;
     }
@@ -3910,14 +3910,14 @@ machine_state_t* SBC_ABS_IY    (machine_state_t* machine, uint16_t arg_one, uint
     uint16_t value_to_subtract;
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         value_to_subtract = read_byte_new(machine, effective_address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
-        uint16_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) - carry;
+        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
+        uint16_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) + carry - 1;
         if (result & 0x8000) clear_flag(machine, CARRY); else set_flag(machine, CARRY); set_flags_nz_8(machine, state->A.low);
         state->A.low = result & 0xFF;
     } else {
         value_to_subtract = read_word_new(machine, effective_address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
-        uint32_t result = (state->A.full & 0xFFFF) - (value_to_subtract & 0xFFFF) - carry;
+        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
+        uint32_t result = (state->A.full & 0xFFFF) - (value_to_subtract & 0xFFFF) + carry - 1;
         if (result & 0x80000000) clear_flag(machine, CARRY); else set_flag(machine, CARRY); set_flags_nz_16(machine, state->A.full);
         state->A.full = result & 0xFFFF;
     }
@@ -3960,14 +3960,14 @@ machine_state_t* SBC_ABS_IX    (machine_state_t* machine, uint16_t arg_one, uint
     uint16_t value_to_subtract;
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         value_to_subtract = read_byte_new(machine, effective_address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
-        uint16_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) - carry;
+        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
+        uint16_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) + carry - 1;
         if (result & 0x8000) clear_flag(machine, CARRY); else set_flag(machine, CARRY); set_flags_nz_8(machine, state->A.low);
         state->A.low = result & 0xFF;
     } else {
         value_to_subtract = read_word_new(machine, effective_address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
-        uint32_t result = (state->A.full & 0xFFFF) - (value_to_subtract & 0xFFFF) - carry;
+        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
+        uint32_t result = (state->A.full & 0xFFFF) - (value_to_subtract & 0xFFFF) + carry - 1;
         if (result & 0x80000000) clear_flag(machine, CARRY); else set_flag(machine, CARRY); set_flags_nz_16(machine, state->A.full);
         state->A.full = result & 0xFFFF;
     }
@@ -4000,14 +4000,14 @@ machine_state_t* SBC_ABL_IX    (machine_state_t* machine, uint16_t arg_one, uint
     uint16_t value_to_subtract;
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
         value_to_subtract = read_byte_new(machine, effective_address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
-        uint16_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) - carry;
+        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
+        uint16_t result = (state->A.low & 0xFF) - (value_to_subtract & 0xFF) + carry - 1;
         if (result & 0x8000) clear_flag(machine, CARRY); else set_flag(machine, CARRY); set_flags_nz_8(machine, state->A.low);
         state->A.low = result & 0xFF;
     } else {
         value_to_subtract = read_word_new(machine, effective_address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 0 : 1;
-        uint32_t result = (state->A.full & 0xFFFF) - (value_to_subtract & 0xFFFF) - carry;
+        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
+        uint32_t result = (state->A.full & 0xFFFF) - (value_to_subtract & 0xFFFF) + carry - 1;
         if (result & 0x80000000) clear_flag(machine, CARRY); else set_flag(machine, CARRY); set_flags_nz_16(machine, state->A.full);
         state->A.full = result & 0xFFFF;
     }
