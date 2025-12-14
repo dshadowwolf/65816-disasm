@@ -256,14 +256,21 @@ static int32_t load_srec_file(const char *filename, machine_state_t *machine) {
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
-        fprintf(stderr, "Usage: %s [-p ADDR] <srec_file>\n", argv[0]);
-        fprintf(stderr, "  -p ADDR  Set custom program counter start address (hex)\n");
+        fprintf(stderr, "Usage: %s [options] <srec_file>\n", argv[0]);
+        fprintf(stderr, "Options:\n");
+        fprintf(stderr, "  -p ADDR    Set custom program counter start address (hex)\n");
+        fprintf(stderr, "  -m         Set M flag (8-bit accumulator mode)\n");
+        fprintf(stderr, "  -x         Set X flag (8-bit index register mode)\n");
+        fprintf(stderr, "  -e         Enable emulation mode (6502 compatibility)\n");
         return 1;
     }
 
     const char *filename = NULL;
     uint16_t custom_pc = 0;
     bool use_custom_pc = false;
+    bool set_m_flag = false;
+    bool set_x_flag = false;
+    bool set_emulation = false;
 
     // Parse command line arguments
     for (int i = 1; i < argc; i++) {
@@ -280,6 +287,12 @@ int main(int argc, char *argv[]) {
                 return 1;
             }
             use_custom_pc = true;
+        } else if (strcmp(argv[i], "-m") == 0) {
+            set_m_flag = true;
+        } else if (strcmp(argv[i], "-x") == 0) {
+            set_x_flag = true;
+        } else if (strcmp(argv[i], "-e") == 0) {
+            set_emulation = true;
         } else {
             filename = argv[i];
         }
@@ -290,8 +303,24 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    // Initialize machine
-    machine_state_t *machine = create_machine();
+    // Initialize machine with custom state if flags specified
+    machine_state_t *machine;
+    if (set_m_flag || set_x_flag || set_emulation) {
+        initial_state_t init = {0};
+        init.SP = 0x01FF;
+        init.emulation_mode = set_emulation;
+        if (set_m_flag) init.P |= M_FLAG;
+        if (set_x_flag) init.P |= X_FLAG;
+        machine = create_machine_with_state(&init);
+        printf("Processor state: %s mode, M=%d (accumulator %s), X=%d (index %s)\n",
+               set_emulation ? "Emulation" : "Native",
+               set_m_flag ? 1 : 0,
+               set_m_flag ? "8-bit" : "16-bit",
+               set_x_flag ? 1 : 0,
+               set_x_flag ? "8-bit" : "16-bit");
+    } else {
+        machine = create_machine();
+    }
     if (!machine) {
         fprintf(stderr, "Error: Failed to initialize machine\n");
         return 1;
@@ -356,9 +385,9 @@ int main(int argc, char *argv[]) {
         step_result_t *result = machine_step(machine);
         
         // Print disassembly and state
-        printf("%5d. %04X: %-16s A=$%04X X=$%04X Y=$%04X SP=$%04X P=%c%c%c%c%c%c%c%c %s",
+        printf("%5d. %06X: %-16s A=$%04X X=$%04X Y=$%04X SP=$%04X P=%c%c%c%c%c%c%c%c %s",
                step_count,
-               (uint16_t)result->address,
+               result->address,
                result->mnemonic,
                machine->processor.A.full,
                machine->processor.X,

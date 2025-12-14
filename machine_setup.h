@@ -9,7 +9,7 @@
 typedef struct step_result_s {
     uint32_t address;          // Address where instruction was executed (PBR:PC)
     uint8_t opcode;            // Opcode byte
-    uint16_t operand;          // Operand bytes (if any)
+    uint32_t operand;          // Operand bytes (if any, up to 24-bit for long addresses)
     uint8_t instruction_size;  // Total size of instruction (1-4 bytes)
     char mnemonic[8];          // Instruction mnemonic (e.g., "LDA")
     char operand_str[32];      // Formatted operand string
@@ -17,11 +17,29 @@ typedef struct step_result_s {
     bool waiting;              // True if processor waiting (WAI instruction)
 } step_result_t;
 
+// Structure for user-defined initial processor state
+typedef struct initial_state_s {
+    uint16_t A;                // Accumulator (full 16-bit value)
+    uint16_t X;                // Index Register X
+    uint16_t Y;                // Index Register Y
+    uint16_t PC;               // Program Counter
+    uint16_t SP;               // Stack Pointer
+    uint16_t DP;               // Direct Page Register
+    uint8_t P;                 // Processor Status Register
+    uint8_t PBR;               // Program Bank Register
+    uint8_t DBR;               // Data Bank Register
+    bool emulation_mode;       // Emulation Mode Flag
+    bool interrupts_disabled;  // Interrupt Disable Flag
+} initial_state_t;
+
 void initialize_processor(processor_state_t *state);
+void initialize_processor_with_state(processor_state_t *state, const initial_state_t *init);
 void reset_processor(processor_state_t *state);
 void initialize_machine(machine_state_t *machine);
+void initialize_machine_with_state(machine_state_t *machine, const initial_state_t *init);
 void reset_machine(machine_state_t *machine);
 machine_state_t* create_machine();
+machine_state_t* create_machine_with_state(const initial_state_t *init);
 void destroy_machine(machine_state_t *machine);
 void machine_clock_devices(machine_state_t *machine);
 void cleanup_machine_with_via(machine_state_t *machine);

@@ -284,6 +284,9 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "  -i           Force Intel HEX format\n");
         fprintf(stderr, "  -s           Force simple address:bytes format\n");
         fprintf(stderr, "  -p ADDR      Set starting PC address (hex, e.g., -p 2000)\n");
+        fprintf(stderr, "  -m           Set M flag (8-bit accumulator mode)\n");
+        fprintf(stderr, "  -x           Set X flag (8-bit index register mode)\n");
+        fprintf(stderr, "  -e           Enable emulation mode (6502 compatibility)\n");
         fprintf(stderr, "  (no option)  Auto-detect format, use reset vector\n");
         fprintf(stderr, "\nSupported formats:\n");
         fprintf(stderr, "  Intel HEX: :LLAAAATTDDDDCC (standard format with checksums)\n");
@@ -294,6 +297,9 @@ int main(int argc, char *argv[]) {
     const char *filename = NULL;
     enum { AUTO, INTEL_HEX, SIMPLE_HEX } format = AUTO;
     int custom_pc = -1;
+    bool set_m_flag = false;
+    bool set_x_flag = false;
+    bool set_emulation = false;
 
     // Parse arguments
     for (int i = 1; i < argc; i++) {
@@ -311,6 +317,12 @@ int main(int argc, char *argv[]) {
                 fprintf(stderr, "Error: Invalid address '%s'\n", argv[i]);
                 return 1;
             }
+        } else if (strcmp(argv[i], "-m") == 0) {
+            set_m_flag = true;
+        } else if (strcmp(argv[i], "-x") == 0) {
+            set_x_flag = true;
+        } else if (strcmp(argv[i], "-e") == 0) {
+            set_emulation = true;
         } else if (argv[i][0] == '-') {
             fprintf(stderr, "Error: Unknown option '%s'\n", argv[i]);
             return 1;
@@ -324,13 +336,28 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    // Initialize machine
-    machine_state_t *machine = create_machine();
+    // Initialize machine with custom state if flags specified
+    machine_state_t *machine;
+    if (set_m_flag || set_x_flag || set_emulation) {
+        initial_state_t init = {0};
+        init.SP = 0x01FF;
+        init.emulation_mode = set_emulation;
+        if (set_m_flag) init.P |= M_FLAG;
+        if (set_x_flag) init.P |= X_FLAG;
+        machine = create_machine_with_state(&init);
+        printf("Processor state: %s mode, M=%d (accumulator %s), X=%d (index %s)\n",
+               set_emulation ? "Emulation" : "Native",
+               set_m_flag ? 1 : 0,
+               set_m_flag ? "8-bit" : "16-bit",
+               set_x_flag ? 1 : 0,
+               set_x_flag ? "8-bit" : "16-bit");
+    } else {
+        machine = create_machine();
+    }
     if (!machine) {
         fprintf(stderr, "Error: Failed to initialize machine\n");
         return 1;
     }
-    initialize_machine(machine);
 
     // Load the hex file
     int bytes_loaded;
@@ -398,7 +425,7 @@ int main(int argc, char *argv[]) {
         }
 
         // Print disassembly and state
-        printf("%5d. %04X: %-16s A=$%04X X=$%04X Y=$%04X SP=$%04X P=%c%c%c%c%c%c%c%c %s",
+        printf("%5d. %06X: %-16s A=$%04X X=$%04X Y=$%04X SP=$%04X P=%c%c%c%c%c%c%c%c %s",
                step_count,
                result->address,
                result->mnemonic,
