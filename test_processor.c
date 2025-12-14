@@ -4300,6 +4300,299 @@ TEST(CMP_IMM_immediate) {
 }
 
 // ============================================================================
+// ADC/SBC Flag Tests
+// ============================================================================
+
+TEST(ADC_flags_negative_8bit) {
+    machine_state_t *machine = setup_machine();
+    set_flag(machine, M_FLAG);
+    clear_flag(machine, CARRY);
+    machine->processor.A.low = 0x50;
+    
+    ADC_IMM(machine, 0x50, 0);  // 0x50 + 0x50 = 0xA0 (negative in signed)
+    
+    ASSERT_EQ(machine->processor.A.low, 0xA0, "Result should be 0xA0");
+    ASSERT(check_flag(machine, NEGATIVE), "Negative flag should be set");
+    ASSERT(!check_flag(machine, ZERO), "Zero flag should not be set");
+    ASSERT(!check_flag(machine, CARRY), "Carry flag should not be set");
+    ASSERT(check_flag(machine, OVERFLOW), "Overflow flag should be set (0x50+0x50 overflows in signed)");
+    
+    destroy_machine(machine);
+}
+
+TEST(ADC_flags_zero_8bit) {
+    machine_state_t *machine = setup_machine();
+    set_flag(machine, M_FLAG);
+    set_flag(machine, CARRY);  // Carry in = 1
+    machine->processor.A.low = 0xFF;
+    
+    ADC_IMM(machine, 0x00, 0);  // 0xFF + 0x00 + 1 = 0x00 with carry
+    
+    ASSERT_EQ(machine->processor.A.low, 0x00, "Result should be 0x00");
+    ASSERT(check_flag(machine, ZERO), "Zero flag should be set");
+    ASSERT(!check_flag(machine, NEGATIVE), "Negative flag should not be set");
+    ASSERT(check_flag(machine, CARRY), "Carry flag should be set");
+    ASSERT(!check_flag(machine, OVERFLOW), "Overflow flag should not be set");
+    
+    destroy_machine(machine);
+}
+
+TEST(ADC_flags_carry_8bit) {
+    machine_state_t *machine = setup_machine();
+    set_flag(machine, M_FLAG);
+    clear_flag(machine, CARRY);
+    machine->processor.A.low = 0xFF;
+    
+    ADC_IMM(machine, 0x01, 0);  // 0xFF + 0x01 = 0x00 with carry
+    
+    ASSERT_EQ(machine->processor.A.low, 0x00, "Result should wrap to 0x00");
+    ASSERT(check_flag(machine, CARRY), "Carry flag should be set");
+    ASSERT(check_flag(machine, ZERO), "Zero flag should be set");
+    ASSERT(!check_flag(machine, NEGATIVE), "Negative flag should not be set");
+    
+    destroy_machine(machine);
+}
+
+TEST(ADC_flags_overflow_positive_8bit) {
+    machine_state_t *machine = setup_machine();
+    set_flag(machine, M_FLAG);
+    clear_flag(machine, CARRY);
+    machine->processor.A.low = 0x7F;  // Max positive signed
+    
+    ADC_IMM(machine, 0x01, 0);  // 0x7F + 0x01 = 0x80 (overflow: pos + pos = neg)
+    
+    ASSERT_EQ(machine->processor.A.low, 0x80, "Result should be 0x80");
+    ASSERT(check_flag(machine, OVERFLOW), "Overflow flag should be set");
+    ASSERT(check_flag(machine, NEGATIVE), "Negative flag should be set");
+    ASSERT(!check_flag(machine, CARRY), "Carry flag should not be set");
+    
+    destroy_machine(machine);
+}
+
+TEST(ADC_flags_no_overflow_8bit) {
+    machine_state_t *machine = setup_machine();
+    set_flag(machine, M_FLAG);
+    clear_flag(machine, CARRY);
+    machine->processor.A.low = 0x10;  // Positive
+    
+    ADC_IMM(machine, 0x20, 0);  // 0x10 + 0x20 = 0x30 (pos + pos = pos: no overflow)
+    
+    ASSERT_EQ(machine->processor.A.low, 0x30, "Result should be 0x30");
+    ASSERT(!check_flag(machine, OVERFLOW), "Overflow flag should not be set");
+    ASSERT(!check_flag(machine, CARRY), "Carry flag should not be set");
+    ASSERT(!check_flag(machine, ZERO), "Zero flag should not be set");
+    ASSERT(!check_flag(machine, NEGATIVE), "Negative flag should not be set");
+    
+    destroy_machine(machine);
+}
+
+TEST(ADC_flags_overflow_both_negative_8bit) {
+    machine_state_t *machine = setup_machine();
+    set_flag(machine, M_FLAG);
+    clear_flag(machine, CARRY);
+    machine->processor.A.low = 0x80;  // Negative (-128)
+    
+    ADC_IMM(machine, 0x80, 0);  // 0x80 + 0x80 = 0x00 (neg + neg = pos: OVERFLOW!)
+    
+    ASSERT_EQ(machine->processor.A.low, 0x00, "Result should be 0x00");
+    ASSERT(check_flag(machine, OVERFLOW), "Overflow flag should be set (neg + neg = pos)");
+    ASSERT(check_flag(machine, CARRY), "Carry flag should be set");
+    ASSERT(check_flag(machine, ZERO), "Zero flag should be set");
+    
+    destroy_machine(machine);
+}
+
+TEST(ADC_flags_overflow_negative_8bit) {
+    machine_state_t *machine = setup_machine();
+    set_flag(machine, M_FLAG);
+    clear_flag(machine, CARRY);
+    machine->processor.A.low = 0x80;  // -128 in signed
+    
+    ADC_IMM(machine, 0xFF, 0);  // 0x80 + 0xFF = 0x7F (overflow: neg + neg = pos)
+    
+    ASSERT_EQ(machine->processor.A.low, 0x7F, "Result should be 0x7F");
+    ASSERT(check_flag(machine, OVERFLOW), "Overflow flag should be set");
+    ASSERT(!check_flag(machine, NEGATIVE), "Negative flag should not be set");
+    ASSERT(check_flag(machine, CARRY), "Carry flag should be set");
+    
+    destroy_machine(machine);
+}
+
+TEST(ADC_flags_16bit_negative) {
+    machine_state_t *machine = setup_machine();
+    clear_flag(machine, M_FLAG);  // 16-bit mode
+    clear_flag(machine, CARRY);
+    machine->processor.A.full = 0x4000;
+    
+    ADC_IMM(machine, 0x4000, 0);  // 0x4000 + 0x4000 = 0x8000 (negative in 16-bit signed)
+    
+    ASSERT_EQ(machine->processor.A.full, 0x8000, "Result should be 0x8000");
+    ASSERT(check_flag(machine, NEGATIVE), "Negative flag should be set");
+    ASSERT(check_flag(machine, OVERFLOW), "Overflow flag should be set");
+    ASSERT(!check_flag(machine, CARRY), "Carry flag should not be set");
+    
+    destroy_machine(machine);
+}
+
+TEST(ADC_flags_16bit_carry) {
+    machine_state_t *machine = setup_machine();
+    clear_flag(machine, M_FLAG);  // 16-bit mode
+    clear_flag(machine, CARRY);
+    machine->processor.A.full = 0xFFFF;
+    
+    ADC_IMM(machine, 0x0001, 0);  // 0xFFFF + 0x0001 = 0x0000 with carry
+    
+    ASSERT_EQ(machine->processor.A.full, 0x0000, "Result should wrap to 0x0000");
+    ASSERT(check_flag(machine, CARRY), "Carry flag should be set");
+    ASSERT(check_flag(machine, ZERO), "Zero flag should be set");
+    ASSERT(!check_flag(machine, NEGATIVE), "Negative flag should not be set");
+    
+    destroy_machine(machine);
+}
+
+TEST(SBC_flags_negative_8bit) {
+    machine_state_t *machine = setup_machine();
+    set_flag(machine, M_FLAG);
+    set_flag(machine, CARRY);  // No borrow
+    machine->processor.A.low = 0x20;
+    
+    SBC_IMM(machine, 0x30, 0);  // 0x20 - 0x30 = 0xF0 (negative)
+    
+    ASSERT_EQ(machine->processor.A.low, 0xF0, "Result should be 0xF0");
+    ASSERT(check_flag(machine, NEGATIVE), "Negative flag should be set");
+    ASSERT(!check_flag(machine, ZERO), "Zero flag should not be set");
+    ASSERT(!check_flag(machine, CARRY), "Carry flag should not be set (borrow occurred)");
+    
+    destroy_machine(machine);
+}
+
+TEST(SBC_flags_zero_8bit) {
+    machine_state_t *machine = setup_machine();
+    set_flag(machine, M_FLAG);
+    set_flag(machine, CARRY);  // No borrow
+    machine->processor.A.low = 0x50;
+    
+    SBC_IMM(machine, 0x50, 0);  // 0x50 - 0x50 = 0x00
+    
+    ASSERT_EQ(machine->processor.A.low, 0x00, "Result should be 0x00");
+    ASSERT(check_flag(machine, ZERO), "Zero flag should be set");
+    ASSERT(!check_flag(machine, NEGATIVE), "Negative flag should not be set");
+    ASSERT(check_flag(machine, CARRY), "Carry flag should be set (no borrow)");
+    
+    destroy_machine(machine);
+}
+
+TEST(SBC_flags_carry_8bit) {
+    machine_state_t *machine = setup_machine();
+    set_flag(machine, M_FLAG);
+    set_flag(machine, CARRY);  // No borrow
+    machine->processor.A.low = 0x50;
+    
+    SBC_IMM(machine, 0x30, 0);  // 0x50 - 0x30 = 0x20
+    
+    ASSERT_EQ(machine->processor.A.low, 0x20, "Result should be 0x20");
+    ASSERT(check_flag(machine, CARRY), "Carry flag should be set (no borrow)");
+    ASSERT(!check_flag(machine, ZERO), "Zero flag should not be set");
+    ASSERT(!check_flag(machine, NEGATIVE), "Negative flag should not be set");
+    
+    destroy_machine(machine);
+}
+
+TEST(SBC_flags_overflow_8bit) {
+    machine_state_t *machine = setup_machine();
+    set_flag(machine, M_FLAG);
+    set_flag(machine, CARRY);  // No borrow
+    machine->processor.A.low = 0x50;  // Positive
+    
+    SBC_IMM(machine, 0x90, 0);  // 0x50 - 0x90 = 0xC0 (overflow: pos - neg = neg)
+    
+    ASSERT_EQ(machine->processor.A.low, 0xC0, "Result should be 0xC0");
+    ASSERT(check_flag(machine, OVERFLOW), "Overflow flag should be set");
+    ASSERT(check_flag(machine, NEGATIVE), "Negative flag should be set");
+    ASSERT(!check_flag(machine, CARRY), "Carry flag should not be set (borrow occurred)");
+    
+    destroy_machine(machine);
+}
+
+TEST(SBC_flags_overflow_positive_result_8bit) {
+    machine_state_t *machine = setup_machine();
+    set_flag(machine, M_FLAG);
+    set_flag(machine, CARRY);  // No borrow
+    machine->processor.A.low = 0x80;  // -128 in signed
+    
+    SBC_IMM(machine, 0x01, 0);  // 0x80 - 0x01 = 0x7F (overflow: neg - pos = pos)
+    
+    ASSERT_EQ(machine->processor.A.low, 0x7F, "Result should be 0x7F");
+    ASSERT(check_flag(machine, OVERFLOW), "Overflow flag should be set");
+    ASSERT(!check_flag(machine, NEGATIVE), "Negative flag should not be set");
+    ASSERT(check_flag(machine, CARRY), "Carry flag should be set (no borrow)");
+    
+    destroy_machine(machine);
+}
+
+TEST(SBC_flags_no_overflow_8bit) {
+    machine_state_t *machine = setup_machine();
+    set_flag(machine, M_FLAG);
+    set_flag(machine, CARRY);  // No borrow
+    machine->processor.A.low = 0x50;  // Positive
+    
+    SBC_IMM(machine, 0x30, 0);  // 0x50 - 0x30 = 0x20 (pos - pos = pos, no overflow)
+    
+    ASSERT_EQ(machine->processor.A.low, 0x20, "Result should be 0x20");
+    ASSERT(!check_flag(machine, OVERFLOW), "Overflow flag should not be set");
+    ASSERT(!check_flag(machine, NEGATIVE), "Negative flag should not be set");
+    ASSERT(check_flag(machine, CARRY), "Carry flag should be set");
+    
+    destroy_machine(machine);
+}
+
+TEST(SBC_flags_with_borrow_8bit) {
+    machine_state_t *machine = setup_machine();
+    set_flag(machine, M_FLAG);
+    clear_flag(machine, CARRY);  // Borrow = 1
+    machine->processor.A.low = 0x50;
+    
+    SBC_IMM(machine, 0x30, 0);  // 0x50 - 0x30 - 1 = 0x1F
+    
+    ASSERT_EQ(machine->processor.A.low, 0x1F, "Result should be 0x1F (with borrow)");
+    ASSERT(check_flag(machine, CARRY), "Carry flag should be set (no borrow out)");
+    ASSERT(!check_flag(machine, NEGATIVE), "Negative flag should not be set");
+    
+    destroy_machine(machine);
+}
+
+TEST(SBC_flags_16bit_negative) {
+    machine_state_t *machine = setup_machine();
+    clear_flag(machine, M_FLAG);  // 16-bit mode
+    set_flag(machine, CARRY);  // No borrow
+    machine->processor.A.full = 0x2000;
+    
+    SBC_IMM(machine, 0x4000, 0);  // 0x2000 - 0x4000 = 0xE000 (negative in 16-bit)
+    
+    ASSERT_EQ(machine->processor.A.full, 0xE000, "Result should be 0xE000");
+    ASSERT(check_flag(machine, NEGATIVE), "Negative flag should be set");
+    ASSERT(!check_flag(machine, CARRY), "Carry flag should not be set (borrow occurred)");
+    
+    destroy_machine(machine);
+}
+
+TEST(SBC_flags_16bit_overflow) {
+    machine_state_t *machine = setup_machine();
+    clear_flag(machine, M_FLAG);  // 16-bit mode
+    set_flag(machine, CARRY);  // No borrow
+    machine->processor.A.full = 0x8000;  // Negative in 16-bit signed
+    
+    SBC_IMM(machine, 0x0001, 0);  // 0x8000 - 0x0001 = 0x7FFF (overflow: neg - pos = pos)
+    
+    ASSERT_EQ(machine->processor.A.full, 0x7FFF, "Result should be 0x7FFF");
+    ASSERT(check_flag(machine, OVERFLOW), "Overflow flag should be set");
+    ASSERT(!check_flag(machine, NEGATIVE), "Negative flag should not be set");
+    ASSERT(check_flag(machine, CARRY), "Carry flag should be set");
+    
+    destroy_machine(machine);
+}
+
+// ============================================================================
 // STZ Tests
 // ============================================================================
 
@@ -4853,6 +5146,27 @@ int main(int argc, char **argv) {
     run_test_ORA_IMM_immediate();
     run_test_EOR_IMM_immediate();
     run_test_CMP_IMM_immediate();
+    
+    // ADC/SBC flag tests
+    printf(COLOR_BLUE "--- ADC/SBC Flag Tests ---\n" COLOR_RESET);
+    run_test_ADC_flags_negative_8bit();
+    run_test_ADC_flags_zero_8bit();
+    run_test_ADC_flags_carry_8bit();
+    run_test_ADC_flags_overflow_positive_8bit();
+    run_test_ADC_flags_no_overflow_8bit();
+    run_test_ADC_flags_overflow_both_negative_8bit();
+    run_test_ADC_flags_overflow_negative_8bit();
+    run_test_ADC_flags_16bit_negative();
+    run_test_ADC_flags_16bit_carry();
+    run_test_SBC_flags_negative_8bit();
+    run_test_SBC_flags_zero_8bit();
+    run_test_SBC_flags_carry_8bit();
+    run_test_SBC_flags_overflow_8bit();
+    run_test_SBC_flags_overflow_positive_result_8bit();
+    run_test_SBC_flags_no_overflow_8bit();
+    run_test_SBC_flags_with_borrow_8bit();
+    run_test_SBC_flags_16bit_negative();
+    run_test_SBC_flags_16bit_overflow();
     
     // Additional STZ tests
     printf(COLOR_BLUE "--- Additional STZ Tests ---\n" COLOR_RESET);

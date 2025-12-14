@@ -1780,6 +1780,8 @@ machine_state_t* ADC_IMM       (machine_state_t* machine, uint16_t arg_one, uint
         state->A.low = (uint8_t)(result & 0xFF);
         // Set Carry flag
         check_and_set_carry_8(machine, result);
+        // Set Negative and Zero flags
+        set_flags_nz_8(machine, state->A.low);
         // Set Overflow flag: V = (A^result) & (M^result) & 0x80
         if (((a_val ^ result) & (m_val ^ result) & 0x80)) {
             set_flag(machine, OVERFLOW);
@@ -1794,6 +1796,8 @@ machine_state_t* ADC_IMM       (machine_state_t* machine, uint16_t arg_one, uint
         state->A.full = (uint16_t)(result & 0xFFFF);
         // Set Carry flag
         check_and_set_carry_16(machine, result);
+        // Set Negative and Zero flags
+        set_flags_nz_16(machine, state->A.full);
         // Set Overflow flag: V = (A^result) & (M^result) & 0x8000
         if (((a_val ^ result) & (m_val ^ result) & 0x8000)) {
             set_flag(machine, OVERFLOW);
