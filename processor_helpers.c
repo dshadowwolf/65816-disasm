@@ -1,6 +1,7 @@
 #include "processor_helpers.h"
 #include "machine.h"
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -391,3 +392,233 @@ long_address_t get_absolute_address_long_indirect_new(machine_state_t *machine, 
     return get_long_address(machine, addr, bank_b);
 }
 
+// BCD (Binary Coded Decimal) arithmetic helpers
+// In BCD mode, each nibble represents a decimal digit 0-9
+
+uint16_t bcd_add_8(uint8_t a, uint8_t b, uint16_t carry_in, bool *carry_out) {
+    // Add two BCD bytes with carry
+    uint16_t low_nibble = (a & 0x0F) + (b & 0x0F) + carry_in;
+    uint16_t high_nibble = (a >> 4) + (b >> 4);
+    
+    // Adjust low nibble if > 9
+    if (low_nibble > 9) {
+        low_nibble += 6;
+        high_nibble++;
+    }
+    
+    // Adjust high nibble if > 9
+    if (high_nibble > 9) {
+        high_nibble += 6;
+        *carry_out = true;
+    } else {
+        *carry_out = false;
+    }
+    
+    return ((high_nibble & 0x0F) << 4) | (low_nibble & 0x0F);
+}
+
+uint32_t bcd_add_16(uint16_t a, uint16_t b, uint32_t carry_in, bool *carry_out) {
+    // Add two BCD words (4 nibbles each) with carry
+    uint32_t result = 0;
+    uint32_t carry = carry_in;
+    
+    // Process each nibble from right to left
+    for (int i = 0; i < 4; i++) {
+        uint32_t nibble_a = (a >> (i * 4)) & 0x0F;
+        uint32_t nibble_b = (b >> (i * 4)) & 0x0F;
+        uint32_t sum = nibble_a + nibble_b + carry;
+        
+        if (sum > 9) {
+            sum += 6;
+            carry = 1;
+        } else {
+            carry = 0;
+        }
+        
+        result |= ((sum & 0x0F) << (i * 4));
+    }
+    
+    *carry_out = (carry != 0);
+    return result;
+}
+
+uint16_t bcd_subtract_8(uint8_t a, uint8_t b, uint16_t carry_in, bool *carry_out) {
+    // Subtract two BCD bytes with borrow (carry_in = 1 means no borrow)
+    uint16_t low_nibble = (a & 0x0F) - (b & 0x0F) - (carry_in ? 0 : 1);
+    uint16_t high_nibble = (a >> 4) - (b >> 4);
+    
+    // Adjust low nibble if negative
+    if (low_nibble & 0x8000) {  // Borrow occurred
+        low_nibble -= 6;
+        high_nibble--;
+    }
+    
+    // Adjust high nibble if negative
+    if (high_nibble & 0x8000) {  // Borrow occurred
+        high_nibble -= 6;
+        *carry_out = false;  // Borrow out
+    } else {
+        *carry_out = true;  // No borrow
+    }
+    
+    return ((high_nibble & 0x0F) << 4) | (low_nibble & 0x0F);
+}
+
+uint32_t bcd_subtract_16(uint16_t a, uint16_t b, uint32_t carry_in, bool *carry_out) {
+    // Subtract two BCD words with borrow (carry_in = 1 means no borrow)
+    uint32_t result = 0;
+    uint32_t borrow = (carry_in ? 0 : 1);
+    
+    // Process each nibble from right to left
+    for (int i = 0; i < 4; i++) {
+        int32_t nibble_a = (a >> (i * 4)) & 0x0F;
+        int32_t nibble_b = (b >> (i * 4)) & 0x0F;
+        int32_t diff = nibble_a - nibble_b - borrow;
+        
+        if (diff < 0) {
+            diff += 10;
+            borrow = 1;
+        } else {
+            borrow = 0;
+        }
+        
+        result |= ((diff & 0x0F) << (i * 4));
+    }
+    
+    *carry_out = (borrow == 0);  // Carry out is set if no final borrow
+    return result;
+}
+
+// High-level ADC/SBC helpers that handle both binary and decimal modes
+
+void adc_8bit(machine_state_t *machine, uint8_t value) {
+    processor_state_t *state = &machine->processor;
+    uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
+    
+    if (is_flag_set(machine, DECIMAL_MODE)) {
+        // Decimal (BCD) mode
+        uint8_t a_val = state->A.low;
+        bool carry_out = false;
+        uint16_t result = bcd_add_8(a_val, value, carry, &carry_out);
+        state->A.low = (uint8_t)(result & 0xFF);
+        
+        if (carry_out) set_flag(machine, CARRY);
+        else clear_flag(machine, CARRY);
+        set_flags_nz_8(machine, state->A.low);
+        // Overflow flag is undefined in decimal mode
+    } else {
+        // Binary mode
+        uint8_t a_val = state->A.low;
+        uint16_t result = (uint16_t)a_val + (uint16_t)value + carry;
+        state->A.low = (uint8_t)(result & 0xFF);
+        
+        check_and_set_carry_8(machine, result);
+        set_flags_nz_8(machine, state->A.low);
+        // Set Overflow flag: V = (A^result) & (M^result) & 0x80
+        if (((a_val ^ result) & (value ^ result) & 0x80)) {
+            set_flag(machine, OVERFLOW);
+        } else {
+            clear_flag(machine, OVERFLOW);
+        }
+    }
+}
+
+void adc_16bit(machine_state_t *machine, uint16_t value) {
+    processor_state_t *state = &machine->processor;
+    uint32_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
+    
+    if (is_flag_set(machine, DECIMAL_MODE)) {
+        // Decimal (BCD) mode
+        uint16_t a_val = state->A.full;
+        bool carry_out = false;
+        uint32_t result = bcd_add_16(a_val, value, carry, &carry_out);
+        state->A.full = (uint16_t)(result & 0xFFFF);
+        
+        if (carry_out) set_flag(machine, CARRY);
+        else clear_flag(machine, CARRY);
+        set_flags_nz_16(machine, state->A.full);
+        // Overflow flag is undefined in decimal mode
+    } else {
+        // Binary mode
+        uint16_t a_val = state->A.full;
+        uint32_t result = (uint32_t)a_val + (uint32_t)value + carry;
+        state->A.full = (uint16_t)(result & 0xFFFF);
+        
+        check_and_set_carry_16(machine, result);
+        set_flags_nz_16(machine, state->A.full);
+        // Set Overflow flag: V = (A^result) & (M^result) & 0x8000
+        if (((a_val ^ result) & (value ^ result) & 0x8000)) {
+            set_flag(machine, OVERFLOW);
+        } else {
+            clear_flag(machine, OVERFLOW);
+        }
+    }
+}
+
+void sbc_8bit(machine_state_t *machine, uint8_t value) {
+    processor_state_t *state = &machine->processor;
+    uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
+    
+    if (is_flag_set(machine, DECIMAL_MODE)) {
+        // Decimal (BCD) mode
+        uint8_t a_val = state->A.low;
+        bool carry_out = false;
+        uint16_t result = bcd_subtract_8(a_val, value, carry, &carry_out);
+        state->A.low = (uint8_t)(result & 0xFF);
+        
+        if (carry_out) set_flag(machine, CARRY);
+        else clear_flag(machine, CARRY);
+        set_flags_nz_8(machine, state->A.low);
+        // Overflow flag is undefined in decimal mode
+    } else {
+        // Binary mode
+        uint8_t a_val = state->A.low;
+        uint16_t result = (uint16_t)a_val - (uint16_t)value + carry - 1;
+        state->A.low = result & 0xFF;
+        
+        if (result & 0x8000) clear_flag(machine, CARRY);  // Borrow occurred
+        else set_flag(machine, CARRY);  // No borrow
+        
+        set_flags_nz_8(machine, state->A.low);
+        // Set Overflow flag: V = (A^M) & (A^result) & 0x80
+        if (((a_val ^ value) & (a_val ^ result) & 0x80)) {
+            set_flag(machine, OVERFLOW);
+        } else {
+            clear_flag(machine, OVERFLOW);
+        }
+    }
+}
+
+void sbc_16bit(machine_state_t *machine, uint16_t value) {
+    processor_state_t *state = &machine->processor;
+    uint32_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
+    
+    if (is_flag_set(machine, DECIMAL_MODE)) {
+        // Decimal (BCD) mode
+        uint16_t a_val = state->A.full;
+        bool carry_out = false;
+        uint32_t result = bcd_subtract_16(a_val, value, carry, &carry_out);
+        state->A.full = (uint16_t)(result & 0xFFFF);
+        
+        if (carry_out) set_flag(machine, CARRY);
+        else clear_flag(machine, CARRY);
+        set_flags_nz_16(machine, state->A.full);
+        // Overflow flag is undefined in decimal mode
+    } else {
+        // Binary mode
+        uint16_t a_val = state->A.full;
+        uint32_t result = (uint32_t)a_val - (uint32_t)value + carry - 1;
+        state->A.full = result & 0xFFFF;
+        
+        if (result & 0x80000000) clear_flag(machine, CARRY);  // Borrow occurred
+        else set_flag(machine, CARRY);  // No borrow
+        
+        set_flags_nz_16(machine, state->A.full);
+        // Set Overflow flag: V = (A^M) & (A^result) & 0x8000
+        if (((a_val ^ value) & (a_val ^ result) & 0x8000)) {
+            set_flag(machine, OVERFLOW);
+        } else {
+            clear_flag(machine, OVERFLOW);
+        }
+    }
+}

@@ -4593,6 +4593,194 @@ TEST(SBC_flags_16bit_overflow) {
 }
 
 // ============================================================================
+// ADC/SBC Decimal Mode (BCD) Tests
+// ============================================================================
+
+TEST(ADC_decimal_8bit_simple) {
+    machine_state_t *machine = setup_machine();
+    set_flag(machine, M_FLAG);  // 8-bit mode
+    set_flag(machine, DECIMAL_MODE);  // BCD mode
+    clear_flag(machine, CARRY);
+    machine->processor.A.low = 0x25;  // 25 in BCD
+    
+    ADC_IMM(machine, 0x34, 0);  // 25 + 34 = 59 in BCD
+    
+    ASSERT_EQ(machine->processor.A.low, 0x59, "Result should be 0x59 (59 in BCD)");
+    ASSERT(!check_flag(machine, CARRY), "Carry should not be set");
+    
+    destroy_machine(machine);
+}
+
+TEST(ADC_decimal_8bit_with_carry_in) {
+    machine_state_t *machine = setup_machine();
+    set_flag(machine, M_FLAG);
+    set_flag(machine, DECIMAL_MODE);
+    set_flag(machine, CARRY);  // Carry in = 1
+    machine->processor.A.low = 0x58;  // 58 in BCD
+    
+    ADC_IMM(machine, 0x46, 0);  // 58 + 46 + 1 = 105 in BCD
+    
+    ASSERT_EQ(machine->processor.A.low, 0x05, "Result should be 0x05 (05 in BCD, carry out)");
+    ASSERT(check_flag(machine, CARRY), "Carry should be set");
+    
+    destroy_machine(machine);
+}
+
+TEST(ADC_decimal_8bit_with_carry_out) {
+    machine_state_t *machine = setup_machine();
+    set_flag(machine, M_FLAG);
+    set_flag(machine, DECIMAL_MODE);
+    clear_flag(machine, CARRY);
+    machine->processor.A.low = 0x99;  // 99 in BCD
+    
+    ADC_IMM(machine, 0x01, 0);  // 99 + 01 = 100 in BCD
+    
+    ASSERT_EQ(machine->processor.A.low, 0x00, "Result should be 0x00 (00 in BCD, carry out)");
+    ASSERT(check_flag(machine, CARRY), "Carry should be set");
+    ASSERT(check_flag(machine, ZERO), "Zero flag should be set");
+    
+    destroy_machine(machine);
+}
+
+TEST(ADC_decimal_8bit_nibble_adjust) {
+    machine_state_t *machine = setup_machine();
+    set_flag(machine, M_FLAG);
+    set_flag(machine, DECIMAL_MODE);
+    clear_flag(machine, CARRY);
+    machine->processor.A.low = 0x09;  // 09 in BCD
+    
+    ADC_IMM(machine, 0x08, 0);  // 09 + 08 = 17 in BCD
+    
+    ASSERT_EQ(machine->processor.A.low, 0x17, "Result should be 0x17 (17 in BCD)");
+    ASSERT(!check_flag(machine, CARRY), "Carry should not be set");
+    
+    destroy_machine(machine);
+}
+
+TEST(ADC_decimal_16bit_simple) {
+    machine_state_t *machine = setup_machine();
+    clear_flag(machine, M_FLAG);  // 16-bit mode
+    set_flag(machine, DECIMAL_MODE);
+    clear_flag(machine, CARRY);
+    machine->processor.A.full = 0x1234;  // 1234 in BCD
+    
+    ADC_IMM(machine, 0x5678, 0);  // 1234 + 5678 = 6912 in BCD
+    
+    ASSERT_EQ(machine->processor.A.full, 0x6912, "Result should be 0x6912 (6912 in BCD)");
+    ASSERT(!check_flag(machine, CARRY), "Carry should not be set");
+    
+    destroy_machine(machine);
+}
+
+TEST(ADC_decimal_16bit_with_carry) {
+    machine_state_t *machine = setup_machine();
+    clear_flag(machine, M_FLAG);
+    set_flag(machine, DECIMAL_MODE);
+    clear_flag(machine, CARRY);
+    machine->processor.A.full = 0x9999;  // 9999 in BCD
+    
+    ADC_IMM(machine, 0x0001, 0);  // 9999 + 0001 = 10000 in BCD
+    
+    ASSERT_EQ(machine->processor.A.full, 0x0000, "Result should be 0x0000 (carry out)");
+    ASSERT(check_flag(machine, CARRY), "Carry should be set");
+    ASSERT(check_flag(machine, ZERO), "Zero flag should be set");
+    
+    destroy_machine(machine);
+}
+
+TEST(SBC_decimal_8bit_simple) {
+    machine_state_t *machine = setup_machine();
+    set_flag(machine, M_FLAG);
+    set_flag(machine, DECIMAL_MODE);
+    set_flag(machine, CARRY);  // No borrow
+    machine->processor.A.low = 0x59;  // 59 in BCD
+    
+    SBC_IMM(machine, 0x25, 0);  // 59 - 25 = 34 in BCD
+    
+    ASSERT_EQ(machine->processor.A.low, 0x34, "Result should be 0x34 (34 in BCD)");
+    ASSERT(check_flag(machine, CARRY), "Carry should be set (no borrow)");
+    
+    destroy_machine(machine);
+}
+
+TEST(SBC_decimal_8bit_with_borrow) {
+    machine_state_t *machine = setup_machine();
+    set_flag(machine, M_FLAG);
+    set_flag(machine, DECIMAL_MODE);
+    set_flag(machine, CARRY);  // No borrow in
+    machine->processor.A.low = 0x25;  // 25 in BCD
+    
+    SBC_IMM(machine, 0x34, 0);  // 25 - 34 = -09, wraps to 91 in BCD
+    
+    ASSERT_EQ(machine->processor.A.low, 0x91, "Result should be 0x91 (91 in BCD, borrow out)");
+    ASSERT(!check_flag(machine, CARRY), "Carry should not be set (borrow occurred)");
+    
+    destroy_machine(machine);
+}
+
+TEST(SBC_decimal_8bit_zero_result) {
+    machine_state_t *machine = setup_machine();
+    set_flag(machine, M_FLAG);
+    set_flag(machine, DECIMAL_MODE);
+    set_flag(machine, CARRY);
+    machine->processor.A.low = 0x50;  // 50 in BCD
+    
+    SBC_IMM(machine, 0x50, 0);  // 50 - 50 = 00 in BCD
+    
+    ASSERT_EQ(machine->processor.A.low, 0x00, "Result should be 0x00 (00 in BCD)");
+    ASSERT(check_flag(machine, CARRY), "Carry should be set (no borrow)");
+    ASSERT(check_flag(machine, ZERO), "Zero flag should be set");
+    
+    destroy_machine(machine);
+}
+
+TEST(SBC_decimal_8bit_with_borrow_in) {
+    machine_state_t *machine = setup_machine();
+    set_flag(machine, M_FLAG);
+    set_flag(machine, DECIMAL_MODE);
+    clear_flag(machine, CARRY);  // Borrow in = 1
+    machine->processor.A.low = 0x50;  // 50 in BCD
+    
+    SBC_IMM(machine, 0x25, 0);  // 50 - 25 - 1 = 24 in BCD
+    
+    ASSERT_EQ(machine->processor.A.low, 0x24, "Result should be 0x24 (24 in BCD)");
+    ASSERT(check_flag(machine, CARRY), "Carry should be set");
+    
+    destroy_machine(machine);
+}
+
+TEST(SBC_decimal_16bit_simple) {
+    machine_state_t *machine = setup_machine();
+    clear_flag(machine, M_FLAG);
+    set_flag(machine, DECIMAL_MODE);
+    set_flag(machine, CARRY);
+    machine->processor.A.full = 0x6912;  // 6912 in BCD
+    
+    SBC_IMM(machine, 0x1234, 0);  // 6912 - 1234 = 5678 in BCD
+    
+    ASSERT_EQ(machine->processor.A.full, 0x5678, "Result should be 0x5678 (5678 in BCD)");
+    ASSERT(check_flag(machine, CARRY), "Carry should be set (no borrow)");
+    
+    destroy_machine(machine);
+}
+
+TEST(SBC_decimal_16bit_with_borrow) {
+    machine_state_t *machine = setup_machine();
+    clear_flag(machine, M_FLAG);
+    set_flag(machine, DECIMAL_MODE);
+    set_flag(machine, CARRY);
+    machine->processor.A.full = 0x1234;  // 1234 in BCD
+    
+    SBC_IMM(machine, 0x5678, 0);  // 1234 - 5678, wraps with borrow
+    
+    // 1234 - 5678 = -4444, which wraps to 5556 in 4-digit BCD
+    ASSERT_EQ(machine->processor.A.full, 0x5556, "Result should be 0x5556 (wrapped BCD)");
+    ASSERT(!check_flag(machine, CARRY), "Carry should not be set (borrow occurred)");
+    
+    destroy_machine(machine);
+}
+
+// ============================================================================
 // STZ Tests
 // ============================================================================
 
@@ -5167,6 +5355,21 @@ int main(int argc, char **argv) {
     run_test_SBC_flags_with_borrow_8bit();
     run_test_SBC_flags_16bit_negative();
     run_test_SBC_flags_16bit_overflow();
+    
+    // ADC/SBC decimal mode tests
+    printf(COLOR_BLUE "--- ADC/SBC Decimal Mode (BCD) Tests ---\n" COLOR_RESET);
+    run_test_ADC_decimal_8bit_simple();
+    run_test_ADC_decimal_8bit_with_carry_in();
+    run_test_ADC_decimal_8bit_with_carry_out();
+    run_test_ADC_decimal_8bit_nibble_adjust();
+    run_test_ADC_decimal_16bit_simple();
+    run_test_ADC_decimal_16bit_with_carry();
+    run_test_SBC_decimal_8bit_simple();
+    run_test_SBC_decimal_8bit_with_borrow();
+    run_test_SBC_decimal_8bit_zero_result();
+    run_test_SBC_decimal_8bit_with_borrow_in();
+    run_test_SBC_decimal_16bit_simple();
+    run_test_SBC_decimal_16bit_with_borrow();
     
     // Additional STZ tests
     printf(COLOR_BLUE "--- Additional STZ Tests ---\n" COLOR_RESET);

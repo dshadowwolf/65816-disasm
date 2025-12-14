@@ -1578,35 +1578,14 @@ machine_state_t* RTS           (machine_state_t* machine, uint16_t arg_one, uint
 
 machine_state_t* ADC_DP_I_IX   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry (Direct Page Indirect Indexed with X)
-    processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_dp_address_indirect_indexed_x_new(machine, arg_one);
-    uint8_t value = read_byte_new(machine, effective_address);
-    uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
     if (is_flag_set(machine, M_FLAG)) {
-        uint8_t a_val = state->A.low;
-        uint8_t m_val = value;
-        uint16_t result = (uint16_t)a_val + (uint16_t)m_val + carry;
-        state->A.low = (uint8_t)(result & 0xFF);
-        set_flags_nzc_8(machine, state->A.low);
-        // Set overflow flag
-        if (((a_val ^ result) & (m_val ^ result) & 0x80))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        uint8_t value = read_byte_new(machine, effective_address);
+        adc_8bit(machine, value);
     } else {
         uint16_t value16 = read_word_new(machine, effective_address);
-        uint16_t a_val = state->A.full;
-        uint16_t m_val = value16;
-        uint32_t result = (uint32_t)a_val + (uint32_t)m_val + carry;
-        state->A.full = (uint16_t)(result & 0xFFFF);
-        set_flags_nzc_16(machine, state->A.full);
-        // Set overflow flag
-        if (((a_val ^ result) & (m_val ^ result) & 0x8000))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        adc_16bit(machine, value16);
     }
-    
     return machine;
 }
 
@@ -1666,35 +1645,14 @@ machine_state_t* STZ           (machine_state_t* machine, uint16_t arg_one, uint
 
 machine_state_t* ADC_DP        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry (Direct Page)
-    processor_state_t *state = &machine->processor;
     uint16_t dp_address = get_dp_address(machine, arg_one);
-    uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
     if (is_flag_set(machine, M_FLAG)) {
         uint8_t value = read_byte_new(machine, dp_address);
-        uint8_t a_val = state->A.low;
-        uint8_t m_val = value;
-        uint16_t result = (uint16_t)a_val + (uint16_t)m_val + carry;
-        state->A.low = (uint8_t)(result & 0xFF);
-        set_flags_nzc_8(machine, state->A.low);
-        // Set overflow flag
-        if (((a_val ^ result) & (m_val ^ result) & 0x80))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        adc_8bit(machine, value);
     } else {
         uint16_t value16 = read_word_new(machine, dp_address);
-        uint16_t a_val = state->A.full;
-        uint16_t m_val = value16;
-        uint32_t result = (uint32_t)a_val + (uint32_t)m_val + carry;
-        state->A.full = (uint16_t)(result & 0xFFFF);
-        set_flags_nzc_16(machine, state->A.full);
-        // Set overflow flag
-        if (((a_val ^ result) & (m_val ^ result) & 0x8000))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        adc_16bit(machine, value16);
     }
-    
     return machine;
 }
 
@@ -1723,35 +1681,14 @@ machine_state_t* ROR_DP        (machine_state_t* machine, uint16_t arg_one, uint
 
 machine_state_t* ADC_DP_IL     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry (Direct Page Indirect Long)
-    processor_state_t *state = &machine->processor;
     long_address_t address = get_dp_address_indirect_long_new(machine, arg_one);
-    uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
     if (is_flag_set(machine, M_FLAG)) {
         uint8_t value = read_byte_long(machine, address);
-        uint8_t a_val = state->A.low;
-        uint8_t m_val = value;
-        uint16_t result = (uint16_t)a_val + (uint16_t)m_val + carry;
-        state->A.low = (uint8_t)(result & 0xFF);
-        set_flags_nzc_8(machine, state->A.low);
-        // Set overflow flag
-        if (((a_val ^ result) & (m_val ^ result) & 0x80))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        adc_8bit(machine, value);
     } else {
-        uint16_t value16 = read_word_new(machine, address.address);
-        uint16_t a_val = state->A.full;
-        uint16_t m_val = value16;
-        uint32_t result = (uint32_t)a_val + (uint32_t)m_val + carry;
-        state->A.full = (uint16_t)(result & 0xFFFF);
-        set_flags_nzc_16(machine, state->A.full);
-        // Set overflow flag
-        if (((a_val ^ result) & (m_val ^ result) & 0x8000))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        uint16_t value16 = read_word_long(machine, address);
+        adc_16bit(machine, value16);
     }
-    
     return machine;
 }
 
@@ -1770,40 +1707,12 @@ machine_state_t* PLA           (machine_state_t* machine, uint16_t arg_one, uint
 
 machine_state_t* ADC_IMM       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry (Immediate)
-    processor_state_t *state = &machine->processor;
-    uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
     if (is_flag_set(machine, M_FLAG)) {
         // 8-bit mode
-        uint8_t a_val = state->A.low;
-        uint8_t m_val = arg_one & 0xFF;
-        uint16_t result = (uint16_t)a_val + (uint16_t)m_val + carry;
-        state->A.low = (uint8_t)(result & 0xFF);
-        // Set Carry flag
-        check_and_set_carry_8(machine, result);
-        // Set Negative and Zero flags
-        set_flags_nz_8(machine, state->A.low);
-        // Set Overflow flag: V = (A^result) & (M^result) & 0x80
-        if (((a_val ^ result) & (m_val ^ result) & 0x80)) {
-            set_flag(machine, OVERFLOW);
-        } else {
-            clear_flag(machine, OVERFLOW);
-        }
+        adc_8bit(machine, arg_one & 0xFF);
     } else {
         // 16-bit mode
-        uint16_t a_val = state->A.full;
-        uint16_t m_val = arg_one & 0xFFFF;
-        uint32_t result = (uint32_t)a_val + (uint32_t)m_val + carry;
-        state->A.full = (uint16_t)(result & 0xFFFF);
-        // Set Carry flag
-        check_and_set_carry_16(machine, result);
-        // Set Negative and Zero flags
-        set_flags_nz_16(machine, state->A.full);
-        // Set Overflow flag: V = (A^result) & (M^result) & 0x8000
-        if (((a_val ^ result) & (m_val ^ result) & 0x8000)) {
-            set_flag(machine, OVERFLOW);
-        } else {
-            clear_flag(machine, OVERFLOW);
-        }
+        adc_16bit(machine, arg_one & 0xFFFF);
     }
     return machine;
 }
@@ -1856,35 +1765,13 @@ machine_state_t* JMP_ABS_I     (machine_state_t* machine, uint16_t arg_one, uint
 
 machine_state_t* ADC_ABS       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry (Absolute)
-    processor_state_t *state = &machine->processor;
     uint16_t base_address = get_absolute_address(machine, arg_one);
-    uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
     if (is_flag_set(machine, M_FLAG)) {
-        // 8-bit mode
         uint8_t value = read_byte_new(machine, base_address);
-        uint8_t a_val = state->A.low;
-        uint8_t m_val = value;
-        uint16_t result = (uint16_t)a_val + (uint16_t)m_val + carry;
-        state->A.low = (uint8_t)(result & 0xFF);
-        set_flags_nzc_8(machine, state->A.low);
-        // Set overflow flag
-        if (((a_val ^ result) & (m_val ^ result) & 0x80))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        adc_8bit(machine, value);
     } else {
-        // 16-bit mode
         uint16_t value = read_word_new(machine, base_address);
-        uint16_t a_val = state->A.full;
-        uint16_t m_val = value;
-        uint32_t result = (uint32_t)a_val + (uint32_t)m_val + carry;
-        state->A.full = (uint16_t)(result & 0xFFFF);
-        set_flags_nzc_16(machine, state->A.full);
-        // Set overflow flag
-        if (((a_val ^ result) & (m_val ^ result) & 0x8000))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        adc_16bit(machine, value);
     }
     return machine;
 }
@@ -1916,35 +1803,13 @@ machine_state_t* ROR_ABS       (machine_state_t* machine, uint16_t arg_one, uint
 // TODO: Fix for Long Addressing
 machine_state_t* ADC_ABL       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry (Absolute Long)
-    processor_state_t *state = &machine->processor;
     long_address_t addr = get_absolute_address_long(machine, arg_one, arg_two);
-    uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
     if (is_flag_set(machine, M_FLAG)) {
-        // 8-bit mode
         uint8_t value = read_byte_long(machine, addr);
-        uint8_t a_val = state->A.low;
-        uint8_t m_val = value;
-        uint16_t result = (uint16_t)a_val + (uint16_t)m_val + carry;
-        state->A.low = (uint8_t)(result & 0xFF);
-        set_flags_nzc_8(machine, state->A.low);
-        // Set overflow flag
-        if (((a_val ^ result) & (m_val ^ result) & 0x80))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        adc_8bit(machine, value);
     } else {
-        // 16-bit mode
         uint16_t value16 = read_word_long(machine, addr);
-        uint16_t a_val = state->A.full;
-        uint16_t m_val = value16;
-        uint32_t result = (uint32_t)a_val + (uint32_t)m_val + carry;
-        state->A.full = (uint16_t)(result & 0xFFFF);
-        set_flags_nzc_16(machine, state->A.full);
-        // Set overflow flag
-        if (((a_val ^ result) & (m_val ^ result) & 0x8000))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        adc_16bit(machine, value16);
     }
     return machine;
 }
@@ -1961,105 +1826,39 @@ machine_state_t* BVS_PCR       (machine_state_t* machine, uint16_t arg_one, uint
 
 machine_state_t* ADC_DP_I_IY   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry (Direct Page Indirect Indexed with Y)
-    processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_dp_address_indirect_indexed_y_new(machine, arg_one);
-    uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
     if (is_flag_set(machine, M_FLAG)) {
-        // 8-bit mode
         uint8_t value = read_byte_new(machine, effective_address);
-        uint8_t a_val = state->A.low;
-        uint8_t m_val = value;
-        uint16_t result = (uint16_t)a_val + (uint16_t)m_val + carry;
-        state->A.low = (uint8_t)(result & 0xFF);
-        set_flags_nzc_8(machine, state->A.low);
-        // Set overflow flag
-        if (((a_val ^ result) & (m_val ^ result) & 0x80))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        adc_8bit(machine, value);
     } else {
-        // 16-bit mode
         uint16_t value16 = read_word_new(machine, effective_address);
-        uint16_t a_val = state->A.full;
-        uint16_t m_val = value16;
-        uint32_t result = (uint32_t)a_val + (uint32_t)m_val + carry;
-        state->A.full = (uint16_t)(result & 0xFFFF);
-        set_flags_nzc_16(machine, state->A.full);
-        // Set overflow flag
-        if (((a_val ^ result) & (m_val ^ result) & 0x8000))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        adc_16bit(machine, value16);
     }
     return machine;
 }
 
 machine_state_t* ADC_DP_I      (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry (Direct Page Indirect)
-    processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_dp_address_indirect_new(machine, arg_one);
-    uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
     if (is_flag_set(machine, M_FLAG)) {
-        // 8-bit mode
         uint8_t value = read_byte_new(machine, effective_address);
-        uint8_t a_val = state->A.low;
-        uint8_t m_val = value;
-        uint16_t result = (uint16_t)a_val + (uint16_t)m_val + carry;
-        state->A.low = (uint8_t)(result & 0xFF);
-        set_flags_nzc_8(machine, state->A.low);
-        // Set overflow flag
-        if (((a_val ^ result) & (m_val ^ result) & 0x80))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        adc_8bit(machine, value);
     } else {
-        // 16-bit mode
         uint16_t value16 = read_word_new(machine, effective_address);
-        uint16_t a_val = state->A.full;
-        uint16_t m_val = value16;
-        uint32_t result = (uint32_t)a_val + (uint32_t)m_val + carry;
-        state->A.full = (uint16_t)(result & 0xFFFF);
-        set_flags_nzc_16(machine, state->A.full);
-        // Set overflow flag
-        if (((a_val ^ result) & (m_val ^ result) & 0x8000))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        adc_16bit(machine, value16);
     }
     return machine;
 }
 
 machine_state_t* ADC_SR_I_IY   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry (Stack Relative Indirect Indexed with Y)
-    processor_state_t *state = &machine->processor;
     uint16_t address = get_stack_relative_address_indirect_indexed_y_new(machine, arg_one);
-    uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
     if (is_flag_set(machine, M_FLAG)) {
-        // 8-bit mode
         uint8_t value = read_byte_new(machine, address);
-        uint8_t a_val = state->A.low;
-        uint8_t m_val = value;
-        uint16_t result = (uint16_t)a_val + (uint16_t)m_val + carry;
-        state->A.low = (uint8_t)(result & 0xFF);
-        set_flags_nzc_8(machine, state->A.low);
-        // Set overflow flag
-        if (((a_val ^ result) & (m_val ^ result) & 0x80))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        adc_8bit(machine, value);
     } else {
-        // 16-bit mode
         uint16_t value16 = read_word_new(machine, address);
-        uint16_t a_val = state->A.full;
-        uint16_t m_val = value16;
-        uint32_t result = (uint32_t)a_val + (uint32_t)m_val + carry;
-        state->A.full = (uint16_t)(result & 0xFFFF);
-        set_flags_nzc_16(machine, state->A.full);
-        // Set overflow flag
-        if (((a_val ^ result) & (m_val ^ result) & 0x8000))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        adc_16bit(machine, value16);
     }
     return machine;
 }
@@ -2074,35 +1873,13 @@ machine_state_t* STZ_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint
 
 machine_state_t* ADC_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry (Direct Page Indexed with X)
-    processor_state_t *state = &machine->processor;
     uint16_t address = get_dp_address_indexed_x(machine, arg_one);
-    uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
     if (is_flag_set(machine, M_FLAG)) {
-        // 8-bit mode
         uint8_t value = read_byte_new(machine, address);
-        uint8_t a_val = state->A.low;
-        uint8_t m_val = value;
-        uint16_t result = (uint16_t)a_val + (uint16_t)m_val + carry;
-        state->A.low = (uint8_t)(result & 0xFF);
-        set_flags_nzc_8(machine, state->A.low);
-        // Set overflow flag
-        if (((a_val ^ result) & (m_val ^ result) & 0x80))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        adc_8bit(machine, value);
     } else {
-        // 16-bit mode
         uint16_t value = read_word_new(machine, address);
-        uint16_t a_val = state->A.full;
-        uint16_t m_val = value;
-        uint32_t result = (uint32_t)a_val + (uint32_t)m_val + carry;
-        state->A.full = (uint16_t)(result & 0xFFFF);
-        set_flags_nzc_16(machine, state->A.full);
-        // Set overflow flag
-        if (((a_val ^ result) & (m_val ^ result) & 0x8000))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        adc_16bit(machine, value);
     }
     return machine;
 }
@@ -2133,38 +1910,13 @@ machine_state_t* ROR_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint
 
 machine_state_t* ADC_DP_IL_IY  (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry (Direct Page Indirect Long Indexed by Y)
-    processor_state_t *state = &machine->processor;
-    uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
-
-    // get address somehow
     long_address_t address = get_dp_address_indirect_long_indexed_y_new(machine, arg_one);
-
     if (is_flag_set(machine, M_FLAG)) {
-        // 8-bit mode
         uint8_t value = read_byte_long(machine, address);
-        uint8_t a_val = state->A.low;
-        uint8_t m_val = value;
-        uint16_t result = (uint16_t)a_val + (uint16_t)m_val + carry;
-        state->A.low = (uint8_t)(result & 0xFF);
-        set_flags_nzc_8(machine, state->A.low);
-        // Set overflow flag
-        if (((a_val ^ result) & (m_val ^ result) & 0x80))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        adc_8bit(machine, value);
     } else {
-        // 16-bit mode
         uint16_t value16 = read_word_long(machine, address);
-        uint16_t a_val = state->A.full;
-        uint16_t m_val = value16;
-        uint32_t result = (uint32_t)a_val + (uint32_t)m_val + carry;
-        state->A.full = (uint16_t)(result & 0xFFFF);
-        set_flags_nzc_16(machine, state->A.full);
-        // Set overflow flag
-        if (((a_val ^ result) & (m_val ^ result) & 0x8000))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        adc_16bit(machine, value16);
     }
     return machine;
 }
@@ -2179,33 +1931,13 @@ machine_state_t* SEI           (machine_state_t* machine, uint16_t arg_one, uint
 
 machine_state_t* ADC_ABS_IY    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry, Absolute Indexed by Y
-    processor_state_t *state = &machine->processor;
     uint16_t effective_addr = get_absolute_address_indexed_y(machine, arg_one);
-    uint8_t carry_in = is_flag_set(machine, CARRY) ? 1 : 0;
     if (is_flag_set(machine, M_FLAG)) {
         uint16_t value = read_byte_new(machine, effective_addr);
-        uint8_t a_val = state->A.low;
-        uint8_t m_val = value;
-        uint16_t result = a_val + m_val + carry_in;
-        state->A.low = (uint8_t)(result & 0xFF);
-        set_flags_nzc_8(machine, state->A.low);
-        // Set overflow flag
-        if (((a_val ^ result) & (m_val ^ result) & 0x80))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        adc_8bit(machine, value);
     } else {
         uint16_t value16 = read_word_new(machine, effective_addr);
-        uint16_t a_val = state->A.full;
-        uint16_t m_val = value16;
-        uint32_t result = a_val + m_val + carry_in;
-        state->A.full = (uint16_t)(result & 0xFFFF);
-        set_flags_nzc_16(machine, state->A.full);
-        // Set overflow flag
-        if (((a_val ^ result) & (m_val ^ result) & 0x8000))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        adc_16bit(machine, value16);
     }
     return machine;
 }
@@ -2243,34 +1975,13 @@ machine_state_t* JMP_ABS_I_IX  (machine_state_t* machine, uint16_t arg_one, uint
 
 machine_state_t* ADC_ABS_IX    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry, Absolute Indexed by X
-    processor_state_t *state = &machine->processor;
     uint16_t address = get_absolute_address_indexed_x(machine, arg_one);
-    uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
-
     if (is_flag_set(machine, M_FLAG)) {
         uint8_t value = read_byte_new(machine, address);
-        uint8_t a_val = state->A.low;
-        uint8_t m_val = value;
-        uint16_t result = a_val + m_val + carry;
-        state->A.low = (uint8_t)(result & 0xFF);
-        set_flags_nzc_8(machine, state->A.low);
-        // Set overflow flag
-        if (((a_val ^ result) & (m_val ^ result) & 0x80))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        adc_8bit(machine, value);
     } else {
         uint16_t value16 = read_word_new(machine, address);
-        uint16_t a_val = state->A.full;
-        uint16_t m_val = value16;
-        uint32_t result = a_val + m_val + carry;
-        state->A.full = (uint16_t)(result & 0xFFFF);
-        set_flags_nzc_16(machine, state->A.full);
-        // Set overflow flag
-        if (((a_val ^ result) & (m_val ^ result) & 0x8000))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        adc_16bit(machine, value16);
     }
     return machine;
 }
@@ -2302,33 +2013,13 @@ machine_state_t* ROR_ABS_IX    (machine_state_t* machine, uint16_t arg_one, uint
 
 machine_state_t* ADC_AL_IX     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // Add with Carry, Absolute Long Indexed X
-    processor_state_t *state = &machine->processor;
     long_address_t effective_addr = get_absolute_long_indexed_x_new(machine, arg_one, arg_two);
-    uint8_t carry_in = is_flag_set(machine, CARRY) ? 1 : 0;
     if (is_flag_set(machine, M_FLAG)) {
         uint16_t value = read_byte_long(machine, effective_addr);
-        uint8_t a_val = state->A.low;
-        uint8_t m_val = value;
-        uint16_t result = a_val + m_val + carry_in;
-        state->A.low = (uint8_t)(result & 0xFF);
-        set_flags_nzc_8(machine, state->A.low);
-        // Set overflow flag
-        if (((a_val ^ result) & (m_val ^ result) & 0x80))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        adc_8bit(machine, value);
     } else {
         uint16_t value16 = read_word_long(machine, effective_addr);
-        uint16_t a_val = state->A.full;
-        uint16_t m_val = value16;
-        uint32_t result = a_val + m_val + carry_in;
-        state->A.full = (uint16_t)(result & 0xFFFF);
-        set_flags_nzc_16(machine, state->A.full);
-        // Set overflow flag
-        if (((a_val ^ result) & (m_val ^ result) & 0x8000))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        adc_16bit(machine, value16);
     }
     return machine;
 }
@@ -3686,82 +3377,26 @@ machine_state_t* CPX_IMM       (machine_state_t* machine, uint16_t arg_one, uint
 
 machine_state_t* SBC_DP_I_IX   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Direct Page Indirect Indexed by X
-    processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_dp_address_indirect_indexed_x_new(machine, arg_one);
-    uint16_t value_to_subtract;
-    if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        value_to_subtract = read_byte_new(machine, effective_address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
-        uint8_t a_val = state->A.low;
-        uint8_t m_val = value_to_subtract;
-        uint16_t result = (uint16_t)a_val - (uint16_t)m_val + carry - 1;
-        state->A.low = result & 0xFF;
-        // Carry is set if no borrow occurred
-        if (result & 0x8000) clear_flag(machine, CARRY);  // Borrow occurred
-        else set_flag(machine, CARRY);  // No borrow
-        set_flags_nz_8(machine, state->A.low);
-        // Set overflow flag
-        if (((a_val ^ m_val) & (a_val ^ result) & 0x80))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+    if (is_flag_set(machine, M_FLAG)) {
+        uint16_t value_to_subtract = read_byte_new(machine, effective_address);
+        sbc_8bit(machine, value_to_subtract);
     } else {
-        value_to_subtract = read_word_new(machine, effective_address);
-        uint32_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
-        uint16_t a_val = state->A.full;
-        uint16_t m_val = value_to_subtract;
-        uint32_t result = (uint32_t)a_val - (uint32_t)m_val + carry - 1;
-        state->A.full = result & 0xFFFF;
-        // Carry is set if no borrow occurred
-        if (result & 0x80000000) clear_flag(machine, CARRY);  // Borrow occurred
-        else set_flag(machine, CARRY);  // No borrow
-        set_flags_nz_16(machine, state->A.full);
-        // Set overflow flag
-        if (((a_val ^ m_val) & (a_val ^ result) & 0x8000))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        uint16_t value_to_subtract = read_word_new(machine, effective_address);
+        sbc_16bit(machine, value_to_subtract);
     }
     return machine;
 }
 
 machine_state_t* SBC_SR        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Stack Relative
-    processor_state_t *state = &machine->processor;
     uint16_t address = get_stack_relative_address(machine, arg_one);
-    uint16_t value_to_subtract;
-    if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        value_to_subtract = read_byte_dp_sr(machine, address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
-        uint8_t a_val = state->A.low;
-        uint8_t m_val = value_to_subtract;
-        uint16_t result = (uint16_t)a_val - (uint16_t)m_val + carry - 1;
-        state->A.low = result & 0xFF;
-        // Carry is set if no borrow occurred
-        if (result & 0x8000) clear_flag(machine, CARRY);  // Borrow occurred
-        else set_flag(machine, CARRY);  // No borrow
-        set_flags_nz_8(machine, state->A.low);
-        // Set overflow flag
-        if (((a_val ^ m_val) & (a_val ^ result) & 0x80))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+    if (is_flag_set(machine, M_FLAG)) {
+        uint16_t value_to_subtract = read_byte_dp_sr(machine, address);
+        sbc_8bit(machine, value_to_subtract);
     } else {
-        value_to_subtract = read_word_dp_sr(machine, address);
-        uint32_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
-        uint16_t a_val = state->A.full;
-        uint16_t m_val = value_to_subtract;
-        uint32_t result = (uint32_t)a_val - (uint32_t)m_val + carry - 1;
-        state->A.full = result & 0xFFFF;
-        // Carry is set if no borrow occurred
-        if (result & 0x80000000) clear_flag(machine, CARRY);  // Borrow occurred
-        else set_flag(machine, CARRY);  // No borrow
-        set_flags_nz_16(machine, state->A.full);
-        // Set overflow flag
-        if (((a_val ^ m_val) & (a_val ^ result) & 0x8000))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        uint16_t value_to_subtract = read_word_dp_sr(machine, address);
+        sbc_16bit(machine, value_to_subtract);
     }
     return machine;
 }
@@ -3785,37 +3420,13 @@ machine_state_t* CPX_DP        (machine_state_t* machine, uint16_t arg_one, uint
 
 machine_state_t* SBC_DP        (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Direct Page
-    processor_state_t *state = &machine->processor;
     uint16_t address = get_dp_address(machine, arg_one);
-    uint16_t value_to_subtract;
-    if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        value_to_subtract = read_byte_dp_sr(machine, address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
-        uint8_t a_val = state->A.low;
-        uint8_t m_val = value_to_subtract;
-        uint16_t result = (a_val & 0xFF) - (m_val & 0xFF) + carry - 1;
-        state->A.low = result & 0xFF;
-        if (result & 0x8000) clear_flag(machine, CARRY); else set_flag(machine, CARRY);
-        set_flags_nz_8(machine, state->A.low);
-        // Set overflow flag
-        if (((a_val ^ m_val) & (a_val ^ result) & 0x80))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+    if (is_flag_set(machine, M_FLAG)) {
+        uint16_t value_to_subtract = read_byte_dp_sr(machine, address);
+        sbc_8bit(machine, value_to_subtract);
     } else {
-        value_to_subtract = read_word_dp_sr(machine, address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
-        uint16_t a_val = state->A.full;
-        uint16_t m_val = value_to_subtract;
-        uint32_t result = (a_val & 0xFFFF) - (m_val & 0xFFFF) + carry - 1;
-        state->A.full = result & 0xFFFF;
-        if (result & 0x80000000) clear_flag(machine, CARRY); else set_flag(machine, CARRY);
-        set_flags_nz_16(machine, state->A.full);
-        // Set overflow flag
-        if (((a_val ^ m_val) & (a_val ^ result) & 0x8000))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        uint16_t value_to_subtract = read_word_dp_sr(machine, address);
+        sbc_16bit(machine, value_to_subtract);
     }
     return machine;
 }
@@ -3840,41 +3451,13 @@ machine_state_t* INC_DP        (machine_state_t* machine, uint16_t arg_one, uint
 
 machine_state_t* SBC_DP_IL     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Direct Page Indirect Long
-    processor_state_t *state = &machine->processor;
     long_address_t address = get_dp_address_indirect_long_new(machine, arg_one);
-    uint16_t value_to_subtract;
-    if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        value_to_subtract = read_byte_long(machine, address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
-        uint8_t a_val = state->A.low;
-        uint8_t m_val = value_to_subtract;
-        uint16_t result = (uint16_t)a_val - (uint16_t)m_val + carry - 1;
-        state->A.low = result & 0xFF;
-        // Carry is set if no borrow occurred
-        if (result & 0x8000) clear_flag(machine, CARRY);  // Borrow occurred
-        else set_flag(machine, CARRY);  // No borrow
-        set_flags_nz_8(machine, state->A.low);
-        // Set overflow flag
-        if (((a_val ^ m_val) & (a_val ^ result) & 0x80))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+    if (is_flag_set(machine, M_FLAG)) {
+        uint16_t value_to_subtract = read_byte_long(machine, address);
+        sbc_8bit(machine, value_to_subtract);
     } else {
-        value_to_subtract = read_word_long(machine, address);
-        uint32_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
-        uint16_t a_val = state->A.full;
-        uint16_t m_val = value_to_subtract;
-        uint32_t result = (uint32_t)a_val - (uint32_t)m_val + carry - 1;
-        state->A.full = result & 0xFFFF;
-        // Carry is set if no borrow occurred
-        if (result & 0x80000000) clear_flag(machine, CARRY);  // Borrow occurred
-        else set_flag(machine, CARRY);  // No borrow
-        set_flags_nz_16(machine, state->A.full);
-        // Set overflow flag
-        if (((a_val ^ m_val) & (a_val ^ result) & 0x8000))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        uint16_t value_to_subtract = read_word_long(machine, address);
+        sbc_16bit(machine, value_to_subtract);
     }
     return machine;
 }
@@ -3895,39 +3478,12 @@ machine_state_t* INX           (machine_state_t* machine, uint16_t arg_one, uint
 machine_state_t* SBC_IMM       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Immediate
     processor_state_t *state = &machine->processor;
-    uint16_t value_to_subtract;
     if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        value_to_subtract = (uint8_t)(arg_one & 0xFF);
-        uint8_t a_val = state->A.low;
-        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
-        uint16_t result = (uint16_t)a_val - (uint16_t)value_to_subtract + carry - 1;
-        state->A.low = result & 0xFF;
-        // Carry is set if no borrow occurred (result >= 0)
-        if (result & 0x8000) clear_flag(machine, CARRY);  // Borrow occurred
-        else set_flag(machine, CARRY);  // No borrow
-        // Set Overflow flag: V = (A^M) & (A^result) & 0x80
-        if (((a_val ^ value_to_subtract) & (a_val ^ result) & 0x80)) {
-            set_flag(machine, OVERFLOW);
-        } else {
-            clear_flag(machine, OVERFLOW);
-        }
-        set_flags_nz_8(machine, state->A.low);
+        // 8-bit mode
+        sbc_8bit(machine, arg_one & 0xFF);
     } else {
-        value_to_subtract = arg_one & 0xFFFF;
-        uint16_t a_val = state->A.full;
-        uint32_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
-        uint32_t result = (uint32_t)a_val - (uint32_t)value_to_subtract + carry - 1;
-        state->A.full = result & 0xFFFF;
-        // Carry is set if no borrow occurred
-        if (result & 0x80000000) clear_flag(machine, CARRY);  // Borrow occurred
-        else set_flag(machine, CARRY);  // No borrow
-        // Set Overflow flag: V = (A^M) & (A^result) & 0x8000
-        if (((a_val ^ value_to_subtract) & (a_val ^ result) & 0x8000)) {
-            set_flag(machine, OVERFLOW);
-        } else {
-            clear_flag(machine, OVERFLOW);
-        }
-        set_flags_nz_16(machine, state->A.full);
+        // 16-bit mode
+        sbc_16bit(machine, arg_one & 0xFFFF);
     }
     return machine;
 }
@@ -3974,37 +3530,13 @@ machine_state_t* CPX_ABS       (machine_state_t* machine, uint16_t arg_one, uint
 
 machine_state_t* SBC_ABS       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Absolute
-    processor_state_t *state = &machine->processor;
     uint16_t address = get_absolute_address(machine, arg_one);
-    uint16_t value_to_subtract;
-    if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        value_to_subtract = read_byte_new(machine, address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
-        uint8_t a_val = state->A.low;
-        uint8_t m_val = value_to_subtract;
-        uint16_t result = (a_val & 0xFF) - (m_val & 0xFF) + carry - 1;
-        state->A.low = result & 0xFF;
-        if (result & 0x8000) clear_flag(machine, CARRY); else set_flag(machine, CARRY);
-        set_flags_nz_8(machine, state->A.low);
-        // Set overflow flag
-        if (((a_val ^ m_val) & (a_val ^ result) & 0x80))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+    if (is_flag_set(machine, M_FLAG)) {
+        uint16_t value_to_subtract = read_byte_new(machine, address);
+        sbc_8bit(machine, value_to_subtract);
     } else {
-        value_to_subtract = read_word_new(machine, address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
-        uint16_t a_val = state->A.full;
-        uint16_t m_val = value_to_subtract;
-        uint32_t result = (a_val & 0xFFFF) - (m_val & 0xFFFF) + carry - 1;
-        state->A.full = result & 0xFFFF;
-        if (result & 0x80000000) clear_flag(machine, CARRY); else set_flag(machine, CARRY);
-        set_flags_nz_16(machine, state->A.full);
-        // Set overflow flag
-        if (((a_val ^ m_val) & (a_val ^ result) & 0x8000))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        uint16_t value_to_subtract = read_word_new(machine, address);
+        sbc_16bit(machine, value_to_subtract);
     }
     return machine;
 }
@@ -4029,37 +3561,13 @@ machine_state_t* INC_ABS       (machine_state_t* machine, uint16_t arg_one, uint
 
 machine_state_t* SBC_ABL       (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Absolute Long
-    processor_state_t *state = &machine->processor;
     long_address_t addr = get_absolute_address_long(machine, arg_one, arg_two);
-    uint16_t value_to_subtract;
-    if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        value_to_subtract = read_byte_long(machine, addr);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
-        uint8_t a_val = state->A.low;
-        uint8_t m_val = value_to_subtract;
-        uint16_t result = (a_val & 0xFF) - (m_val & 0xFF) + carry - 1;
-        state->A.low = result & 0xFF;
-        if (result & 0x8000) clear_flag(machine, CARRY); else set_flag(machine, CARRY);
-        set_flags_nz_8(machine, state->A.low);
-        // Set overflow flag
-        if (((a_val ^ m_val) & (a_val ^ result) & 0x80))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+    if (is_flag_set(machine, M_FLAG)) {
+        uint16_t value_to_subtract = read_byte_long(machine, addr);
+        sbc_8bit(machine, value_to_subtract);
     } else {
-        value_to_subtract = read_word_long(machine, addr);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
-        uint16_t a_val = state->A.full;
-        uint16_t m_val = value_to_subtract;
-        uint32_t result = (a_val & 0xFFFF) - (m_val & 0xFFFF) + carry - 1;
-        state->A.full = result & 0xFFFF;
-        if (result & 0x80000000) clear_flag(machine, CARRY); else set_flag(machine, CARRY);
-        set_flags_nz_16(machine, state->A.full);
-        // Set overflow flag
-        if (((a_val ^ m_val) & (a_val ^ result) & 0x8000))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        uint16_t value_to_subtract = read_word_long(machine, addr);
+        sbc_16bit(machine, value_to_subtract);
     }
     return machine;
 }
@@ -4076,111 +3584,39 @@ machine_state_t* BEQ_CB        (machine_state_t* machine, uint16_t arg_one, uint
 
 machine_state_t* SBC_DP_I_IY   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Direct Page Indirect Indexed by Y
-    processor_state_t *state = &machine->processor;
     uint16_t address = get_dp_address_indirect_indexed_y_new(machine, arg_one);
-    uint16_t value_to_subtract;
-    if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        value_to_subtract = read_byte_new(machine, address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
-        uint8_t a_val = state->A.low;
-        uint8_t m_val = value_to_subtract;
-        uint16_t result = (a_val & 0xFF) - (m_val & 0xFF) + carry - 1;
-        state->A.low = result & 0xFF;
-        if (result & 0x8000) clear_flag(machine, CARRY); else set_flag(machine, CARRY);
-        set_flags_nz_8(machine, state->A.low);
-        // Set overflow flag
-        if (((a_val ^ m_val) & (a_val ^ result) & 0x80))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+    if (is_flag_set(machine, M_FLAG)) {
+        uint16_t value_to_subtract = read_byte_new(machine, address);
+        sbc_8bit(machine, value_to_subtract);
     } else {
-        value_to_subtract = read_word_new(machine, address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
-        uint16_t a_val = state->A.full;
-        uint16_t m_val = value_to_subtract;
-        uint32_t result = (a_val & 0xFFFF) - (m_val & 0xFFFF) + carry - 1;
-        state->A.full = result & 0xFFFF;
-        if (result & 0x80000000) clear_flag(machine, CARRY); else set_flag(machine, CARRY);
-        set_flags_nz_16(machine, state->A.full);
-        // Set overflow flag
-        if (((a_val ^ m_val) & (a_val ^ result) & 0x8000))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        uint16_t value_to_subtract = read_word_new(machine, address);
+        sbc_16bit(machine, value_to_subtract);
     }
     return machine;
 }
 
 machine_state_t* SBC_DP_I      (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Direct Page Indirect
-    processor_state_t *state = &machine->processor;
     uint16_t address = get_dp_address_indirect_new(machine, arg_one);
-    uint16_t value_to_subtract;
-    if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        value_to_subtract = read_byte_new(machine, address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
-        uint8_t a_val = state->A.low;
-        uint8_t m_val = value_to_subtract;
-        uint16_t result = (a_val & 0xFF) - (m_val & 0xFF) + carry - 1;
-        state->A.low = result & 0xFF;
-        if (result & 0x8000) clear_flag(machine, CARRY); else set_flag(machine, CARRY);
-        set_flags_nz_8(machine, state->A.low);
-        // Set overflow flag
-        if (((a_val ^ m_val) & (a_val ^ result) & 0x80))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+    if (is_flag_set(machine, M_FLAG)) {
+        uint16_t value_to_subtract = read_byte_new(machine, address);
+        sbc_8bit(machine, value_to_subtract);
     } else {
-        value_to_subtract = read_word_new(machine, address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
-        uint16_t a_val = state->A.full;
-        uint16_t m_val = value_to_subtract;
-        uint32_t result = (a_val & 0xFFFF) - (m_val & 0xFFFF) + carry - 1;
-        state->A.full = result & 0xFFFF;
-        if (result & 0x80000000) clear_flag(machine, CARRY); else set_flag(machine, CARRY);
-        set_flags_nz_16(machine, state->A.full);
-        // Set overflow flag
-        if (((a_val ^ m_val) & (a_val ^ result) & 0x8000))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        uint16_t value_to_subtract = read_word_new(machine, address);
+        sbc_16bit(machine, value_to_subtract);
     }
     return machine;
 }
 
 machine_state_t* SBC_SR_I_IY   (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Stack Relative Indirect Indexed by Y
-    processor_state_t *state = &machine->processor;
     uint16_t address = get_stack_relative_address_indirect_indexed_y_new(machine, arg_one);
-    uint16_t value_to_subtract;
-    if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        value_to_subtract = read_byte_new(machine, address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
-        uint8_t a_val = state->A.low;
-        uint8_t m_val = value_to_subtract;
-        uint16_t result = (a_val & 0xFF) - (m_val & 0xFF) + carry - 1;
-        state->A.low = result & 0xFF;
-        if (result & 0x8000) clear_flag(machine, CARRY); else set_flag(machine, CARRY);
-        set_flags_nz_8(machine, state->A.low);
-        // Set overflow flag
-        if (((a_val ^ m_val) & (a_val ^ result) & 0x80))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+    if (is_flag_set(machine, M_FLAG)) {
+        uint16_t value_to_subtract = read_byte_new(machine, address);
+        sbc_8bit(machine, value_to_subtract);
     } else {
-        value_to_subtract = read_word_new(machine, address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
-        uint16_t a_val = state->A.full;
-        uint16_t m_val = value_to_subtract;
-        uint32_t result = (a_val & 0xFFFF) - (m_val & 0xFFFF) + carry - 1;
-        state->A.full = result & 0xFFFF;
-        if (result & 0x80000000) clear_flag(machine, CARRY); else set_flag(machine, CARRY);
-        set_flags_nz_16(machine, state->A.full);
-        // Set overflow flag
-        if (((a_val ^ m_val) & (a_val ^ result) & 0x8000))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        uint16_t value_to_subtract = read_word_new(machine, address);
+        sbc_16bit(machine, value_to_subtract);
     }
     return machine;
 }
@@ -4194,37 +3630,13 @@ machine_state_t* PEA_ABS       (machine_state_t* machine, uint16_t arg_one, uint
 
 machine_state_t* SBC_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Direct Page Indexed by X
-    processor_state_t *state = &machine->processor;
     uint16_t address = get_dp_address_indexed_x(machine, arg_one);
-    uint16_t value_to_subtract;
-    if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        value_to_subtract = read_byte_new(machine, address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
-        uint8_t a_val = state->A.low;
-        uint8_t m_val = value_to_subtract;
-        uint16_t result = (a_val & 0xFF) - (m_val & 0xFF) + carry - 1;
-        state->A.low = result & 0xFF;
-        if (result & 0x8000) clear_flag(machine, CARRY); else set_flag(machine, CARRY);
-        set_flags_nz_8(machine, state->A.low);
-        // Set overflow flag
-        if (((a_val ^ m_val) & (a_val ^ result) & 0x80))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+    if (is_flag_set(machine, M_FLAG)) {
+        uint16_t value_to_subtract = read_byte_new(machine, address);
+        sbc_8bit(machine, value_to_subtract);
     } else {
-        value_to_subtract = read_word_new(machine, address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
-        uint16_t a_val = state->A.full;
-        uint16_t m_val = value_to_subtract;
-        uint32_t result = (a_val & 0xFFFF) - (m_val & 0xFFFF) + carry - 1;
-        state->A.full = result & 0xFFFF;
-        if (result & 0x80000000) clear_flag(machine, CARRY); else set_flag(machine, CARRY);
-        set_flags_nz_16(machine, state->A.full);
-        // Set overflow flag
-        if (((a_val ^ m_val) & (a_val ^ result) & 0x8000))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        uint16_t value_to_subtract = read_word_new(machine, address);
+        sbc_16bit(machine, value_to_subtract);
     }
     return machine;
 }
@@ -4249,37 +3661,13 @@ machine_state_t* INC_DP_IX     (machine_state_t* machine, uint16_t arg_one, uint
 
 machine_state_t* SBC_DP_IL_IY  (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Direct Page Indirect Long Indexed by Y
-    processor_state_t *state = &machine->processor;
     long_address_t addr = get_dp_address_indirect_long_indexed_y_new(machine, arg_one);
-    uint16_t value_to_subtract;
-    if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        value_to_subtract = read_byte_long(machine, addr);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
-        uint8_t a_val = state->A.low;
-        uint8_t m_val = value_to_subtract;
-        uint16_t result = (a_val & 0xFF) - (m_val & 0xFF) + carry - 1;
-        state->A.low = result & 0xFF;
-        if (result & 0x8000) clear_flag(machine, CARRY); else set_flag(machine, CARRY);
-        set_flags_nz_8(machine, state->A.low);
-        // Set overflow flag
-        if (((a_val ^ m_val) & (a_val ^ result) & 0x80))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+    if (is_flag_set(machine, M_FLAG)) {
+        uint16_t value_to_subtract = read_byte_long(machine, addr);
+        sbc_8bit(machine, value_to_subtract);
     } else {
-        value_to_subtract = read_word_long(machine, addr);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
-        uint16_t a_val = state->A.full;
-        uint16_t m_val = value_to_subtract;
-        uint32_t result = (a_val & 0xFFFF) - (m_val & 0xFFFF) + carry - 1;
-        state->A.full = result & 0xFFFF;
-        if (result & 0x80000000) clear_flag(machine, CARRY); else set_flag(machine, CARRY);
-        set_flags_nz_16(machine, state->A.full);
-        // Set overflow flag
-        if (((a_val ^ m_val) & (a_val ^ result) & 0x8000))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        uint16_t value_to_subtract = read_word_long(machine, addr);
+        sbc_16bit(machine, value_to_subtract);
     }
     return machine;
 }
@@ -4292,37 +3680,13 @@ machine_state_t* SED           (machine_state_t* machine, uint16_t arg_one, uint
 
 machine_state_t* SBC_ABS_IY    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Absolute Indexed by Y
-    processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_absolute_address_indexed_y(machine, arg_one);
-    uint16_t value_to_subtract;
-    if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        value_to_subtract = read_byte_new(machine, effective_address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
-        uint8_t a_val = state->A.low;
-        uint8_t m_val = value_to_subtract;
-        uint16_t result = (a_val & 0xFF) - (m_val & 0xFF) + carry - 1;
-        state->A.low = result & 0xFF;
-        if (result & 0x8000) clear_flag(machine, CARRY); else set_flag(machine, CARRY);
-        set_flags_nz_8(machine, state->A.low);
-        // Set overflow flag
-        if (((a_val ^ m_val) & (a_val ^ result) & 0x80))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+    if (is_flag_set(machine, M_FLAG)) {
+        uint16_t value_to_subtract = read_byte_new(machine, effective_address);
+        sbc_8bit(machine, value_to_subtract);
     } else {
-        value_to_subtract = read_word_new(machine, effective_address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
-        uint16_t a_val = state->A.full;
-        uint16_t m_val = value_to_subtract;
-        uint32_t result = (a_val & 0xFFFF) - (m_val & 0xFFFF) + carry - 1;
-        state->A.full = result & 0xFFFF;
-        if (result & 0x80000000) clear_flag(machine, CARRY); else set_flag(machine, CARRY);
-        set_flags_nz_16(machine, state->A.full);
-        // Set overflow flag
-        if (((a_val ^ m_val) & (a_val ^ result) & 0x8000))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        uint16_t value_to_subtract = read_word_new(machine, effective_address);
+        sbc_16bit(machine, value_to_subtract);
     }
     return machine;
 }
@@ -4358,37 +3722,13 @@ machine_state_t* JSR_ABS_I_IX  (machine_state_t* machine, uint16_t arg_one, uint
 
 machine_state_t* SBC_ABS_IX    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Absolute Indexed by X
-    processor_state_t *state = &machine->processor;
     uint16_t effective_address = get_absolute_address_indexed_x(machine, arg_one);
-    uint16_t value_to_subtract;
-    if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        value_to_subtract = read_byte_new(machine, effective_address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
-        uint8_t a_val = state->A.low;
-        uint8_t m_val = value_to_subtract;
-        uint16_t result = (a_val & 0xFF) - (m_val & 0xFF) + carry - 1;
-        state->A.low = result & 0xFF;
-        if (result & 0x8000) clear_flag(machine, CARRY); else set_flag(machine, CARRY);
-        set_flags_nz_8(machine, state->A.low);
-        // Set overflow flag
-        if (((a_val ^ m_val) & (a_val ^ result) & 0x80))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+    if (is_flag_set(machine, M_FLAG)) {
+        uint16_t value_to_subtract = read_byte_new(machine, effective_address);
+        sbc_8bit(machine, value_to_subtract);
     } else {
-        value_to_subtract = read_word_new(machine, effective_address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
-        uint16_t a_val = state->A.full;
-        uint16_t m_val = value_to_subtract;
-        uint32_t result = (a_val & 0xFFFF) - (m_val & 0xFFFF) + carry - 1;
-        state->A.full = result & 0xFFFF;
-        if (result & 0x80000000) clear_flag(machine, CARRY); else set_flag(machine, CARRY);
-        set_flags_nz_16(machine, state->A.full);
-        // Set overflow flag
-        if (((a_val ^ m_val) & (a_val ^ result) & 0x8000))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        uint16_t value_to_subtract = read_word_new(machine, effective_address);
+        sbc_16bit(machine, value_to_subtract);
     }
     return machine;
 }
@@ -4413,38 +3753,13 @@ machine_state_t* INC_ABS_IX    (machine_state_t* machine, uint16_t arg_one, uint
 
 machine_state_t* SBC_ABL_IX    (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // SuBtract with Carry, Absolute Long Indexed by X
-    processor_state_t *state = &machine->processor;
     long_address_t addr = get_absolute_address_long_indexed_x(machine, arg_one, arg_two);
-    uint16_t effective_address = addr.address;
-    uint16_t value_to_subtract;
-    if (state->emulation_mode || is_flag_set(machine, M_FLAG)) {
-        value_to_subtract = read_byte_new(machine, effective_address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
-        uint8_t a_val = state->A.low;
-        uint8_t m_val = value_to_subtract;
-        uint16_t result = (a_val & 0xFF) - (m_val & 0xFF) + carry - 1;
-        state->A.low = result & 0xFF;
-        if (result & 0x8000) clear_flag(machine, CARRY); else set_flag(machine, CARRY);
-        set_flags_nz_8(machine, state->A.low);
-        // Set overflow flag
-        if (((a_val ^ m_val) & (a_val ^ result) & 0x80))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+    if (is_flag_set(machine, M_FLAG)) {
+        uint16_t value_to_subtract = read_byte_new(machine, addr.address);
+        sbc_8bit(machine, value_to_subtract);
     } else {
-        value_to_subtract = read_word_new(machine, effective_address);
-        uint16_t carry = is_flag_set(machine, CARRY) ? 1 : 0;
-        uint16_t a_val = state->A.full;
-        uint16_t m_val = value_to_subtract;
-        uint32_t result = (a_val & 0xFFFF) - (m_val & 0xFFFF) + carry - 1;
-        state->A.full = result & 0xFFFF;
-        if (result & 0x80000000) clear_flag(machine, CARRY); else set_flag(machine, CARRY);
-        set_flags_nz_16(machine, state->A.full);
-        // Set overflow flag
-        if (((a_val ^ m_val) & (a_val ^ result) & 0x8000))
-            set_flag(machine, OVERFLOW);
-        else
-            clear_flag(machine, OVERFLOW);
+        uint16_t value_to_subtract = read_word_new(machine, addr.address);
+        sbc_16bit(machine, value_to_subtract);
     }
     return machine;
 }

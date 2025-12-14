@@ -84,4 +84,16 @@ uint16_t get_dp_address_indexed_y(machine_state_t *machine, uint16_t dp_offset);
 long_address_t get_absolute_address_long_indirect_new(machine_state_t *machine, uint16_t address, uint8_t bank);
 uint16_t get_absolute_address_indirect_new(machine_state_t *machine, uint16_t address);
 
+// BCD (Binary Coded Decimal) arithmetic helpers
+uint16_t bcd_add_8(uint8_t a, uint8_t b, uint16_t carry_in, bool *carry_out);
+uint32_t bcd_add_16(uint16_t a, uint16_t b, uint32_t carry_in, bool *carry_out);
+uint16_t bcd_subtract_8(uint8_t a, uint8_t b, uint16_t carry_in, bool *carry_out);
+uint32_t bcd_subtract_16(uint16_t a, uint16_t b, uint32_t carry_in, bool *carry_out);
+
+// High-level ADC/SBC helpers that handle both binary and decimal modes
+void adc_8bit(machine_state_t *machine, uint8_t value);
+void adc_16bit(machine_state_t *machine, uint16_t value);
+void sbc_8bit(machine_state_t *machine, uint8_t value);
+void sbc_16bit(machine_state_t *machine, uint16_t value);
+
 #endif // PROCESSOR_HELPERS_H
