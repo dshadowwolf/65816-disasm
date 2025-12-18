@@ -3040,11 +3040,39 @@ machine_state_t* DEX           (machine_state_t* machine, uint16_t arg_one, uint
     return machine;
 }
 
-// TODO: Implement when full hardware emulation begins
 machine_state_t* WAI           (machine_state_t* machine, uint16_t arg_one, uint16_t arg_two) {
     // WAit for Interrupt
     processor_state_t *state = &machine->processor;
-    // ??? what here ?
+    
+    // Reset wait cycle counter
+    state->wai_cycles = 0;
+    
+    // If interrupts are disabled, WAI exits immediately (just the base 2 cycles)
+    if (state->interrupts_disabled) {
+        return machine;
+    }
+    
+    // Wait for an interrupt by clocking hardware until one occurs
+    const uint32_t MAX_WAIT_CYCLES = 1000000; // Safety limit
+    
+    // Keep clocking hardware until interrupt occurs
+    while (state->wai_cycles < MAX_WAIT_CYCLES) {
+        // Clock hardware devices by 1 cycle (if callback is set)
+        if (machine->clock_hardware) {
+            machine->clock_hardware(machine, 1);
+        }
+        state->wai_cycles++;
+        
+        // Check if any device has raised an interrupt (if callback is set)
+        if (machine->check_interrupts && machine->check_interrupts(machine)) {
+            // Interrupt detected - process it (if callback is set)
+            if (machine->process_interrupt) {
+                machine->process_interrupt(machine);
+            }
+            break;
+        }
+    }
+    
     return machine;
 }
 

@@ -345,6 +345,11 @@ void initialize_machine(machine_state_t *machine) {
     g_board_fifo = init_board_fifo();
     
     initialize_memory_regions(machine);
+    
+    // Set up hardware callback functions for processor to use
+    machine->clock_hardware = machine_clock_devices;
+    machine->check_interrupts = machine_check_interrupts;
+    machine->process_interrupt = machine_process_interrupt;
 }
 
 void initialize_machine_with_state(machine_state_t *machine, const initial_state_t *init) {
@@ -353,6 +358,11 @@ void initialize_machine_with_state(machine_state_t *machine, const initial_state
     g_board_fifo = init_board_fifo();
     
     initialize_memory_regions(machine);
+    
+    // Set up hardware callback functions for processor to use
+    machine->clock_hardware = machine_clock_devices;
+    machine->check_interrupts = machine_check_interrupts;
+    machine->process_interrupt = machine_process_interrupt;
 }
 
 // Clock devices (call this in your main emulation loop)
@@ -376,6 +386,76 @@ void machine_clock_devices(machine_state_t *machine, uint8_t cycles) {
         for (uint8_t i = 0; i < cycles; i++) {
             board_fifo_clock(g_board_fifo);
         }
+    }
+}
+
+// Check if any hardware device has a pending interrupt
+bool machine_check_interrupts(machine_state_t *machine) {
+    bool interrupt_pending = false;
+    
+    // Check ACIA interrupt
+    if (g_acia_initialized && acia6551_get_irq(&g_acia)) {
+        interrupt_pending = true;
+    }
+    
+    // Check standalone VIA interrupt
+    if (g_via_initialized && via6522_get_irq(&g_via)) {
+        interrupt_pending = true;
+    }
+    
+    // Check board FIFO interrupt (if it has interrupt support)
+    if (g_board_fifo) {
+        via6522_t *fifo_via = board_fifo_get_via(g_board_fifo);
+        if (fifo_via && via6522_get_irq(fifo_via)) {
+            interrupt_pending = true;
+        }
+    }
+    
+    // Update processor interrupt pending flag
+    machine->processor.interrupt_pending = interrupt_pending;
+    
+    return interrupt_pending;
+}
+
+// Process hardware interrupt (IRQ)
+// This is called after WAI or can be called at the start of each instruction
+void machine_process_interrupt(machine_state_t *machine) {
+    processor_state_t *state = &machine->processor;
+    
+    // Don't process if interrupts are disabled
+    if (state->interrupts_disabled) {
+        return;
+    }
+    
+    // Check if there's a pending interrupt
+    if (!machine_check_interrupts(machine)) {
+        return;
+    }
+    
+    // Save processor state to stack
+    if (!state->emulation_mode) {
+        // Native mode: push PBR, PC (16-bit), P
+        push_byte_new(machine, state->PBR);
+    }
+    push_word_new(machine, state->PC);
+    push_byte_new(machine, state->P);
+    
+    // Set interrupt disable flag
+    state->interrupts_disabled = true;
+    state->P |= 0x04; // Set I flag
+    
+    // Clear decimal mode (per 65816 spec)
+    state->P &= ~0x08; // Clear D flag
+    
+    // Load interrupt vector
+    // In emulation mode: $FFFE-$FFFF
+    // In native mode: $FFE6-$FFE7
+    uint16_t vector_address = state->emulation_mode ? 0xFFFE : 0xFFEE;
+    state->PC = read_word_new(machine, vector_address);
+    
+    // In native mode, also set PBR to 0
+    if (!state->emulation_mode) {
+        state->PBR = 0;
     }
 }
 
@@ -938,10 +1018,8 @@ step_result_t* machine_step(machine_state_t *machine) {
     }
     
     if (result->opcode == 0x44 || result->opcode == 0x54) { 
-        // MVP or MVN - cycles depend on A and B registers
-        uint8_t a = machine->processor.A;
-        uint8_t b = machine->processor.B;
-        uint8_t block_size = (a == 0) ? 256 : a;
+        // MVP or MVN - cycles depend on A register (block size)
+        uint16_t block_size = machine->processor.A.full + 1;
         result->cycles += (block_size * 7); // Each byte transfer takes 7 cycles
     }
 
@@ -953,7 +1031,7 @@ step_result_t* machine_step(machine_state_t *machine) {
             result->cycles += 1;
         }
     }
-    
+
     // Clock hardware devices based on instruction cycles
     machine_clock_devices(machine, result->cycles);
     
@@ -961,8 +1039,11 @@ step_result_t* machine_step(machine_state_t *machine) {
     if (result->opcode == 0xDB) { // STP
         result->halted = true;
     }
-    if (result->opcode == 0xCB) { // WAI
+    if (result->opcode == 0xCB) { // WAI - Wait for Interrupt
         result->waiting = true;
+        // The actual waiting and interrupt processing is done in processor.c
+        // Add the wait cycles to the instruction cycle count
+        result->cycles += machine->processor.wai_cycles;
     }
     
     return result;

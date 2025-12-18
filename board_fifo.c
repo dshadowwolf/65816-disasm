@@ -186,3 +186,9 @@ uint16_t board_fifo_get_tx_count(fifo_t *fifo) {
     if (!fifo) return 0;
     return ft245_get_tx_fifo_count(&fifo->ft245);
 }
+
+// Get VIA instance for interrupt checking
+via6522_t* board_fifo_get_via(fifo_t *fifo) {
+    if (!fifo) return NULL;
+    return &fifo->via;
+}

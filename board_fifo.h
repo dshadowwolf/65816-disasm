@@ -4,8 +4,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-// Forward declaration
+// Forward declarations
 typedef struct fifo_s fifo_t;
+typedef struct via6522_s via6522_t;
 
 // Port B bit assignments for FT245 control/status
 #define PORTB_RD_N      0x01  // Bit 0: RD# output (active low)
@@ -46,6 +47,9 @@ void board_fifo_write_via(fifo_t *fifo, uint8_t reg, uint8_t value);
 // Status queries
 uint16_t board_fifo_get_rx_count(fifo_t *fifo);  // Bytes available to read from USB
 uint16_t board_fifo_get_tx_count(fifo_t *fifo);  // Bytes waiting to send to USB
+
+// Get VIA instance (for interrupt checking)
+via6522_t* board_fifo_get_via(fifo_t *fifo);
 
 // Port callbacks (internal use)
 uint8_t board_fifo_via_port_a_read(void* context);

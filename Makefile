@@ -52,6 +52,9 @@ srec_loader: srec_loader.o lib65816disasm.a
 test_mvn: test_mvn.o lib65816disasm.a
 	gcc -o $@ $< -L. -l65816disasm
 
+test_wai: test_wai.o lib65816disasm.a
+	gcc -o $@ $< -L. -l65816disasm
+
 simple_io_test: simple_io_test.o simple_io.o board_fifo.o via6522.o ft245.o
 	gcc -o $@ $^
 
@@ -65,7 +68,7 @@ lib65816disasm.a: list.o map.o codetable.o outs.o map.o tbl.o state.o disasm.o p
 test: test_processor lib65816disasm.a
 	./test_processor
 
-test_all: test_processor test_via test_pia test_acia test_ft245 test_board_fifo test_integration test_pia_integration test_acia_integration test_mvn lib65816disasm.a
+test_all: test_processor test_via test_pia test_acia test_ft245 test_board_fifo test_integration test_pia_integration test_acia_integration test_mvn test_wai lib65816disasm.a
 	@echo "Running all tests..."
 	@echo ""
 	@echo "=== Running test_processor ==="
@@ -98,8 +101,11 @@ test_all: test_processor test_via test_pia test_acia test_ft245 test_board_fifo 
 	@echo "=== Running test_mvn ==="
 	./test_mvn
 	@echo ""
+	@echo "=== Running test_wai ==="
+	./test_wai
+	@echo ""
 	@echo "=== All tests completed successfully ==="
 
 clean:
-	rm -f *.o tester test_processor test_via test_pia test_acia test_ft245 test_board_fifo test_integration test_pia_integration test_acia_integration test_rom_load test_single_step test_hex_load intel_hex_loader srec_loader example_emulated_state test_mvn simple_io_test simple_io_interactive lib65816disasm.a test_rom.bin test_program.hex
+	rm -f *.o tester test_processor test_via test_pia test_acia test_ft245 test_board_fifo test_integration test_pia_integration test_acia_integration test_rom_load test_single_step test_hex_load intel_hex_loader srec_loader example_emulated_state test_mvn test_wai simple_io_test simple_io_interactive lib65816disasm.a test_rom.bin test_program.hex
 

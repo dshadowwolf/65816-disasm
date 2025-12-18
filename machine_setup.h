@@ -43,6 +43,8 @@ machine_state_t* create_machine();
 machine_state_t* create_machine_with_state(const initial_state_t *init);
 void destroy_machine(machine_state_t *machine);
 void machine_clock_devices(machine_state_t *machine, uint8_t cycles);
+bool machine_check_interrupts(machine_state_t *machine);
+void machine_process_interrupt(machine_state_t *machine);
 void cleanup_machine_with_via(machine_state_t *machine);
 void usb_send_byte_to_cpu(uint8_t data);
 uint8_t usb_receive_byte_from_cpu(void);

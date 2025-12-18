@@ -23,6 +23,8 @@ typedef struct processor_state_s {
     uint8_t DBR;              // Data Bank Register
     bool emulation_mode;      // Emulation Mode Flag
     bool interrupts_disabled; // Interrupt Disable Flag
+    bool interrupt_pending;   // Set when hardware requests an interrupt
+    uint32_t wai_cycles;      // Cycles spent waiting in WAI instruction
 } processor_state_t;
 
 // from here to the next comment is experimental design work
@@ -55,9 +57,22 @@ typedef struct memory_bank_s {
 } memory_bank_t;
 // end experimental design work
 
+// Forward declaration for callback
+typedef struct machine_state_s machine_state_t;
+
+// Hardware callback functions for processor to use
+typedef void (*hardware_clock_fn)(machine_state_t*, uint8_t cycles);
+typedef bool (*hardware_check_irq_fn)(machine_state_t*);
+typedef void (*hardware_process_irq_fn)(machine_state_t*);
+
 typedef struct machine_state_s {
     processor_state_t processor;
     memory_bank_t *memory_banks[256]; // Array of memory banks
+    
+    // Callbacks for hardware interaction (set by machine_setup.c)
+    hardware_clock_fn clock_hardware;
+    hardware_check_irq_fn check_interrupts;
+    hardware_process_irq_fn process_interrupt;
 } machine_state_t;
 
 typedef machine_state_t* (operation)(machine_state_t*, uint16_t, uint16_t);
