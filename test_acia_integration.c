@@ -71,7 +71,7 @@ void test_acia_transmit(machine_state_t *machine) {
     
     // Clock the ACIA to process transmission
     for (int i = 0; i < 1000; i++) {
-        machine_clock_devices(machine);
+        machine_clock_devices(machine, 1);
     }
     
     // TDRE should be set again after transmission
@@ -140,7 +140,7 @@ void test_acia_with_callbacks(machine_state_t *machine) {
     
     // Clock to process transmission
     for (int i = 0; i < 1000; i++) {
-        machine_clock_devices(machine);
+        machine_clock_devices(machine, 1);
     }
     
     TEST_ASSERT(tx_callback_called == true, "TX callback triggered");

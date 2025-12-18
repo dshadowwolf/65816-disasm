@@ -90,7 +90,7 @@ void test_via_timer1(machine_state_t *machine) {
     
     // Clock the VIA a few times
     for (int i = 0; i < 100; i++) {
-        machine_clock_devices(machine);
+        machine_clock_devices(machine, 1);
     }
     
     // Counter should have decreased
@@ -183,7 +183,7 @@ void test_board_fifo_cpu_to_usb(machine_state_t *machine) {
         
         // Clock to process
         for (int j = 0; j < 10; j++) {
-            machine_clock_devices(machine);
+            machine_clock_devices(machine, 1);
         }
         
         // Deassert WR
@@ -232,7 +232,7 @@ void test_board_fifo_usb_to_cpu(machine_state_t *machine) {
         
         // Clock to process
         for (int j = 0; j < 10; j++) {
-            machine_clock_devices(machine);
+            machine_clock_devices(machine, 1);
         }
         
         // Read data from Port A
@@ -283,7 +283,7 @@ void test_board_fifo_bidirectional(machine_state_t *machine) {
         
         // Read byte
         write_byte_new(machine, 0x7FE0, 0x00); // RD# low
-        for (int j = 0; j < 10; j++) machine_clock_devices(machine);
+        for (int j = 0; j < 10; j++) machine_clock_devices(machine, 1);
         cpu_received[i] = read_byte_new(machine, 0x7FE1);
         printf("%c", cpu_received[i]);
         write_byte_new(machine, 0x7FE0, 0x01); // RD# high
@@ -300,7 +300,7 @@ void test_board_fifo_bidirectional(machine_state_t *machine) {
     for (int i = 0; i < 3; i++) {
         write_byte_new(machine, 0x7FE1, response[i]);
         write_byte_new(machine, 0x7FE0, 0x03); // WR high
-        for (int j = 0; j < 10; j++) machine_clock_devices(machine);
+        for (int j = 0; j < 10; j++) machine_clock_devices(machine, 1);
         write_byte_new(machine, 0x7FE0, 0x01); // WR low
     }
     
@@ -378,7 +378,7 @@ void test_concurrent_devices(machine_state_t *machine) {
     
     // Clock both devices
     for (int i = 0; i < 50; i++) {
-        machine_clock_devices(machine);
+        machine_clock_devices(machine, 1);
     }
     
     TEST_ASSERT(true, "Both devices can be clocked simultaneously");

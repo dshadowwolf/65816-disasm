@@ -10,6 +10,7 @@ typedef struct opcode_s {
     void (*extra)(uint32_t, uint32_t);
     int (*reader)(bool);
     const uint32_t flags;
+    const uint8_t cycles;
     machine_state_t* (*op)(machine_state_t *, uint16_t, uint16_t);
 } opcode_t;
 

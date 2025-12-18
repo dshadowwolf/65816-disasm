@@ -66,9 +66,9 @@ int main() {
     int max_steps = 20;
     
     printf("Stepping through program:\n");
-    printf("%-4s  %-8s  %-6s  %-12s  %-s\n", 
-           "Step", "Address", "OpCode", "Instruction", "State");
-    printf("----  --------  ------  ------------  -----\n");
+    printf("%-4s  %-8s  %-6s  %-3s  %-12s  %-s\n", 
+           "Step", "Address", "OpCode", "Cyc", "Instruction", "State");
+    printf("----  --------  ------  ---  ------------  -----\n");
     
     while (step_count < max_steps) {
         step_result_t *result = machine_step(machine);
@@ -78,11 +78,12 @@ int main() {
         }
         
         // Display disassembly and state
-        printf("%4d  %02X:%04X   %02X      %-4s %-8s  A=$%04X X=$%04X Y=$%04X P=$%02X",
+        printf("%4d  %02X:%04X   %02X      %2d   %-4s %-8s  A=$%04X X=$%04X Y=$%04X P=$%02X",
                step_count,
                (result->address >> 16) & 0xFF,
                result->address & 0xFFFF,
                result->opcode,
+               result->cycles,
                result->mnemonic,
                result->operand_str,
                machine->processor.A.full,

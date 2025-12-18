@@ -11,6 +11,7 @@ typedef struct step_result_s {
     uint8_t opcode;            // Opcode byte
     uint32_t operand;          // Operand bytes (if any, up to 24-bit for long addresses)
     uint8_t instruction_size;  // Total size of instruction (1-4 bytes)
+    uint8_t cycles;            // Number of CPU cycles consumed by this instruction
     char mnemonic[8];          // Instruction mnemonic (e.g., "LDA")
     char operand_str[32];      // Formatted operand string
     bool halted;               // True if processor halted (STP instruction)
@@ -41,7 +42,7 @@ void reset_machine(machine_state_t *machine);
 machine_state_t* create_machine();
 machine_state_t* create_machine_with_state(const initial_state_t *init);
 void destroy_machine(machine_state_t *machine);
-void machine_clock_devices(machine_state_t *machine);
+void machine_clock_devices(machine_state_t *machine, uint8_t cycles);
 void cleanup_machine_with_via(machine_state_t *machine);
 void usb_send_byte_to_cpu(uint8_t data);
 uint8_t usb_receive_byte_from_cpu(void);

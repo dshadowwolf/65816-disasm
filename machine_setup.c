@@ -356,22 +356,26 @@ void initialize_machine_with_state(machine_state_t *machine, const initial_state
 }
 
 // Clock devices (call this in your main emulation loop)
-void machine_clock_devices(machine_state_t *machine) {
+void machine_clock_devices(machine_state_t *machine, uint8_t cycles) {
     // Clock ACIA at 0x7F80
     if (g_acia_initialized) {
-        acia6551_clock(&g_acia, 1);
+        acia6551_clock(&g_acia, cycles);
     }
     
     // PIA at 0x7FA0 doesn't need clocking (no timers)
     
     // Clock standalone VIA at 0x7FC0
     if (g_via_initialized) {
-        via6522_clock(&g_via);
+        for (uint8_t i = 0; i < cycles; i++) {
+            via6522_clock(&g_via);
+        }
     }
     
     // Clock board FIFO (VIA+FT245) at 0x7FE0
     if (g_board_fifo) {
-        board_fifo_clock(g_board_fifo);
+        for (uint8_t i = 0; i < cycles; i++) {
+            board_fifo_clock(g_board_fifo);
+        }
     }
 }
 
@@ -922,6 +926,9 @@ step_result_t* machine_step(machine_state_t *machine) {
     // Format operand string
     format_operand(result, op, result->operand, operand_size);
     
+    // Get base cycle count from opcode table
+    result->cycles = op->cycles;
+    
     // Update PC before execution (instruction might modify it)
     machine->processor.PC += result->instruction_size;
     
@@ -929,6 +936,26 @@ step_result_t* machine_step(machine_state_t *machine) {
     if (op->op != NULL) {
         machine = op->op(machine, arg1, arg2);
     }
+    
+    if (result->opcode == 0x44 || result->opcode == 0x54) { 
+        // MVP or MVN - cycles depend on A and B registers
+        uint8_t a = machine->processor.A;
+        uint8_t b = machine->processor.B;
+        uint8_t block_size = (a == 0) ? 256 : a;
+        result->cycles += (block_size * 7); // Each byte transfer takes 7 cycles
+    }
+
+    if (result->opcode == 0x80) { // BRA
+        // Add 1 cycle if branch is taken
+        int8_t offset = (int8_t)(result->operand & 0xFF);
+        uint16_t target_pc = machine->processor.PC + offset;
+        if ((offset < 0 && target_pc < pc) || (offset > 0 && target_pc > pc)) {
+            result->cycles += 1;
+        }
+    }
+    
+    // Clock hardware devices based on instruction cycles
+    machine_clock_devices(machine, result->cycles);
     
     // Check for special states
     if (result->opcode == 0xDB) { // STP
